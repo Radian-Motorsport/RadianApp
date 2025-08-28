@@ -51,9 +51,11 @@
     });
     */
 
-  socket.on('telemetry', (data) => {
-  const fuel = data.FuelLevel;
-  document.getElementById('telemetry').textContent = `Fuel Level: ${fuel.toFixed(1)} L`;
+  const telemetryBox = document.getElementById('telemetry');
+
+socket.on('telemetry', (data) => {
+  const fuel = typeof data.FuelLevel === 'number' ? data.FuelLevel.toFixed(1) : 'N/A';
+  telemetryBox.textContent = `Fuel Level: ${fuel} L`;
 });
 
 
@@ -78,6 +80,7 @@
   </script>
 </body>
 </html>
+
 
 
 
