@@ -10,6 +10,21 @@ const io = socketIo(server);
 
 app.use(express.static('public'));
 
+app.use(express.json()); // Add this to parse incoming JSON
+
+app.post('/telemetry', (req, res) => {
+  console.log('📡 Telemetry POST received');
+  io.emit('telemetry', req.body);
+  res.sendStatus(200);
+});
+
+app.post('/sessionInfo', (req, res) => {
+  console.log('📋 SessionInfo POST received');
+  io.emit('sessionInfo', req.body);
+  res.sendStatus(200);
+});
+
+
 irsdk.init({
   telemetryUpdateInterval: 1000,
   sessionInfoUpdateInterval: 5000
@@ -62,3 +77,4 @@ io.on('connection', (socket) => {
 server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
+
