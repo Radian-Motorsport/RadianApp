@@ -52,8 +52,8 @@
     */
 
   socket.on('telemetry', (data) => {
-  console.log('📡 Telemetry received in frontend:', data);
-  telemetryBox.textContent = JSON.stringify(data, null, 2);
+  const fuel = data.FuelLevel;
+  document.getElementById('telemetry').textContent = `Fuel Level: ${fuel.toFixed(1)} L`;
 });
 
 
@@ -77,4 +77,5 @@
   </script>
 </body>
 </html>
+
 
