@@ -1,86 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>iRacing SDK Viewer</title>
+  <title>Fuel Monitor</title>
   <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
-    pre { white-space: pre-wrap; word-wrap: break-word; margin-bottom: 40px; }
-    h1 { border-bottom: 1px solid #0f0; padding-bottom: 5px; }
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #fuelDisplay {
+      font-size: 48px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>📡 Telemetry (General)</h1>
-  <pre id="telemetry">Waiting for telemetry...</pre>
-
-  <h1>🚗 CarIdx Breakdown</h1>
-  <pre id="caridx">Waiting for CarIdx data...</pre>
-
-  <h1>📋 Session Info</h1>
-  <div id="session">Waiting for session info...</div>
+  <div id="fuelDisplay">Waiting for telemetry...</div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io('https://radianapp.onrender.com');
-    const telemetryBox = document.getElementById('telemetry');
-    const caridxBox = document.getElementById('caridx');
-    const sessionBox = document.getElementById('session');
+    const fuelDisplay = document.getElementById('fuelDisplay');
 
-    /*socket.on('telemetry', (data) => {
-      // General telemetry (no CarIdx*)
-      const filtered = {};
-      for (const key in data) {
-        if (!key.startsWith('CarIdx')) {
-          filtered[key] = data[key];
-        }
-      }
-      telemetryBox.textContent = JSON.stringify(filtered, null, 2);
+    socket = io('https://radianapp.onrender.com');
 
-      // CarIdx breakdown
-      const carIdxKeys = Object.keys(data).filter(key => key.startsWith('CarIdx'));
-      const output = [];
+    socket.on('telemetry', (data) => {
+      const fuel = typeof data.FuelLevel === 'number' ? data.FuelLevel.toFixed(1) : 'N/A';
+      fuelDisplay.textContent = `Fuel Level: ${fuel} L`;
 
-      for (let i = 0; i < 64; i++) {
-        const car = { CarIdx: i };
-        for (const key of carIdxKeys) {
-          car[key] = data[key]?.[i];
-        }
-        output.push(car);
-      }
-
-      caridxBox.textContent = JSON.stringify(output, null, 2);
+      fuelDisplay.style.color =
+        fuel < 5 ? '#f00' :
+        fuel < 10 ? '#ffa500' :
+        '#0f0';
     });
-    */
-
-  const telemetryBox = document.getElementById('telemetry');
-
-socket.on('telemetry', (data) => {
-  const fuel = typeof data.FuelLevel === 'number' ? data.FuelLevel.toFixed(1) : 'N/A';
-  telemetryBox.textContent = `Fuel Level: ${fuel} L`;
-});
-
-
-
-
-  /*  socket.on('sessionInfo', (data) => {
-      sessionBox.innerHTML = ''; // Clear previous
-
-      for (const section in data) {
-        const header = document.createElement('h2');
-        header.textContent = `📦 ${section}`;
-        sessionBox.appendChild(header);
-
-        const pre = document.createElement('pre');
-        pre.textContent = JSON.stringify(data[section], null, 2);
-        sessionBox.appendChild(pre);
-      }
-    });
-  */
-
-    
   </script>
 </body>
 </html>
-
-
-
-
