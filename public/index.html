@@ -51,10 +51,11 @@
     });
     */
 
-    socket.on('telemetry', (data) => {
-  const fuelOnly = { FuelLevel: data.FuelLevel };
-  telemetryBox.textContent = JSON.stringify(fuelOnly, null, 2);
+  socket.on('telemetry', (data) => {
+  console.log('📡 Telemetry received in frontend:', data);
+  telemetryBox.textContent = JSON.stringify(data, null, 2);
 });
+
 
 
   /*  socket.on('sessionInfo', (data) => {
@@ -76,3 +77,4 @@
   </script>
 </body>
 </html>
+
