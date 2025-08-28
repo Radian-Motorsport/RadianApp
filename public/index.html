@@ -27,7 +27,7 @@
     const fuelDisplay = document.getElementById('fuelDisplay');
 
 socket.on('telemetry', (data) => {
-  const fuel = data?.values?.FuelLevel;
+  const fuel = data.FuelLevel;
 
   if (typeof fuel === 'number') {
     fuelDisplay.textContent = `Fuel Level: ${fuel.toFixed(1)} L`;
@@ -44,8 +44,11 @@ socket.on('telemetry', (data) => {
 
 
 
+
+
     });
   </script>
 </body>
 </html>
+
 
