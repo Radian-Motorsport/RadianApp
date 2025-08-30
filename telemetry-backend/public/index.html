@@ -1,81 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>iRacing SDK Viewer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telemetry Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
-    pre { white-space: pre-wrap; word-wrap: break-word; margin-bottom: 40px; }
-    h1 { border-bottom: 1px solid #0f0; padding-bottom: 5px; }
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #fuelGaugeContainer {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+      width: 300px;
+      text-align: center;
+    }
+
+    #fuelGaugeContainer label {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    #fuelGauge {
+      width: 100%;
+      height: 30px;
+      appearance: none;
+      background: #333;
+      border-radius: 5px;
+    }
+
+    #fuelGauge::-webkit-progress-bar {
+      background-color: #222;
+      border-radius: 5px;
+    }
+
+    #fuelGauge::-webkit-progress-value {
+      background-color: #00ff00;
+      border-radius: 5px;
+    }
+
+    #fuelGauge::-moz-progress-bar {
+      background-color: #00ff00;
+      border-radius: 5px;
+    }
+
+    #fuelValue {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
-  <h1>📡 Telemetry (General)</h1>
-  <pre id="telemetry">Waiting for telemetry...</pre>
 
-  <h1>🚗 CarIdx Breakdown</h1>
-  <pre id="caridx">Waiting for CarIdx data...</pre>
+  <div id="fuelGaugeContainer">
+    <label for="fuelGauge">Fuel Level</label>
+    <progress id="fuelGauge" value="0" max="100"></progress>
+    <div id="fuelValue">0%</div>
+  </div>
 
-  <h1>📋 Session Info</h1>
-  <div id="session">Waiting for session info...</div>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io('https://radianapp.onrender.com');
-    const telemetryBox = document.getElementById('telemetry');
-    const caridxBox = document.getElementById('caridx');
-    const sessionBox = document.getElementById('session');
 
-    /*socket.on('telemetry', (data) => {
-      // General telemetry (no CarIdx*)
-      const filtered = {};
-      for (const key in data) {
-        if (!key.startsWith('CarIdx')) {
-          filtered[key] = data[key];
-        }
-      }
-      telemetryBox.textContent = JSON.stringify(filtered, null, 2);
-
-      // CarIdx breakdown
-      const carIdxKeys = Object.keys(data).filter(key => key.startsWith('CarIdx'));
-      const output = [];
-
-      for (let i = 0; i < 64; i++) {
-        const car = { CarIdx: i };
-        for (const key of carIdxKeys) {
-          car[key] = data[key]?.[i];
-        }
-        output.push(car);
-      }
-
-      caridxBox.textContent = JSON.stringify(output, null, 2);
-    });
-    */
+    function updateFuelGauge(level) {
+      const gauge = document.getElementById('fuelGauge');
+      const valueDisplay = document.getElementById('fuelValue');
+      const fuel = Math.round(level);
+      gauge.value = fuel;
+      valueDisplay.textContent = `${fuel}%`;
+    }
 
     socket.on('telemetry', (data) => {
-      // Debug: log the incoming data structure
-      console.log('Telemetry data:', data);
-      // Try to access FuelLevel from data.values
-      const fuelOnly = data.values ? { FuelLevel: data.values.FuelLevel } : { FuelLevel: data.FuelLevel };
-      telemetryBox.textContent = JSON.stringify(fuelOnly, null, 2);
+      const fuelLevel = data?.values?.FuelLevel ?? data?.FuelLevel ?? 0;
+      updateFuelGauge(fuelLevel);
     });
-
-
-  /*  socket.on('sessionInfo', (data) => {
-      sessionBox.innerHTML = ''; // Clear previous
-
-      for (const section in data) {
-        const header = document.createElement('h2');
-        header.textContent = `📦 ${section}`;
-        sessionBox.appendChild(header);
-
-        const pre = document.createElement('pre');
-        pre.textContent = JSON.stringify(data[section], null, 2);
-        sessionBox.appendChild(pre);
-      }
-    });
-  */
-
-    
   </script>
+
 </body>
 </html>
