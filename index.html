@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Telemetry HUD</title>
+  <style>
+        @font-face {
+                    font-family: 'RoadRage';
+                    src: url('https://radian-motorsport.github.io/Endurance-Planner-Backend/RoadRage.woff') format('woff');
+                    font-weight: normal;
+                    font-style: normal;
+        }
+        .road-rage-font {
+            font-family: 'RoadRage', sans-serif;
+        }
+        
+    h1 {
+            color: #ffffff; /* A dark color for the text */
+            text-shadow: 3px 3px 0px #000000; /* The text-shadow property */
+
+        }
+    h3 {
+            color: #ffffff; /* A dark color for the text */
+            text-shadow: 3px 3px 0px #000000; /* The text-shadow property *//* Gradient text for h3 */
+
+        }
+    h4 {
+            color: #ffffff; /* A dark color for the text */
+            text-shadow: 3px 3px 0px #000000; /* The text-shadow property *//* Gradient text for h2 *//* Gradient text for h4 */
+        }
+        
+    h2 {
+            font-size: 4em;
+            font-weight: SEMIbold;
+            
+            /* Apply the gradient to the background */
+            background-image: linear-gradient(to right, #00ffff, #d400ff);
+            
+            /* Clip the background to the text */
+            -webkit-background-clip: text;
+            
+            /* Make the text color transparent */
+            -webkit-text-fill-color: transparent;
+            
+            /* This is a fallback for browsers that don't support the above */
+            color: #4a90e2; 
+        
+            /*text-shadow: 3px 3px 0px #ffffff; /* The shadow property */
+            
+        }
+
+    .text-shadow {
+        text-shadow: 3px 3px 5px #000000;
+       }
+
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .hud {
+      background-color: #2A2A28;
+      width: 300px;
+      height: 100px;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .status-line {
+      font-size: 20px;
+      letter-spacing: 1px;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
+    .status-line.connected {
+      color: #10B981; /* Green */
+    }
+
+    .status-line.waiting {
+      color: #FBBF24; /* Amber */
+    }
+
+    .status-line.disconnected {
+      color: #ff2a2a; /* Red */
+    }
+
+    .draggable {
+    -webkit-app-region: drag;
+    }
+
+    .packet-count {
+      position: absolute;
+      bottom: 6px;
+      left: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: semi-bold;
+      color: hsl(0, 0%, 43%);
+    }
+
+    .Telemetry {
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: semi-bold;
+      color: hsl(0, 0%, 43%);
+    }
+
+    .logo {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      opacity: 0.2;
+      height: 16px;
+    }
+
+    .min-btn {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    color: #575757;
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-app-region: no-drag; /* so clicking doesn't drag */
+    }
+
+
+  </style>
+</head>
+<body>
+  <div class="hud draggable">
+    <button id="minimize" class="min-btn" onclick="window.electronAPI.minimizeWindow()">–</button>
+    <div id="announcement" class="Telemetry">Telemetry</div>
+    <div id="broadcasting" class="status-line disconnected text-shadow: 6px 6px 0px #000000 road-rage-font text-shadow">Not broadcasting</div>
+    <div id="packetsSent" class="packet-count">1287</div>
+    <img src="assets/logo.png" alt="Radian Motorsport Logo" class="logo" />
+  </div>
+</body>
+
+<script>
+  function updateStatus() {
+    window.electronAPI.getStatus().then((status) => {
+      const statusEl = document.getElementById('broadcasting');
+      const packetsEl = document.getElementById('packetsSent');
+
+      // Always preserve base classes
+      statusEl.classList.remove('connected', 'waiting', 'disconnected');
+      if (status.broadcasting) {
+        if (status.iracingConnected) {
+          statusEl.classList.add('connected');
+          statusEl.innerHTML = '&#11093; Broadcasting (iRacing connected)';
+        } else {
+          statusEl.classList.add('waiting');
+          statusEl.innerHTML = '&#11093; Broadcasting (waiting for iRacing)';
+        }
+      } else {
+        statusEl.classList.add('disconnected');
+        statusEl.innerHTML = '&#11093; Not broadcasting';
+      }
+
+      packetsEl.innerText = status.packetsSent;
+    });
+  }
+
+  setInterval(updateStatus, 1000);
+</script>
+
+
+
+</html>
