@@ -69,6 +69,8 @@
     <label for="fuelGauge">Fuel Level</label>
     <progress id="fuelGauge" value="0" max="100"></progress>
     <div id="fuelValue">0%</div>
+    <div id="fuelPerLap">Fuel Used Last Lap: --</div>
+    <div id="fuelAvg">3-Lap Avg: --</div>
   </div>
 
   <script>
@@ -82,9 +84,36 @@
   valueDisplay.textContent = `${fuel}%`;
     }
 
+    let lastLapCompleted = -1;
+    let fuelAtLapStart = null;
+    let fuelUsageHistory = [];
+
     socket.on('telemetry', (data) => {
       const fuelLevel = data?.values?.FuelLevel ?? data?.FuelLevel ?? 0;
       updateFuelGauge(fuelLevel);
+
+      const lapCompleted = data?.values?.LapCompleted;
+      const fuel = data?.values?.FuelLevel;
+
+      if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+        if (fuelAtLapStart !== null) {
+          const fuelUsed = fuelAtLapStart - fuel;
+          fuelUsageHistory.push(fuelUsed);
+
+          // Keep only the last 3 laps
+          if (fuelUsageHistory.length > 3) {
+            fuelUsageHistory.shift();
+          }
+
+          const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+
+          document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+          document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+        }
+
+        fuelAtLapStart = fuel;
+        lastLapCompleted = lapCompleted;
+      }
     });
   </script>
 
