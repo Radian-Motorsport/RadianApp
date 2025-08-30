@@ -77,9 +77,9 @@
     function updateFuelGauge(level) {
       const gauge = document.getElementById('fuelGauge');
       const valueDisplay = document.getElementById('fuelValue');
-      const fuel = Math.round(level);
-      gauge.value = fuel;
-      valueDisplay.textContent = `${fuel}%`;
+  const fuel = Number(level).toFixed(1);
+  gauge.value = fuel;
+  valueDisplay.textContent = `${fuel}%`;
     }
 
     socket.on('telemetry', (data) => {
