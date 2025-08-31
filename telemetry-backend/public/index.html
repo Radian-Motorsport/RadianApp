@@ -243,102 +243,96 @@
     }
 
     // === Lap Completion Logic ===
-    if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-      // Fuel usage per lap
-      if (fuelAtLapStart !== null) {
-        const fuelUsed = fuelAtLapStart - fuel;
-        if (fuelUsed >= 0 && isFinite(fuelUsed)) {
-          fuelUsageHistory.push(fuelUsed);
-          if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
-          
-          // === 3-Lap Fuel Average ===
-          const avgFuelUsed3 = fuelUsageHistory.length >= 3
-            ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-            : null;
+if (fuelAtLapStart !== null) {
+  const fuelUsed = fuelAtLapStart - fuel;
+  if (fuelUsed >= 0 && isFinite(fuelUsed)) {
+    fuelUsageHistory.push(fuelUsed);
+    if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
 
-          document.getElementById('fuelAvg').textContent =
-            `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+    // === 3-Lap Fuel Average ===
+    const avgFuelUsed3 = fuelUsageHistory.length >= 3
+      ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : null;
 
-          // === 5-Lap Fuel Average ===
-          const avgFuelUsed5 = fuelUsageHistory.length === 5
-            ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
-            : null;
+    document.getElementById('fuelAvg').textContent =
+      `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
 
-          document.getElementById('fuelAvg5').textContent =
-            `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+    // === 5-Lap Fuel Average ===
+    const avgFuelUsed5 = fuelUsageHistory.length === 5
+      ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
+      : null;
 
-          // Display last lap fuel
-          document.getElementById('fuelPerLap').textContent =
-            `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+    document.getElementById('fuelAvg5').textContent =
+      `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
 
+    // Display last lap fuel
+    document.getElementById('fuelPerLap').textContent =
+      `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+  }
+}
 
-          // === Fuel Projection ===
-          const projectedLaps = avgFuelUsed3 > 0
-            ? fuelLevel / avgFuelUsed3
-            : null;
+    // === Lap Time Tracking ===
+    const now = Date.now();
+    if (lastLapStartTime !== null) {
+      const lapTime = (now - lastLapStartTime) / 1000; // seconds
+      lapTimeHistory.push(lapTime);
+      if (lapTimeHistory.length > 5) lapTimeHistory.shift();
 
-          const projectedTimeSec = projectedLaps && lapAvg3
-            ? projectedLaps * lapAvg3
-            : null;
+      // === 3-Lap Time Average ===
+      var lapAvg3 = lapTimeHistory.length >= 3
+        ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+        : null;
 
-          document.getElementById('fuelProjectedLaps').textContent =
-            `Projected Laps Remaining: ${projectedLaps?.toFixed(2) ?? '--'}`;
+      document.getElementById('lapAvg3').textContent =
+        `3-Lap Avg Lap Time: ${lapAvg3?.toFixed(2) ?? '--'}s`;
 
-          if (projectedTimeSec) {
-            const minutes = Math.floor(projectedTimeSec / 60);
-            const seconds = Math.floor(projectedTimeSec % 60);
-            document.getElementById('fuelProjectedTime').textContent =
-              `Projected Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-          } else {
-            document.getElementById('fuelProjectedTime').textContent =
-              'Projected Time Remaining: --';
-          }
-        }
+      // === 5-Lap Time Average ===
+      const lapAvg5 = lapTimeHistory.length === 5
+        ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+        : null;
+
+      document.getElementById('lapAvg5').textContent =
+        `5-Lap Avg Lap Time: ${lapAvg5?.toFixed(2) ?? '--'}s`;
+
+      // === Fuel Projection ===
+      const projectedLaps = avgFuelUsed3 > 0
+        ? fuel / avgFuelUsed3
+        : null;
+
+      const projectedTimeSec = projectedLaps && lapAvg3
+        ? projectedLaps * lapAvg3
+        : null;
+
+      document.getElementById('fuelProjectedLaps').textContent =
+        `Projected Laps Remaining: ${projectedLaps?.toFixed(2) ?? '--'}`;
+
+      if (projectedTimeSec) {
+        const minutes = Math.floor(projectedTimeSec / 60);
+        const seconds = Math.floor(projectedTimeSec % 60);
+        document.getElementById('fuelProjectedTime').textContent =
+          `Projected Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        document.getElementById('fuelProjectedTime').textContent =
+          'Projected Time Remaining: --';
       }
-
-      // === Lap Time Tracking ===
-      const now = Date.now();
-      if (lastLapStartTime !== null) {
-        const lapTime = (now - lastLapStartTime) / 1000; // seconds
-        lapTimeHistory.push(lapTime);
-        if (lapTimeHistory.length > 5) lapTimeHistory.shift();
-
-        // === 3-Lap Time Average ===
-        const lapAvg3 = lapTimeHistory.length >= 3
-          ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-          : null;
-
-        document.getElementById('lapAvg3').textContent =
-          `3-Lap Avg Lap Time: ${lapAvg3?.toFixed(2) ?? '--'}s`;
+    }
+    lastLapStartTime = now;
+    fuelAtLapStart = fuel;
+    lastLapCompleted = lapCompleted;
 
 
-        // === 5-Lap Time Average ===
-        const lapAvg5 = lapTimeHistory.length === 5
-          ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
-          : null;
+    // === Driver Info Display ===
+    socket.on('currentBroadcaster', (info) => {
+      document.getElementById('streamingStatus').textContent =
+        `Live: ${info.driver} (Session ${info.sessionId})`;
+    });
 
-        document.getElementById('lapAvg5').textContent =
-          `5-Lap Avg Lap Time: ${lapAvg5?.toFixed(2) ?? '--'}s`;
+    socket.on('telemetry', (data) => {
+      const isOnTrack = data?.values?.IsOnTrack;
+      if (isOnTrack === false) {
+        document.getElementById('streamingStatus').textContent = 'Live: —';
       }
-      lastLapStartTime = now;
-
-      fuelAtLapStart = fuel;
-      lastLapCompleted = lapCompleted;
-    }
-  });
-
-  // === Driver Info Display ===
-  socket.on('currentBroadcaster', (info) => {
-    document.getElementById('streamingStatus').textContent =
-      `Live: ${info.driver} (Session ${info.sessionId})`;
-  });
-
-  socket.on('telemetry', (data) => {
-    const isOnTrack = data?.values?.IsOnTrack;
-    if (isOnTrack === false) {
-      document.getElementById('streamingStatus').textContent = 'Live: —';
-    }
-  });
+    });
 </script>
 
 
