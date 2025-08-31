@@ -90,6 +90,7 @@
 <script>
   const socket = io('https://radianapp.onrender.com');
 
+  // === Live Value Display ===
   function updateFuelGauge(level) {
     const gauge = document.getElementById('fuelGauge');
     const valueDisplay = document.getElementById('fuelValue');
@@ -98,6 +99,7 @@
     valueDisplay.textContent = `${fuel}%`;
   }
 
+  // === State Variables ===
   let lastLapCompleted = -1;
   let fuelAtLapStart = null;
   let fuelUsageHistory = [];
@@ -119,7 +121,7 @@
 
     document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
-    // 🔁 Detect driver exit
+    // === Driver Exit ===
     if (!isOnTrack && driverWasOnTrack) {
       bufferFrozen = true;
       lapEntryPoint = null;
@@ -127,7 +129,7 @@
       document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
       panel.classList.add('dimmed');
 
-      // Preserve bufferedData and fuel history
+      // === Post-Stint Values ===
       const lastFuelUsed = fuelUsageHistory.at(-1);
       const avgFuelUsed = fuelUsageHistory.length > 0
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
@@ -138,11 +140,13 @@
       document.getElementById('fuelAvg').textContent =
         `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
+      // Future: tire wear, stint lap count, etc.
+
       driverWasOnTrack = false;
       return;
     }
 
-    // 🔁 Detect driver entry
+    // === Driver Entry ===
     if (isOnTrack && !driverWasOnTrack) {
       lapEntryPoint = teamLap;
       bufferFrozen = true;
@@ -152,7 +156,7 @@
       return;
     }
 
-    // 🔁 Unlock buffer after 2 laps
+    // === Lap-Based Buffer Unlock ===
     if (isOnTrack && bufferFrozen && lapEntryPoint !== null && teamLap >= lapEntryPoint + 2) {
       bufferFrozen = false;
       lastTeamLap = teamLap;
@@ -160,31 +164,31 @@
       document.getElementById('bufferStatus').textContent = 'Live telemetry';
     }
 
-    // 🔁 Update buffer on new lap (only if not frozen)
+    // === Buffer Update on New Lap ===
     if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
       lastTeamLap = teamLap;
       bufferedData = data;
     }
 
-    // 🔁 Use buffered data for display
+    // === Display Logic ===
     const safeValues = bufferedData?.values;
     if (!safeValues) return;
 
+    // === Live Values ===
     const fuelLevel = safeValues.FuelLevel ?? 0;
+    updateFuelGauge(fuelLevel);
+
+    // === Calculated Values ===
     const lapCompleted = safeValues.LapCompleted;
     const fuel = safeValues.FuelLevel;
-
     currentLap = lapCompleted;
     const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
 
-    // 🔁 Always show buffered data, but dim if not ready
     if (driverReady && isOnTrack) {
       panel.classList.remove('dimmed');
     } else {
       panel.classList.add('dimmed');
     }
-
-    updateFuelGauge(fuelLevel);
 
     if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
       if (fuelAtLapStart !== null) {
@@ -193,8 +197,11 @@
           fuelUsageHistory.push(fuelUsed);
           if (fuelUsageHistory.length > 3) fuelUsageHistory.shift();
           const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-          document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-          document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+
+          document.getElementById('fuelPerLap').textContent =
+            `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+          document.getElementById('fuelAvg').textContent =
+            `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
         }
       }
       fuelAtLapStart = fuel;
@@ -202,6 +209,7 @@
     }
   });
 
+  // === Driver Info Display ===
   socket.on('currentBroadcaster', (info) => {
     document.getElementById('streamingStatus').textContent =
       `Live: ${info.driver} (Session ${info.sessionId})`;
@@ -214,6 +222,7 @@
     }
   });
 </script>
+
 
 
 </body>
