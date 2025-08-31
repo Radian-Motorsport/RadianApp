@@ -77,9 +77,11 @@
   <div id="fuelAvg5">5-Lap Avg: --</div>
   <div id="lapAvg3">3-Lap Avg Lap Time: --</div>
   <div id="lapAvg5">5-Lap Avg Lap Time: --</div>
+  <div id="fuelProjectedLaps">Projected Laps Remaining: --</div>
+  <div id="fuelProjectedTime">Projected Time Remaining: --</div>
   </div>
 
-  <div id="fuelGaugeContainer">
+  <div id="fuelGaugeContainer" style="margin-top: 20px;">
     <label for="fuelGauge">Fuel Level</label>
     <progress id="fuelGauge" value="0" max="100"></progress>
     <div id="fuelValue">0%</div>
@@ -248,6 +250,29 @@
         if (fuelUsed >= 0 && isFinite(fuelUsed)) {
           fuelUsageHistory.push(fuelUsed);
           if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
+
+          // === Fuel Projection ===
+          const projectedLaps = avgFuelUsed3 > 0
+            ? fuelLevel / avgFuelUsed3
+            : null;
+
+          const projectedTimeSec = projectedLaps && lapAvg3
+            ? projectedLaps * lapAvg3
+            : null;
+
+          document.getElementById('fuelProjectedLaps').textContent =
+            `Projected Laps Remaining: ${projectedLaps?.toFixed(2) ?? '--'}`;
+
+          if (projectedTimeSec) {
+            const minutes = Math.floor(projectedTimeSec / 60);
+            const seconds = Math.floor(projectedTimeSec % 60);
+            document.getElementById('fuelProjectedTime').textContent =
+              `Projected Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            document.getElementById('fuelProjectedTime').textContent =
+              'Projected Time Remaining: --';
+          }
+
 
           // === 3-Lap Fuel Average ===
           const avgFuelUsed3 = fuelUsageHistory.length >= 3
