@@ -95,44 +95,70 @@
     let fuelAtLapStart = null;
     let fuelUsageHistory = [];
     let lastTelemetry = null;
+    let bufferTimestamp = null;
+    let currentLap = 0;
+
+    const MIN_LAPS_FOR_VALID_DATA = 2;
+    const MAX_BUFFER_TIME_MS = 30000; // 30 seconds
+
 
     socket.on('telemetry', (data) => {
-      const fuelLevel = data?.values?.FuelLevel ?? data?.FuelLevel ?? 0;
-      const lapCompleted = data?.values?.LapCompleted;
-      const fuel = data?.values?.FuelLevel;
-      const isOnTrack = data?.values?.IsOnTrack;
+      const values = data?.values;
+      const fuelLevel = values?.FuelLevel ?? data?.FuelLevel ?? 0;
+      const lapCompleted = values?.LapCompleted;
+      const fuel = values?.FuelLevel;
+      const isOnTrack = values?.IsOnTrack;
       const panel = document.getElementById('fuelGaugeContainer');
+      const now = Date.now();
 
       if (isOnTrack === true) {
-        lastTelemetry = data;
-        panel.classList.remove('dimmed');
-        updateFuelGauge(fuelLevel);
+        currentLap = lapCompleted;
 
-        if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-          if (fuelAtLapStart !== null) {
-            const fuelUsed = fuelAtLapStart - fuel;
-            fuelUsageHistory.push(fuelUsed);
+        const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
 
-            if (fuelUsageHistory.length > 3) {
-              fuelUsageHistory.shift();
+        if (driverReady) {
+          lastTelemetry = data;
+          bufferTimestamp = now;
+          panel.classList.remove('dimmed');
+          updateFuelGauge(fuelLevel);
+
+          if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+            if (fuelAtLapStart !== null) {
+              const fuelUsed = fuelAtLapStart - fuel;
+              fuelUsageHistory.push(fuelUsed);
+
+              if (fuelUsageHistory.length > 3) {
+                fuelUsageHistory.shift();
+              }
+
+              const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+
+              document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+              document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
             }
 
-            const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-
-            document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-            document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+            fuelAtLapStart = fuel;
+            lastLapCompleted = lapCompleted;
           }
-
-          fuelAtLapStart = fuel;
-          lastLapCompleted = lapCompleted;
+        } else {
+          panel.classList.add('dimmed');
+          if (lastTelemetry) {
+            updateFuelGauge(lastTelemetry.values.FuelLevel);
+          }
         }
       } else {
+        const bufferAge = now - (bufferTimestamp ?? 0);
+        const bufferStillValid = bufferAge < MAX_BUFFER_TIME_MS;
+
         panel.classList.add('dimmed');
-        if (lastTelemetry) {
+        if (lastTelemetry && bufferStillValid) {
           updateFuelGauge(lastTelemetry.values.FuelLevel);
+        } else {
+          clearTelemetryDisplay?.(); // optional fallback if you’ve defined this
         }
       }
     });
+
 
 
     socket.on('currentBroadcaster', (info) => {
