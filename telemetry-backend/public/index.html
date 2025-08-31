@@ -87,7 +87,7 @@
   </div>
 
 
-  <script>
+<script>
   const socket = io('https://radianapp.onrender.com');
 
   function updateFuelGauge(level) {
@@ -142,19 +142,18 @@
       return;
     }
 
-    // 🔁 Lap-based buffer unlock
-    if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
-      lastTeamLap = teamLap;
-      bufferedData = data;
-      document.getElementById('bufferStatus').textContent = 'Live telemetry';
-    }
-
     // 🔁 Unlock buffer after 2 laps
     if (isOnTrack && bufferFrozen && lapEntryPoint !== null && teamLap >= lapEntryPoint + 2) {
       bufferFrozen = false;
       lastTeamLap = teamLap;
       bufferedData = data;
       document.getElementById('bufferStatus').textContent = 'Live telemetry';
+    }
+
+    // 🔁 Update buffer on new lap (only if not frozen)
+    if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
+      lastTeamLap = teamLap;
+      bufferedData = data;
     }
 
     // 🔁 Use buffered data for display
@@ -168,26 +167,28 @@
     currentLap = lapCompleted;
     const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
 
-    if (driverReady) {
+    // 🔁 Always show buffered data, but dim if not ready
+    if (driverReady && isOnTrack) {
       panel.classList.remove('dimmed');
-      updateFuelGauge(fuelLevel);
-
-      if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-        if (fuelAtLapStart !== null) {
-          const fuelUsed = fuelAtLapStart - fuel;
-          if (fuelUsed >= 0 && isFinite(fuelUsed)) {
-            fuelUsageHistory.push(fuelUsed);
-            if (fuelUsageHistory.length > 3) fuelUsageHistory.shift();
-            const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-            document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-            document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
-          }
-        }
-        fuelAtLapStart = fuel;
-        lastLapCompleted = lapCompleted;
-      }
     } else {
       panel.classList.add('dimmed');
+    }
+
+    updateFuelGauge(fuelLevel);
+
+    if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+      if (fuelAtLapStart !== null) {
+        const fuelUsed = fuelAtLapStart - fuel;
+        if (fuelUsed >= 0 && isFinite(fuelUsed)) {
+          fuelUsageHistory.push(fuelUsed);
+          if (fuelUsageHistory.length > 3) fuelUsageHistory.shift();
+          const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+          document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+          document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+        }
+      }
+      fuelAtLapStart = fuel;
+      lastLapCompleted = lapCompleted;
     }
   });
 
@@ -203,7 +204,6 @@
     }
   });
 </script>
-
 
 </body>
 </html>
