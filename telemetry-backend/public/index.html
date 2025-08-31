@@ -114,85 +114,84 @@
 
 
     socket.on('telemetry', (data) => {
-      const values = data?.values;
-      const carIdx = values?.PlayerCarIdx;
-      const teamLap = values?.CarIdxLapCompleted?.[carIdx];
+  const values = data?.values;
+  const carIdx = values?.PlayerCarIdx;
+  const teamLap = values?.CarIdxLapCompleted?.[carIdx];
+  const isOnTrack = values?.IsOnTrack;
+  const panel = document.getElementById('fuelGaugeContainer');
 
-      // Display the current team lap count in the UI
-      document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
+  // Display the current team lap count
+  document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
-      // If this is the first valid lap data we've seen, set the lap entry point
-      // This marks when the driver entered the sim and starts the buffer window
-      if (lapEntryPoint === null && teamLap !== undefined) {
-        lapEntryPoint = teamLap;
-        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
-      }
+  // 🔁 Detect driver exit BEFORE using bufferedData
+  if (!isOnTrack && driverWasOnTrack) {
+    lapEntryPoint = null;
+    lastTeamLap = null;
+    bufferedData = null;
+    lastLapCompleted = -1;
+    fuelAtLapStart = null;
+    fuelUsageHistory = [];
+    document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
+    document.getElementById('fuelPerLap').textContent = 'Fuel Used Last Lap: --';
+    document.getElementById('fuelAvg').textContent = '3-Lap Avg: --';
+    panel.classList.add('dimmed');
+    driverWasOnTrack = false;
+    return;
+  }
 
-      // Only trust and update telemetry once the car has completed 2 full laps since entry
-      // This avoids false triggers from pit lane crossings or unstable data
-      if (teamLap >= lapEntryPoint + 2) {
-        // If this is a new lap, update the buffer and unlock live telemetry
-        if (lastTeamLap === null || teamLap > lastTeamLap) {
-          lastTeamLap = teamLap;
-          bufferedData = data;
-          document.getElementById('bufferStatus').textContent = 'Live telemetry';
+  // 🔁 Detect driver entry and set lapEntryPoint
+  if (isOnTrack && !driverWasOnTrack) {
+    lapEntryPoint = teamLap;
+    document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+    driverWasOnTrack = true;
+    return;
+  }
+
+  // 🔁 Lap-based buffer logic
+  if (teamLap >= lapEntryPoint + 2) {
+    if (lastTeamLap === null || teamLap > lastTeamLap) {
+      lastTeamLap = teamLap;
+      bufferedData = data;
+      document.getElementById('bufferStatus').textContent = 'Live telemetry';
+    }
+  } else {
+    document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+  }
+
+  // 🔁 Use bufferedData for all display logic
+  const safeValues = bufferedData?.values;
+  if (!safeValues) return;
+
+  const fuelLevel = safeValues.FuelLevel ?? 0;
+  const lapCompleted = safeValues.LapCompleted;
+  const fuel = safeValues.FuelLevel;
+
+  currentLap = lapCompleted;
+  const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
+
+  if (driverReady) {
+    panel.classList.remove('dimmed');
+    updateFuelGauge(fuelLevel);
+
+    if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+      if (fuelAtLapStart !== null) {
+        const fuelUsed = fuelAtLapStart - fuel;
+        if (fuelUsed >= 0 && isFinite(fuelUsed)) {
+          fuelUsageHistory.push(fuelUsed);
+          if (fuelUsageHistory.length > 3) fuelUsageHistory.shift();
+          const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+          document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+          document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
         }
-      } else {
-        // Still within the buffer zone—hold previous data and show waiting message
-        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
       }
+      fuelAtLapStart = fuel;
+      lastLapCompleted = lapCompleted;
+    }
+  } else {
+    panel.classList.add('dimmed');
+  }
+});
 
-      // Use bufferedData for all logic
-      const safeValues = bufferedData?.values;
-      if (!safeValues) return;
-
-      const fuelLevel = safeValues.FuelLevel ?? 0;
-      const lapCompleted = safeValues.LapCompleted;
-      const fuel = safeValues.FuelLevel;
-      const isOnTrack = safeValues.IsOnTrack;
-
-      // Detect driver exit and reset buffer state
-      if (!isOnTrack && driverWasOnTrack) {
-        lapEntryPoint = null;
-        lastTeamLap = null;
-        bufferedData = null;
-        document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
-      }
-
-      // Update driver state tracker
-      driverWasOnTrack = isOnTrack;
-
-      const panel = document.getElementById('fuelGaugeContainer');
-
-      currentLap = lapCompleted;
-      const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
-
-      if (isOnTrack === true && driverReady) {
-        panel.classList.remove('dimmed');
-        updateFuelGauge(fuelLevel);
-
-        if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-          if (fuelAtLapStart !== null) {
-            const fuelUsed = fuelAtLapStart - fuel;
-            fuelUsageHistory.push(fuelUsed);
-
-            if (fuelUsageHistory.length > 3) {
-              fuelUsageHistory.shift();
-            }
-
-            const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-
-            document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-            document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
-          }
-
-          fuelAtLapStart = fuel;
-          lastLapCompleted = lapCompleted;
-        }
-      } else {
-        panel.classList.add('dimmed');
-      }
-    });
 
 
 
