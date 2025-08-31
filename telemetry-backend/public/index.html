@@ -79,6 +79,10 @@
     <div id="fuelPerLap">Fuel Used Last Lap: --</div>
     <div id="fuelAvg">3-Lap Avg: --</div>
   </div>
+  <div id="teamLapDisplay" style="margin-top: 20px; font-size: 1rem; color: #ccc;">
+    Team Car Lap: —
+  </div>
+
 
   <script>
     const socket = io('https://radianapp.onrender.com');
@@ -110,6 +114,12 @@
       const isOnTrack = values?.IsOnTrack;
       const panel = document.getElementById('fuelGaugeContainer');
       const now = Date.now();
+
+      const carIdx = data?.PlayerCarIdx;
+      const teamLap = data?.CarIdxLapCompleted?.[carIdx];
+
+      document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
+
 
       if (isOnTrack === true) {
         currentLap = lapCompleted;
