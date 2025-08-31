@@ -125,9 +125,19 @@
       lapEntryPoint = null;
       lastTeamLap = null;
       document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
-      document.getElementById('fuelPerLap').textContent = 'Fuel Used Last Lap: --';
-      document.getElementById('fuelAvg').textContent = '3-Lap Avg: --';
       panel.classList.add('dimmed');
+
+      // Preserve bufferedData and fuel history
+      const lastFuelUsed = fuelUsageHistory.at(-1);
+      const avgFuelUsed = fuelUsageHistory.length > 0
+        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
+        : null;
+
+      document.getElementById('fuelPerLap').textContent =
+        `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
+      document.getElementById('fuelAvg').textContent =
+        `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+
       driverWasOnTrack = false;
       return;
     }
@@ -204,6 +214,7 @@
     }
   });
 </script>
+
 
 </body>
 </html>
