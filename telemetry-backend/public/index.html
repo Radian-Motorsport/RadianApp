@@ -250,6 +250,27 @@
         if (fuelUsed >= 0 && isFinite(fuelUsed)) {
           fuelUsageHistory.push(fuelUsed);
           if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
+          
+          // === 3-Lap Fuel Average ===
+          const avgFuelUsed3 = fuelUsageHistory.length >= 3
+            ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+            : null;
+
+          document.getElementById('fuelAvg').textContent =
+            `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+
+          // === 5-Lap Fuel Average ===
+          const avgFuelUsed5 = fuelUsageHistory.length === 5
+            ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
+            : null;
+
+          document.getElementById('fuelAvg5').textContent =
+            `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+
+          // Display last lap fuel
+          document.getElementById('fuelPerLap').textContent =
+            `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+
 
           // === Fuel Projection ===
           const projectedLaps = avgFuelUsed3 > 0
@@ -272,27 +293,6 @@
             document.getElementById('fuelProjectedTime').textContent =
               'Projected Time Remaining: --';
           }
-
-
-          // === 3-Lap Fuel Average ===
-          const avgFuelUsed3 = fuelUsageHistory.length >= 3
-            ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-            : null;
-
-          document.getElementById('fuelAvg').textContent =
-            `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
-
-          // === 5-Lap Fuel Average ===
-          const avgFuelUsed5 = fuelUsageHistory.length === 5
-            ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
-            : null;
-
-          document.getElementById('fuelAvg5').textContent =
-            `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
-
-          // Display last lap fuel
-          document.getElementById('fuelPerLap').textContent =
-            `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
         }
       }
 
