@@ -64,7 +64,9 @@
   </style>
 </head>
 <body>
-
+  <div id="streamingStatus" style="font-weight: bold; margin-bottom: 10px;">
+  Live: —
+  </div>
   <div id="fuelGaugeContainer">
     <label for="fuelGauge">Fuel Level</label>
     <progress id="fuelGauge" value="0" max="100"></progress>
@@ -114,6 +116,11 @@
         fuelAtLapStart = fuel;
         lastLapCompleted = lapCompleted;
       }
+    });
+
+    socket.on('currentBroadcaster', (info) => {
+      document.getElementById('streamingStatus').textContent =
+        `Live: ${info.driver} (Session ${info.sessionId})`;
     });
   </script>
 
