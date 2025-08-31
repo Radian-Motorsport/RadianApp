@@ -72,12 +72,12 @@
   <div id="streamingStatus" style="font-weight: bold; margin-bottom: 10px;">
   Live: —
   </div>
+  <div id="fuelPerLap">Fuel Used Last Lap: --</div>
+  <div id="fuelAvg">3-Lap Avg: --</div>
   <div id="fuelGaugeContainer">
     <label for="fuelGauge">Fuel Level</label>
     <progress id="fuelGauge" value="0" max="100"></progress>
     <div id="fuelValue">0%</div>
-    <div id="fuelPerLap">Fuel Used Last Lap: --</div>
-    <div id="fuelAvg">3-Lap Avg: --</div>
   </div>
   <div id="teamLapDisplay" style="margin-top: 20px; font-size: 1rem; color: #ccc;">
     Team Car Lap: —
@@ -118,6 +118,10 @@
     const teamLap = values?.CarIdxLapCompleted?.[carIdx];
     const isOnTrack = values?.IsOnTrack;
     const panel = document.getElementById('fuelGaugeContainer');
+
+    // === Live Values ===
+    const liveFuelLevel = data?.values?.FuelLevel ?? 0;
+    updateFuelGauge(liveFuelLevel);
 
     document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
@@ -174,9 +178,7 @@
     const safeValues = bufferedData?.values;
     if (!safeValues) return;
 
-    // === Live Values ===
-    const fuelLevel = safeValues.FuelLevel ?? 0;
-    updateFuelGauge(fuelLevel);
+    
 
     // === Calculated Values ===
     const lapCompleted = safeValues.LapCompleted;
