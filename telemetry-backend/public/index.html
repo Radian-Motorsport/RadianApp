@@ -164,6 +164,23 @@
         LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
       };
 
+      // Display stint lap count and fuel average
+      document.getElementById('stintLapCount').textContent =
+        `Stint Lap Count: ${stintLapCount ?? '--'}`;
+      document.getElementById('stintFuelAvg').textContent =
+        `Stint Avg Fuel: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+
+      // Display tire wear
+      document.getElementById('tireRF').textContent =
+        `RF: L${lastStintTireWear.RF.L} M${lastStintTireWear.RF.M} R${lastStintTireWear.RF.R}`;
+      document.getElementById('tireLF').textContent =
+        `LF: L${lastStintTireWear.LF.L} M${lastStintTireWear.LF.M} R${lastStintTireWear.LF.R}`;
+      document.getElementById('tireRR').textContent =
+        `RR: L${lastStintTireWear.RR.L} M${lastStintTireWear.RR.M} R${lastStintTireWear.RR.R}`;
+      document.getElementById('tireLR').textContent =
+        `LR: L${lastStintTireWear.LR.L} M${lastStintTireWear.LR.M} R${lastStintTireWear.LR.R}`;
+
+
       // Display fuel summary
       document.getElementById('fuelPerLap').textContent =
         `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
