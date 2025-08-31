@@ -105,6 +105,7 @@
     let currentLap = 0;
     let lastTeamLap = null;
     let bufferedData = null;
+    let lapEntryPoint = null;
 
 
     const MIN_LAPS_FOR_VALID_DATA = 2;
@@ -116,28 +117,27 @@
       const carIdx = values?.PlayerCarIdx;
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
 
+      // Display the current team lap count in the UI
       document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
-      // Buffer logic: only update when car completes a new lap
-      if (teamLap !== undefined) {
+      // If this is the first valid lap data we've seen, set the lap entry point
+      // This marks when the driver entered the sim and starts the buffer window
+      if (lapEntryPoint === null && teamLap !== undefined) {
+        lapEntryPoint = teamLap;
+        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+      }
+
+      // Only trust and update telemetry once the car has completed 2 full laps since entry
+      // This avoids false triggers from pit lane crossings or unstable data
+      if (teamLap >= lapEntryPoint + 2) {
+        // If this is a new lap, update the buffer and unlock live telemetry
         if (lastTeamLap === null || teamLap > lastTeamLap) {
           lastTeamLap = teamLap;
           bufferedData = data;
+          document.getElementById('bufferStatus').textContent = 'Live telemetry';
         }
-      }
-
-      if (lastTeamLap === null) {
-        // First packet—initialize
-        lastTeamLap = teamLap;
-        bufferedData = data;
-        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
-      } else if (teamLap > lastTeamLap) {
-        // New lap—accept and clear buffer message
-        lastTeamLap = teamLap;
-        bufferedData = data;
-        document.getElementById('bufferStatus').textContent = 'Live telemetry';
       } else {
-        // Still in buffer zone
+        // Still within the buffer zone—hold previous data and show waiting message
         document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
       }
 
