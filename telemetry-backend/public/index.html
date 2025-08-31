@@ -162,6 +162,8 @@
 
   socket.on('telemetry', (data) => {
     const values = data?.values;
+    const coastingEl = document.getElementById('coastingStatus');
+    const overlapEl = document.getElementById('overlapStatus');
     const carIdx = values?.PlayerCarIdx;
     const teamLap = values?.CarIdxLapCompleted?.[carIdx];
     const isOnTrack = values?.IsOnTrack;
@@ -173,24 +175,17 @@
     // === Live Values ===
     const liveFuelLevel = values?.FuelLevel ?? 0;
     updateFuelGauge(liveFuelLevel);
-    
-    const isCoasting = values?.Brake < 0.02 && values?.ThrottleRaw > 0.50;
-    const isPedalOverlap = values?.ThrottleRaw > 0.99 && values?.Brake > 0.0005;
+        // === Coasting and Overlap Detection ===
+      const isCoasting = values.Brake < 0.02 && values.ThrottleRaw > 0.50;
+      const isPedalOverlap = values.ThrottleRaw > 0.99 && values.Brake > 0.0005;
 
-    const coastingEl = document.getElementById('coastingStatus');
-    const overlapEl = document.getElementById('overlapStatus');
+      if (coastingEl) {
+        coastingEl.classList.toggle('coasting-active', isCoasting);
+      }
 
-    if (isCoasting) {
-      coastingEl.classList.add('coasting-active');
-    } else {
-      coastingEl.classList.remove('coasting-active');
-    }
-
-    if (isPedalOverlap) {
-      overlapEl.classList.add('overlap-active');
-    } else {
-      overlapEl.classList.remove('overlap-active');
-    }
+      if (overlapEl) {
+        overlapEl.classList.toggle('overlap-active', isPedalOverlap);
+      }
 
     document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
