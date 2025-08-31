@@ -82,6 +82,9 @@
   <div id="teamLapDisplay" style="margin-top: 20px; font-size: 1rem; color: #ccc;">
     Team Car Lap: —
   </div>
+  <div id="bufferStatus" style="margin-top: 10px; font-size: 1rem; color: #888;">
+  —
+  </div>
 
 
   <script>
@@ -99,76 +102,85 @@
     let fuelAtLapStart = null;
     let fuelUsageHistory = [];
     let lastTelemetry = null;
-    let bufferTimestamp = null;
     let currentLap = 0;
+    let lastTeamLap = null;
+    let bufferedData = null;
+
 
     const MIN_LAPS_FOR_VALID_DATA = 2;
-    const MAX_BUFFER_TIME_MS = 30000; // 30 seconds
+    
 
 
     socket.on('telemetry', (data) => {
       const values = data?.values;
-      const fuelLevel = values?.FuelLevel ?? data?.FuelLevel ?? 0;
-      const lapCompleted = values?.LapCompleted;
-      const fuel = values?.FuelLevel;
-      const isOnTrack = values?.IsOnTrack;
-      const panel = document.getElementById('fuelGaugeContainer');
-      const now = Date.now();
-
       const carIdx = values?.PlayerCarIdx;
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
 
-
       document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
-
-      if (isOnTrack === true) {
-        currentLap = lapCompleted;
-
-        const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
-
-        if (driverReady) {
-          lastTelemetry = data;
-          bufferTimestamp = now;
-          panel.classList.remove('dimmed');
-          updateFuelGauge(fuelLevel);
-
-          if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-            if (fuelAtLapStart !== null) {
-              const fuelUsed = fuelAtLapStart - fuel;
-              fuelUsageHistory.push(fuelUsed);
-
-              if (fuelUsageHistory.length > 3) {
-                fuelUsageHistory.shift();
-              }
-
-              const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-
-              document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-              document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
-            }
-
-            fuelAtLapStart = fuel;
-            lastLapCompleted = lapCompleted;
-          }
-        } else {
-          panel.classList.add('dimmed');
-          if (lastTelemetry) {
-            updateFuelGauge(lastTelemetry.values.FuelLevel);
-          }
-        }
-      } else {
-        const bufferAge = now - (bufferTimestamp ?? 0);
-        const bufferStillValid = bufferAge < MAX_BUFFER_TIME_MS;
-
-        panel.classList.add('dimmed');
-        if (lastTelemetry && bufferStillValid) {
-          updateFuelGauge(lastTelemetry.values.FuelLevel);
-        } else {
-          clearTelemetryDisplay?.(); // optional fallback if you’ve defined this
+      // Buffer logic: only update when car completes a new lap
+      if (teamLap !== undefined) {
+        if (lastTeamLap === null || teamLap > lastTeamLap) {
+          lastTeamLap = teamLap;
+          bufferedData = data;
         }
       }
+
+      if (lastTeamLap === null) {
+        // First packet—initialize
+        lastTeamLap = teamLap;
+        bufferedData = data;
+        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+      } else if (teamLap > lastTeamLap) {
+        // New lap—accept and clear buffer message
+        lastTeamLap = teamLap;
+        bufferedData = data;
+        document.getElementById('bufferStatus').textContent = 'Live telemetry';
+      } else {
+        // Still in buffer zone
+        document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+      }
+
+      // Use bufferedData for all logic
+      const safeValues = bufferedData?.values;
+      if (!safeValues) return;
+
+      const fuelLevel = safeValues.FuelLevel ?? 0;
+      const lapCompleted = safeValues.LapCompleted;
+      const fuel = safeValues.FuelLevel;
+      const isOnTrack = safeValues.IsOnTrack;
+      const panel = document.getElementById('fuelGaugeContainer');
+
+      currentLap = lapCompleted;
+      const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
+
+      if (isOnTrack === true && driverReady) {
+        panel.classList.remove('dimmed');
+        updateFuelGauge(fuelLevel);
+
+        if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+          if (fuelAtLapStart !== null) {
+            const fuelUsed = fuelAtLapStart - fuel;
+            fuelUsageHistory.push(fuelUsed);
+
+            if (fuelUsageHistory.length > 3) {
+              fuelUsageHistory.shift();
+            }
+
+            const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+
+            document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+            document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+          }
+
+          fuelAtLapStart = fuel;
+          lastLapCompleted = lapCompleted;
+        }
+      } else {
+        panel.classList.add('dimmed');
+      }
     });
+
 
 
 
