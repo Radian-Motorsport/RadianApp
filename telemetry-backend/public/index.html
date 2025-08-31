@@ -115,8 +115,9 @@
       const panel = document.getElementById('fuelGaugeContainer');
       const now = Date.now();
 
-      const carIdx = data?.PlayerCarIdx;
-      const teamLap = data?.CarIdxLapCompleted?.[carIdx];
+      const carIdx = values?.PlayerCarIdx;
+      const teamLap = values?.CarIdxLapCompleted?.[carIdx];
+
 
       document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
