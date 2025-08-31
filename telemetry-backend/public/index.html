@@ -167,6 +167,9 @@
     const isOnTrack = values?.IsOnTrack;
     const panel = document.getElementById('fuelGaugeContainer');
 
+    console.log('Coasting element:', coastingEl);
+    console.log('Overlap element:', overlapEl);
+
     // === Live Values ===
     const liveFuelLevel = values?.FuelLevel ?? 0;
     updateFuelGauge(liveFuelLevel);
