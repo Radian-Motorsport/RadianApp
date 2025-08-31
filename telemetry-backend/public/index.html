@@ -6,6 +6,11 @@
   <title>Telemetry Dashboard</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
+    .dimmed {
+      opacity: 0.4;
+      transition: opacity 0.3s ease;
+    }
+
     body {
       background-color: #121212;
       color: #fff;
@@ -89,39 +94,59 @@
     let lastLapCompleted = -1;
     let fuelAtLapStart = null;
     let fuelUsageHistory = [];
+    let lastTelemetry = null;
 
     socket.on('telemetry', (data) => {
       const fuelLevel = data?.values?.FuelLevel ?? data?.FuelLevel ?? 0;
-      updateFuelGauge(fuelLevel);
-
       const lapCompleted = data?.values?.LapCompleted;
       const fuel = data?.values?.FuelLevel;
+      const isOnTrack = data?.values?.IsOnTrack;
+      const panel = document.getElementById('fuelGaugeContainer');
 
-      if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-        if (fuelAtLapStart !== null) {
-          const fuelUsed = fuelAtLapStart - fuel;
-          fuelUsageHistory.push(fuelUsed);
+      if (isOnTrack === true) {
+        lastTelemetry = data;
+        panel.classList.remove('dimmed');
+        updateFuelGauge(fuelLevel);
 
-          // Keep only the last 3 laps
-          if (fuelUsageHistory.length > 3) {
-            fuelUsageHistory.shift();
+        if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+          if (fuelAtLapStart !== null) {
+            const fuelUsed = fuelAtLapStart - fuel;
+            fuelUsageHistory.push(fuelUsed);
+
+            if (fuelUsageHistory.length > 3) {
+              fuelUsageHistory.shift();
+            }
+
+            const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+
+            document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+            document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
           }
 
-          const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
-
-          document.getElementById('fuelPerLap').textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-          document.getElementById('fuelAvg').textContent = `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
+          fuelAtLapStart = fuel;
+          lastLapCompleted = lapCompleted;
         }
-
-        fuelAtLapStart = fuel;
-        lastLapCompleted = lapCompleted;
+      } else {
+        panel.classList.add('dimmed');
+        if (lastTelemetry) {
+          updateFuelGauge(lastTelemetry.values.FuelLevel);
+        }
       }
     });
+
 
     socket.on('currentBroadcaster', (info) => {
       document.getElementById('streamingStatus').textContent =
         `Live: ${info.driver} (Session ${info.sessionId})`;
     });
+    socket.on('telemetry', (data) => {
+      const isOnTrack = data?.values?.IsOnTrack;
+
+      if (isOnTrack === false) {
+        document.getElementById('streamingStatus').textContent = 'Live: —';
+      }
+    });
+
   </script>
 
 </body>
