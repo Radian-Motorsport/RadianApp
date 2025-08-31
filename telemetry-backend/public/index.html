@@ -85,6 +85,20 @@
   <div id="bufferStatus" style="margin-top: 10px; font-size: 1rem; color: #888;">
   —
   </div>
+<div id="stintSummary" style="margin-top: 20px; font-size: 1rem; color: #aaa;">
+  <h3 style="color: #0f0; font-size: 1.2rem;">Last Stint Summary</h3>
+  <div id="stintLapCount">Stint Lap Count: --</div>
+  <div id="stintFuelAvg">Stint Avg Fuel: --</div>
+  <div id="tireWearSummary" style="margin-top: 10px;">
+    <strong>Tire Wear:</strong>
+    <div id="tireRF">RF: L-- M-- R--</div>
+    <div id="tireLF">LF: L-- M-- R--</div>
+    <div id="tireRR">RR: L-- M-- R--</div>
+    <div id="tireLR">LR: L-- M-- R--</div>
+  </div>
+</div>
+
+
 
 
 <script>
@@ -138,6 +152,23 @@
       const avgFuelUsed = fuelUsageHistory.length > 0
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
         : null;
+
+      // Stint lap count
+      const stintLapCount = teamLap - lapEntryPoint;
+
+      // Tire wear snapshot
+      const lastStintTireWear = {
+        RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
+        LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
+        RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
+        LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
+      };
+
+      // Display fuel summary
+      document.getElementById('fuelPerLap').textContent =
+        `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
+      document.getElementById('fuelAvg').textContent =
+        `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
       document.getElementById('fuelPerLap').textContent =
         `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
