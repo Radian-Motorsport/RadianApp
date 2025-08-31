@@ -106,6 +106,7 @@
     let lastTeamLap = null;
     let bufferedData = null;
     let lapEntryPoint = null;
+    let driverWasOnTrack = false;
 
 
     const MIN_LAPS_FOR_VALID_DATA = 2;
@@ -149,6 +150,18 @@
       const lapCompleted = safeValues.LapCompleted;
       const fuel = safeValues.FuelLevel;
       const isOnTrack = safeValues.IsOnTrack;
+
+      // Detect driver exit and reset buffer state
+      if (!isOnTrack && driverWasOnTrack) {
+        lapEntryPoint = null;
+        lastTeamLap = null;
+        bufferedData = null;
+        document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
+      }
+
+      // Update driver state tracker
+      driverWasOnTrack = isOnTrack;
+
       const panel = document.getElementById('fuelGaugeContainer');
 
       currentLap = lapCompleted;
