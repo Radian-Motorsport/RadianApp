@@ -142,8 +142,9 @@
     // === Driver Exit ===
     if (!isOnTrack && driverWasOnTrack) {
       bufferFrozen = true;
-      lapEntryPoint = null;
+     
       lastTeamLap = null;
+
       document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
       panel.classList.add('dimmed');
 
@@ -170,16 +171,15 @@
       document.getElementById('stintFuelAvg').textContent =
         `Stint Avg Fuel: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
-      // Display tire wear
+      // Display tire wear as percentages
       document.getElementById('tireRF').textContent =
-        `RF: L${lastStintTireWear.RF.L} M${lastStintTireWear.RF.M} R${lastStintTireWear.RF.R}`;
+        `RF: L${(lastStintTireWear.RF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RF.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireLF').textContent =
-        `LF: L${lastStintTireWear.LF.L} M${lastStintTireWear.LF.M} R${lastStintTireWear.LF.R}`;
+        `LF: L${(lastStintTireWear.LF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LF.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireRR').textContent =
-        `RR: L${lastStintTireWear.RR.L} M${lastStintTireWear.RR.M} R${lastStintTireWear.RR.R}`;
+        `RR: L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireLR').textContent =
-        `LR: L${lastStintTireWear.LR.L} M${lastStintTireWear.LR.M} R${lastStintTireWear.LR.R}`;
-
+        `LR: L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
 
       // Display fuel summary
       document.getElementById('fuelPerLap').textContent =
@@ -187,15 +187,13 @@
       document.getElementById('fuelAvg').textContent =
         `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
-      document.getElementById('fuelPerLap').textContent =
-        `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
-      document.getElementById('fuelAvg').textContent =
-        `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
-
+      
       // Future: tire wear, stint lap count, etc.
 
       driverWasOnTrack = false;
       return;
+
+      lapEntryPoint = null;
     }
 
     // === Driver Entry ===
