@@ -74,6 +74,11 @@
   </div>
   <div id="fuelPerLap">Fuel Used Last Lap: --</div>
   <div id="fuelAvg">3-Lap Avg: --</div>
+  <div id="fuelAvg5">5-Lap Avg: --</div>
+  <div id="lapAvg3">3-Lap Avg Lap Time: --</div>
+  <div id="lapAvg5">5-Lap Avg Lap Time: --</div>
+  </div>
+
   <div id="fuelGaugeContainer">
     <label for="fuelGauge">Fuel Level</label>
     <progress id="fuelGauge" value="0" max="100"></progress>
@@ -96,7 +101,10 @@
     <div id="tireRR">RR: L-- M-- R--</div>
     <div id="tireLR">LR: L-- M-- R--</div>
   </div>
+
 </div>
+
+
 
 
 
@@ -117,6 +125,8 @@
   let lastLapCompleted = -1;
   let fuelAtLapStart = null;
   let fuelUsageHistory = [];
+  let lapTimeHistory = [];
+  let lastLapStartTime = null;
   let currentLap = 0;
   let lastTeamLap = null;
   let bufferedData = null;
@@ -134,7 +144,7 @@
     const panel = document.getElementById('fuelGaugeContainer');
 
     // === Live Values ===
-    const liveFuelLevel = data?.values?.FuelLevel ?? 0;
+    const liveFuelLevel = values?.FuelLevel ?? 0;
     updateFuelGauge(liveFuelLevel);
 
     document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
@@ -142,11 +152,6 @@
     // === Driver Exit ===
     if (!isOnTrack && driverWasOnTrack) {
       bufferFrozen = true;
-     
-      lastTeamLap = null;
-
-      document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
-      panel.classList.add('dimmed');
 
       // === Post-Stint Values ===
       const lastFuelUsed = fuelUsageHistory.at(-1);
@@ -154,8 +159,10 @@
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
         : null;
 
-      // Stint lap count
+      // Stint lap count (must be calculated before resetting lapEntryPoint)
       const stintLapCount = teamLap - lapEntryPoint;
+      lapEntryPoint = null;
+      lastTeamLap = null;
 
       // Tire wear snapshot
       const lastStintTireWear = {
@@ -187,13 +194,10 @@
       document.getElementById('fuelAvg').textContent =
         `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
-      
-      // Future: tire wear, stint lap count, etc.
-
       driverWasOnTrack = false;
+      document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
+      panel.classList.add('dimmed');
       return;
-
-      lapEntryPoint = null;
     }
 
     // === Driver Entry ===
@@ -224,8 +228,6 @@
     const safeValues = bufferedData?.values;
     if (!safeValues) return;
 
-    
-
     // === Calculated Values ===
     const lapCompleted = safeValues.LapCompleted;
     const fuel = safeValues.FuelLevel;
@@ -238,20 +240,63 @@
       panel.classList.add('dimmed');
     }
 
+    // === Lap Completion Logic ===
     if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+      // Fuel usage per lap
       if (fuelAtLapStart !== null) {
         const fuelUsed = fuelAtLapStart - fuel;
         if (fuelUsed >= 0 && isFinite(fuelUsed)) {
           fuelUsageHistory.push(fuelUsed);
-          if (fuelUsageHistory.length > 3) fuelUsageHistory.shift();
-          const avgFuelUsed = fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length;
+          if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
 
+          // === 3-Lap Fuel Average ===
+          const avgFuelUsed3 = fuelUsageHistory.length >= 3
+            ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+            : null;
+
+          document.getElementById('fuelAvg').textContent =
+            `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+
+          // === 5-Lap Fuel Average ===
+          const avgFuelUsed5 = fuelUsageHistory.length === 5
+            ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
+            : null;
+
+          document.getElementById('fuelAvg5').textContent =
+            `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+
+          // Display last lap fuel
           document.getElementById('fuelPerLap').textContent =
             `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
-          document.getElementById('fuelAvg').textContent =
-            `3-Lap Avg: ${avgFuelUsed.toFixed(2)} L`;
         }
       }
+
+      // === Lap Time Tracking ===
+      const now = Date.now();
+      if (lastLapStartTime !== null) {
+        const lapTime = (now - lastLapStartTime) / 1000; // seconds
+        lapTimeHistory.push(lapTime);
+        if (lapTimeHistory.length > 5) lapTimeHistory.shift();
+
+        // === 3-Lap Time Average ===
+        const lapAvg3 = lapTimeHistory.length >= 3
+          ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+          : null;
+
+        document.getElementById('lapAvg3').textContent =
+          `3-Lap Avg Lap Time: ${lapAvg3?.toFixed(2) ?? '--'}s`;
+
+
+        // === 5-Lap Time Average ===
+        const lapAvg5 = lapTimeHistory.length === 5
+          ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+          : null;
+
+        document.getElementById('lapAvg5').textContent =
+          `5-Lap Avg Lap Time: ${lapAvg5?.toFixed(2) ?? '--'}s`;
+      }
+      lastLapStartTime = now;
+
       fuelAtLapStart = fuel;
       lastLapCompleted = lapCompleted;
     }
