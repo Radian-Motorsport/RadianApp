@@ -216,7 +216,17 @@ socket.on('telemetry', (data) => {
   const values = data?.values;
   if (!values) return;
 
-  liveLapPct = values.LapDistPct; // keep updating this every tick
+  // Shift the previous target into prevLapPct
+  prevLapPct = targetLapPct;
+
+  // Set the new target from telemetry
+  targetLapPct = values.LapDistPct;
+
+  // Record the time of this update
+  lastPctUpdateTime = performance.now();
+
+  // Optional: still keep liveLapPct for other uses
+  liveLapPct = values.LapDistPct;
 
   // === Refresh Rate Calculation ===
   const now = Date.now();
