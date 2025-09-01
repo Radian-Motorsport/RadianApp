@@ -238,8 +238,8 @@ socket.on('telemetry', (data) => {
 
   const heading = values.YawNorth; // or values.YawNorth if you want geographic alignment
 
-  x += Math.cos(heading) * Speed * dt * scale;
-  y += Math.sin(heading) * Speed * dt * scale;
+  x += Math.cos(heading) * Speed * dt;
+  y += Math.sin(heading) * Speed * dt;
   trackPoints.push({ x, y });
 
   trackCtx.fillStyle = 'red';
@@ -412,10 +412,13 @@ function drawTrack() {
   });
   trackCtx.strokeStyle = 'white';
   trackCtx.stroke();
+  const sx = pt.x * autoScale + offsetX;
+  const sy = pt.y * autoScale + offsetY;
 
+  //red dot
   const dotX = x * autoScale + offsetX;
   const dotY = y * autoScale + offsetY;
-  //red dot
+  
   trackCtx.fillStyle = 'red';
   trackCtx.fillRect(dotX - 2, dotY - 2, 4, 4);
 
