@@ -32,6 +32,12 @@
     <button onclick="location.href='index.html'">Strategy</button>
       </div>
 
+
+    <div id="refreshRate" style="margin-top: 10px; color: #0f0; font-size: 1rem;">
+  Refresh Rate: --
+</div>
+
+
   <h2>Status</h2>
 <ul>
   <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
@@ -86,6 +92,21 @@
 </ul>
 
   <script>
+
+    let lastTelemetryTime = null;
+    let refreshRateDisplay = document.getElementById('refreshRate');
+
+    socket.on('telemetry', () => {
+    const now = Date.now();
+    if (lastTelemetryTime) {
+        const interval = now - lastTelemetryTime;
+        const hz = (1000 / interval).toFixed(1);
+        refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
+    }
+    lastTelemetryTime = now;
+    });
+
+
   const socket = io('https://radianapp.onrender.com');
 
   socket.on('telemetry', (data) => {
