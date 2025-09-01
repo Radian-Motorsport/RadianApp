@@ -365,34 +365,27 @@ socket.on('telemetry', (data) => {
   const { Speed, YawNorth, LapDistPct } = values;
   const dt = 1 / 60;
 
-  
+  // Track position
+  const last = lapBuffer.length > 0 ? lapBuffer[lapBuffer.length - 1] : { x: 300, y: 300 };
+  const newX = last.x + Math.cos(YawNorth) * Speed * dt;
+  const newY = last.y + Math.sin(YawNorth) * Speed * dt;
+  lapBuffer.push({ x: newX, y: newY });
 
-
-  // Detect lap transition
-  if (LapDistPct < 0.05 && currentLap.length > 100) {
+  // Detect lap wrap by drop in LapDistPct
+  if (LapDistPct < lastLapPct - 0.5) {
     if (!lapStarted) {
-      lapStarted = true; // First lap complete, start tracking
-      currentLap = [];
+      lapStarted = true;
+      currentLap = [...lapBuffer];
+      lapBuffer = [];
     } else {
-      lapCompleted = true; // Second lap complete, lock it
-      finalLap = [...currentLap];
+      lapCompleted = true;
+      finalLap = [...lapBuffer];
     }
-    return;
   }
-
-
-
-  if (lapStarted) {
-    const last = currentLap.length > 0 ? currentLap[currentLap.length - 1] : { x: 300, y: 300 };
-    const newX = last.x + Math.cos(YawNorth) * Speed * dt;
-    const newY = last.y + Math.sin(YawNorth) * Speed * dt;
-    currentLap.push({ x: newX, y: newY });
-  }
-  console.log('LapDistPct:', values.LapDistPct);
-  console.log('Lap tracking active:', lapStarted, lapCompleted, currentLap.length);
 
   lastLapPct = LapDistPct;
 
+  console.log('Lap tracking active:', lapStarted, lapCompleted, lapBuffer.length);
 });
 
 // === Smoothing Function ===
