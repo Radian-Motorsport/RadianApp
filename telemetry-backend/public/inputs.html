@@ -101,7 +101,7 @@
 
   <!-- Track Map -->
   <div class="track-map">
-    <canvas id="trackCanvas" width="600" height="200"></canvas>
+    <canvas id="trackCanvas" width="600" height="600"></canvas>
   </div>
 
   <!-- Telemetry Block -->
@@ -386,7 +386,7 @@ function drawTrack() {
     const pt = trackPoints[i];
     i === 0 ? trackCtx.moveTo(pt.x, pt.y) : trackCtx.lineTo(pt.x, pt.y);
   }
-  trackCtx.strokeStyle = '#0f0';
+  trackCtx.strokeStyle = 'white';
   trackCtx.stroke();
 
   // Draw current position as a dot
