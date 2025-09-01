@@ -147,18 +147,20 @@
 
 <script>
 
+  document.addEventListener('DOMContentLoaded', () => {
+  const refreshRateDisplay = document.getElementById('refreshRate');
   let lastTelemetryTime = null;
-  let refreshRateDisplay = document.getElementById('refreshRate');
 
   socket.on('telemetry', () => {
     const now = Date.now();
-    if (lastTelemetryTime) {
+    if (lastTelemetryTime && refreshRateDisplay) {
       const interval = now - lastTelemetryTime;
       const hz = (1000 / interval).toFixed(1);
       refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
     }
     lastTelemetryTime = now;
   });
+});
 
 
   const socket = io('https://radianapp.onrender.com');
@@ -414,3 +416,4 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
 
 </body>
 </html>
+
