@@ -244,13 +244,15 @@ socket.on('telemetry', (data) => {
   trackCtx.fillStyle = 'red';
   trackCtx.fillRect(x - 2, y - 2, 4, 4);
 
+  console.log('Canvas bounds check:', x, y);
+
   // Reset track map on lap start
   if (LapDistPct < 0.01 && trackPoints.length > 100) {
     trackPoints.length = 0;
     x = 300; y = 300; heading = 0;
   }
 
-  console.log('Track point:', x.toFixed(2), y.toFixed(2));
+  //console.log('Track point:', x.toFixed(2), y.toFixed(2));
 
   // === DOM Updates: Status ===
   document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
