@@ -236,7 +236,8 @@ socket.on('telemetry', (data) => {
 
   //console.log(Speed, SteeringWheelAngle, LapDistPct);
 
-  heading += SteeringWheelAngle * dt;
+  const heading = values.YawNorth; // or values.YawNorth if you want geographic alignment
+
   x += Math.cos(heading) * Speed * dt * scale;
   y += Math.sin(heading) * Speed * dt * scale;
   trackPoints.push({ x, y });
