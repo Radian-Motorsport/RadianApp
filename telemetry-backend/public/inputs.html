@@ -375,6 +375,28 @@ function drawEnvGraph() {
 }
 requestAnimationFrame(drawEnvGraph);
 
+function drawTrack() {
+  trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
+
+  // Draw path
+  trackCtx.beginPath();
+  for (let i = 0; i < trackPoints.length; i++) {
+    const pt = trackPoints[i];
+    i === 0 ? trackCtx.moveTo(pt.x, pt.y) : trackCtx.lineTo(pt.x, pt.y);
+  }
+  trackCtx.strokeStyle = '#0f0';
+  trackCtx.stroke();
+
+  // Draw current position as a dot
+  trackCtx.fillStyle = 'red';
+  trackCtx.fillRect(x - 2, y - 2, 4, 4);
+
+  requestAnimationFrame(drawTrack);
+}
+
+requestAnimationFrame(drawTrack);
+
+
 </script>
 
 </body>
