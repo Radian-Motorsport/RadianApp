@@ -234,16 +234,23 @@ socket.on('telemetry', (data) => {
   const { Speed, SteeringWheelAngle, LapDistPct } = values;
   const dt = 1 / 60; // Adjust if your telemetry rate differs
 
+  console.log(Speed, SteeringWheelAngle, LapDistPct);
+
   heading += SteeringWheelAngle * dt;
   x += Math.cos(heading) * Speed * dt * scale;
   y += Math.sin(heading) * Speed * dt * scale;
   trackPoints.push({ x, y });
+
+  trackCtx.fillStyle = 'red';
+  trackCtx.fillRect(x - 2, y - 2, 4, 4);
 
   // Reset track map on lap start
   if (LapDistPct < 0.01 && trackPoints.length > 100) {
     trackPoints.length = 0;
     x = 300; y = 300; heading = 0;
   }
+
+  console.log('Track point:', x.toFixed(2), y.toFixed(2));
 
   // === DOM Updates: Status ===
   document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
