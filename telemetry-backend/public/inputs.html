@@ -196,6 +196,9 @@ let liveLapPct = 0;
 let prevLapPct = 0;
 let targetLapPct = 0;
 let lastPctUpdateTime = performance.now();
+let lapSteering = [];        // steering values for the current lap
+let finalLapSteering = [];   // steering values for the completed lap
+
 const telemetryHz = 10; 
 
 
@@ -393,23 +396,83 @@ socket.on('telemetry', (data) => {
   const newX = last.x + Math.cos(YawNorth) * Speed * dt;
   const newY = last.y + Math.sin(YawNorth) * Speed * dt;
   lapBuffer.push({ x: newX, y: newY });
+  lapSteering.push(values.SteeringWheelAngle);
 
   // Detect lap wrap by drop in LapDistPct
   if (LapDistPct < lastLapPct - 0.5) {
-    if (!lapStarted) {
-      lapStarted = true;
-      currentLap = [...lapBuffer];
-      lapBuffer = [];
-    } else {
-      lapCompleted = true;
-      finalLap = [...lapBuffer];
-    }
+  if (!lapStarted) {
+    lapStarted = true;
+    currentLap = [...lapBuffer];
+    lapBuffer = [];
+
+    // steering
+    finalLapSteering = [...lapSteering];
+    lapSteering = [];
+
+  } else {
+    lapCompleted = true;
+    finalLap = [...lapBuffer];
+
+    // steering
+    finalLapSteering = [...lapSteering];
   }
+}
+
 
   lastLapPct = LapDistPct;
 
   console.log('Lap tracking active:', lapStarted, lapCompleted, lapBuffer.length);
 });
+
+function findStraightBlendZone(points, steering, threshold = 0.02) {
+  const total = points.length;
+
+  // Find last straight point before start/finish
+  let startIdx = 0;
+  for (let i = total - 1; i > 0; i--) {
+    if (Math.abs(steering[i]) > threshold) {
+      startIdx = (i + 1) % total;
+      break;
+    }
+  }
+
+  // Find first straight point after start/finish
+  let endIdx = 0;
+  for (let i = 0; i < total; i++) {
+    if (Math.abs(steering[i]) > threshold) {
+      endIdx = (i - 1 + total) % total;
+      break;
+    }
+  }
+
+  return { startIdx, endIdx };
+}
+
+function blendLapEndsFromSteering(points, startIdx, endIdx) {
+  const blended = [...points];
+  const total = points.length;
+
+  // Direction vector from startIdx to next point
+  const dx = points[(startIdx + 1) % total].x - points[startIdx].x;
+  const dy = points[(startIdx + 1) % total].y - points[startIdx].y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+
+  // Walk forward from startIdx to endIdx, wrapping if needed
+  let i = startIdx;
+  while (true) {
+    const dist = ((i - startIdx + total) % total) * len;
+    blended[i] = {
+      x: points[startIdx].x + ux * dist,
+      y: points[startIdx].y + uy * dist
+    };
+    if (i === endIdx) break;
+    i = (i + 1) % total;
+  }
+
+  return blended;
+}
 
 // === Smoothing Function ===
 function smooth(points, windowSize = 5) {
@@ -459,11 +522,11 @@ function drawTrack() {
   if (finalLap.length > 0) {
     let smoothed = smooth(finalLap);
 
-    // --- Blend start and end points ---
-
-    smoothed = blendLapEndsStraight(smoothed, 5);
-
-    
+    // --- Steering-aware blend ---
+    if (finalLapSteering && finalLapSteering.length === smoothed.length) {
+      const { startIdx, endIdx } = findStraightBlendZone(smoothed, finalLapSteering, 0.02);
+      smoothed = blendLapEndsFromSteering(smoothed, startIdx, endIdx);
+    }
 
     // Auto-scale and center
     let minX = Infinity, maxX = -Infinity;
@@ -495,65 +558,47 @@ function drawTrack() {
     trackCtx.strokeStyle = 'white';
     trackCtx.stroke();
 
-    // === Draw Finish Line Marker ===
+    // Finish line marker
     const finishX = smoothed[0].x * autoScale + offsetX;
     const finishY = smoothed[0].y * autoScale + offsetY;
     trackCtx.strokeStyle = 'red';
     trackCtx.lineWidth = 2;
     trackCtx.beginPath();
-    trackCtx.moveTo(finishX - 5, finishY - 5); // small diagonal bar
+    trackCtx.moveTo(finishX - 5, finishY - 5);
     trackCtx.lineTo(finishX + 5, finishY + 5);
     trackCtx.stroke();
-    trackCtx.lineWidth = 1; // reset
+    trackCtx.lineWidth = 1;
 
-    console.log('Drawing final lap with', finalLap.length, 'points');
+    // Live position marker
+    if (liveLapPct > 0 && liveLapPct <= 1) {
+      const elapsed = (performance.now() - lastPctUpdateTime) / 1000;
+      const lerpFactor = Math.min(elapsed * telemetryHz, 1);
+      let pct = prevLapPct + (targetLapPct - prevLapPct) * lerpFactor;
 
-    // === Draw Position Marker for Live Lap ===
-    if (finalLap.length > 0 && liveLapPct > 0 && liveLapPct <= 1) {
-        const smoothed = smooth(finalLap);
+      // Wrap-around handling
+      if (targetLapPct < prevLapPct && (prevLapPct - targetLapPct) > 0.5) {
+        pct = prevLapPct + ((targetLapPct + 1) - prevLapPct) * lerpFactor;
+        if (pct > 1) pct -= 1;
+      }
 
-        // Time since last telemetry update
-        const elapsed = (performance.now() - lastPctUpdateTime) / 1000; // seconds
-        // How far between prev and target we should be
-        const lerpFactor = Math.min(elapsed * telemetryHz, 1);
-        // Interpolated lap percentage
-        const interpPct = prevLapPct + (targetLapPct - prevLapPct) * lerpFactor;
+      const idx = Math.floor(pct * smoothed.length);
+      const nextIdx = (idx + 1) % smoothed.length;
+      const t = (pct * smoothed.length) - idx;
+      const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
+      const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
 
-        // Wrap around if crossing start/finish
-        let pct = interpPct;
-        if (targetLapPct < prevLapPct && (prevLapPct - targetLapPct) > 0.5) {
-          // e.g. 0.99 → 0.01 wrap
-          pct = prevLapPct + ((targetLapPct + 1) - prevLapPct) * lerpFactor;
-          if (pct > 1) pct -= 1;
-        }
+      const markerX = px * autoScale + offsetX;
+      const markerY = py * autoScale + offsetY;
 
-        // Find the index along the lap
-        const idx = Math.floor(pct * smoothed.length);
-        const nextIdx = (idx + 1) % smoothed.length;
-        const t = (pct * smoothed.length) - idx;
-        // Interpolate between points for smooth movement
-        const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
-        const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
-
-        // Apply same scaling/offset as the lap
-        const markerX = px * autoScale + offsetX;
-        const markerY = py * autoScale + offsetY;
-
-        // Custom Marker
-        const iconSize = 16; // pixels
-        trackCtx.drawImage(carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
-
-        // Draw the marker
-        //trackCtx.fillStyle = 'yellow';
-        //trackCtx.beginPath();
-        //trackCtx.arc(markerX, markerY, 4, 0, Math.PI * 2);
-        //trackCtx.fill();
+      const iconSize = 16;
+      trackCtx.drawImage(carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
     }
   }
 
   requestAnimationFrame(drawTrack);
 }
 requestAnimationFrame(drawTrack);
+
 
 
 
