@@ -66,7 +66,7 @@
   <li>Gear: <span id="Gear">--</span></li>
   <li>RPM: <span id="RPM">--</span></li>
   <li>Speed: <span id="Speed">--</span></li>
-  <li>Steering: <span id="SteeringWheelAngle">--</span></li>
+  <li>Steering: <span id="Steering">--</span></li>
 </ul>
 
 <h2>Driver Controls</h2>
@@ -96,13 +96,12 @@
 </ul>
 
   <script>
-
+const socket = io('https://radianapp.onrender.com');
 const canvas = document.getElementById('pedalCanvas');
 const ctx = canvas.getContext('2d');
 const buffer = [];
 const MAX_POINTS = 300;
 const maxSteeringRad = 1.5; // adjust if needed
-const normalizedSteering = (values.SteeringWheelAngle / maxSteeringRad) * 100;
 
 
 socket.on('telemetry', (data) => {
@@ -163,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
    
 
 
-  const socket = io('https://radianapp.onrender.com');
+  
 
   socket.on('telemetry', (data) => {
     const values = data?.values;
@@ -219,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
