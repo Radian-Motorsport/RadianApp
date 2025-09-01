@@ -97,6 +97,7 @@
 
   <script>
 const canvas = document.getElementById('pedalCanvas');
+const socket = io('https://radianapp.onrender.com');
 const ctx = canvas.getContext('2d');
 const buffer = [];
 const MAX_POINTS = 300;
