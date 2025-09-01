@@ -469,6 +469,95 @@ function smooth(points, windowSize = 5) {
   });
 }
 
+// Smooth an array of numbers with a simple moving average
+function smoothArray(arr, windowSize = 3) {
+  return arr.map((val, i) => {
+    const start = Math.max(0, i - windowSize);
+    const slice = arr.slice(start, i + 1);
+    return slice.reduce((sum, v) => sum + v, 0) / slice.length;
+  });
+}
+
+// Find straight section based on yaw *rate of change*
+function findStraightBlendZoneFromYaw(points, yawArray, yawRateThreshold = 0.001) {
+  const total = points.length;
+  const yawDelta = (a, b) => {
+    let diff = a - b;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    return diff;
+  };
+
+  const smoothYaw = smoothArray(yawArray, 3);
+
+  let startIdx = 0;
+  for (let i = total - 1; i > 0; i--) {
+    if (Math.abs(yawDelta(smoothYaw[i], smoothYaw[i - 1])) > yawRateThreshold) {
+      startIdx = (i + 1) % total;
+      break;
+    }
+  }
+
+  let endIdx = 0;
+  for (let i = 1; i < total; i++) {
+    if (Math.abs(yawDelta(smoothYaw[i], smoothYaw[i - 1])) > yawRateThreshold) {
+      endIdx = (i - 1 + total) % total;
+      break;
+    }
+  }
+
+  return { startIdx, endIdx };
+}
+
+// Blend into/out of a straight section gradually
+function blendLapEndsStraightSection(points, startIdx, endIdx, fadePoints = 5) {
+  const blended = [...points];
+  const total = points.length;
+
+  // Average heading vector over first few points of the straight
+  let avgDx = 0, avgDy = 0, count = 0;
+  let i = startIdx;
+  while (true) {
+    const next = (i + 1) % total;
+    avgDx += points[next].x - points[i].x;
+    avgDy += points[next].y - points[i].y;
+    count++;
+    if (i === endIdx) break;
+    i = next;
+  }
+  avgDx /= count;
+  avgDy /= count;
+  const len = Math.hypot(avgDx, avgDy) || 1;
+  const ux = avgDx / len;
+  const uy = avgDy / len;
+
+  // Walk through the straight section
+  i = startIdx;
+  let dist = 0;
+  while (true) {
+    const fadeIn = Math.min(1, ((i - startIdx + total) % total) / fadePoints);
+    const fadeOut = Math.min(1, ((endIdx - i + total) % total) / fadePoints);
+    const alpha = Math.min(fadeIn, fadeOut); // 0→1→0 across the section
+
+    const straightX = points[startIdx].x + ux * dist;
+    const straightY = points[startIdx].y + uy * dist;
+
+    blended[i] = {
+      x: points[i].x * (1 - alpha) + straightX * alpha,
+      y: points[i].y * (1 - alpha) + straightY * alpha
+    };
+
+    if (i === endIdx) break;
+    const next = (i + 1) % total;
+    dist += Math.hypot(points[next].x - points[i].x, points[next].y - points[i].y);
+    i = next;
+  }
+
+  return blended;
+}
+
+
+
 // === Draw Final Lap Only ===
 function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
@@ -477,10 +566,10 @@ function drawTrack() {
     let smoothed = smooth(finalLap);
 
     // --- Yaw-aware blend ---
-    if (finalLapYaw && finalLapYaw.length === smoothed.length) {
-      const { startIdx, endIdx } = findStraightBlendZoneFromYaw(smoothed, finalLapYaw, 0.001);
-      smoothed = blendLapEndsStraightSection(smoothed, startIdx, endIdx);
-    }
+   if (finalLapYaw && finalLapYaw.length === smoothed.length) {
+  const { startIdx, endIdx } = findStraightBlendZoneFromYaw(smoothed, finalLapYaw, 0.001);
+  smoothed = blendLapEndsStraightSection(smoothed, startIdx, endIdx, 5); // fade over 5 points
+  }
 
     // Auto-scale and center
     let minX = Infinity, maxX = -Infinity;
