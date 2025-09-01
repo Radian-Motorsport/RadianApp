@@ -378,13 +378,15 @@ socket.on('telemetry', (data) => {
     return;
   }
 
+
+
   if (lapStarted) {
     const last = currentLap.length > 0 ? currentLap[currentLap.length - 1] : { x: 300, y: 300 };
     const newX = last.x + Math.cos(YawNorth) * Speed * dt;
     const newY = last.y + Math.sin(YawNorth) * Speed * dt;
     currentLap.push({ x: newX, y: newY });
   }
-
+  console.log('LapDistPct:', values.LapDistPct);
   console.log('Lap tracking active:', lapStarted, lapCompleted, currentLap.length);
 
 });
@@ -399,7 +401,7 @@ function smooth(points, windowSize = 5) {
   });
 }
 
-console.log('LapDistPct:', values.LapDistPct);
+
 
 // === Draw Final Lap Only ===
 function drawTrack() {
