@@ -184,8 +184,11 @@ const MAX_POINTS = 300;
 // === Track Map Setup ===
 const trackCanvas = document.getElementById('trackCanvas');
 const trackCtx = trackCanvas.getContext('2d');
-let x = 300, y = 300, heading = 0;
-const trackPoints = [];
+let x = 300, y = 300;
+let lapStarted = false;
+let lapCompleted = false;
+let currentLap = [];
+let finalLap = [];
 
 
 // === Environment Trends Setup ===
@@ -378,51 +381,83 @@ function drawEnvGraph() {
 }
 requestAnimationFrame(drawEnvGraph);
 
-function drawTrack() {
-  trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
-  
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
+// === Telemetry Listener ===
+socket.on('telemetry', (data) => {
+  const values = data?.values;
+  if (!values || lapCompleted) return;
 
-  trackPoints.forEach(pt => {
-    if (pt.x < minX) minX = pt.x;
-    if (pt.x > maxX) maxX = pt.x;
-    if (pt.y < minY) minY = pt.y;
-    if (pt.y > maxY) maxY = pt.y;
-  });
+  const { Speed, YawNorth, LapDistPct } = values;
+  const dt = 1 / 60;
 
-  const padding = 20;
-  const traceWidth = maxX - minX;
-  const traceHeight = maxY - minY;
-
-  const scaleX = (trackCanvas.width - padding * 2) / traceWidth;
-  const scaleY = (trackCanvas.height - padding * 2) / traceHeight;
-  const autoScale = Math.min(scaleX, scaleY);
-
-  const offsetX = (trackCanvas.width - traceWidth * autoScale) / 2 - minX * autoScale;
-  const offsetY = (trackCanvas.height - traceHeight * autoScale) / 2 - minY * autoScale;
-
-
-  // Draw path
-  trackCtx.beginPath();
-  trackPoints.forEach((pt, i) => {
-    const sx = pt.x * autoScale + offsetX;
-    const sy = pt.y * autoScale + offsetY;
-    i === 0 ? trackCtx.moveTo(sx, sy) : trackCtx.lineTo(sx, sy);
-  });
-  trackCtx.strokeStyle = 'white';
-  trackCtx.stroke();
-
-  // Red dot for current position
-  const dotX = x * autoScale + offsetX;
-  const dotY = y * autoScale + offsetY;
-  trackCtx.fillStyle = 'red';
-  trackCtx.fillRect(dotX - 2, dotY - 2, 4, 4);
-
-  requestAnimationFrame(drawTrack);
-  console.log('Drawing track with', trackPoints.length, 'points');
+  // Detect lap transition
+  if (LapDistPct < 0.01 && currentLap.length > 100) {
+    if (!lapStarted) {
+      lapStarted = true; // First lap complete, start tracking
+      currentLap = [];
+    } else {
+      lapCompleted = true; // Second lap complete, lock it
+      finalLap = [...currentLap];
+    }
+    return;
   }
 
+  if (lapStarted) {
+    const last = currentLap.length > 0 ? currentLap[currentLap.length - 1] : { x: 300, y: 300 };
+    const newX = last.x + Math.cos(YawNorth) * Speed * dt;
+    const newY = last.y + Math.sin(YawNorth) * Speed * dt;
+    currentLap.push({ x: newX, y: newY });
+  }
+});
+
+// === Smoothing Function ===
+function smooth(points, windowSize = 5) {
+  return points.map((pt, i) => {
+    const slice = points.slice(Math.max(0, i - windowSize), i + 1);
+    const avgX = slice.reduce((sum, p) => sum + p.x, 0) / slice.length;
+    const avgY = slice.reduce((sum, p) => sum + p.y, 0) / slice.length;
+    return { x: avgX, y: avgY };
+  });
+}
+
+// === Draw Final Lap Only ===
+function drawTrack() {
+  trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
+
+  if (finalLap.length > 0) {
+    const smoothed = smooth(finalLap);
+
+    // Auto-scale and center
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    smoothed.forEach(pt => {
+      minX = Math.min(minX, pt.x);
+      maxX = Math.max(maxX, pt.x);
+      minY = Math.min(minY, pt.y);
+      maxY = Math.max(maxY, pt.y);
+    });
+
+    const padding = 20;
+    const traceWidth = maxX - minX;
+    const traceHeight = maxY - minY;
+    const scaleX = (trackCanvas.width - padding * 2) / traceWidth;
+    const scaleY = (trackCanvas.height - padding * 2) / traceHeight;
+    const autoScale = Math.min(scaleX, scaleY);
+    const offsetX = (trackCanvas.width - traceWidth * autoScale) / 2 - minX * autoScale;
+    const offsetY = (trackCanvas.height - traceHeight * autoScale) / 2 - minY * autoScale;
+
+    // Draw path
+    trackCtx.beginPath();
+    smoothed.forEach((pt, i) => {
+      const sx = pt.x * autoScale + offsetX;
+      const sy = pt.y * autoScale + offsetY;
+      i === 0 ? trackCtx.moveTo(sx, sy) : trackCtx.lineTo(sx, sy);
+    });
+    trackCtx.strokeStyle = 'white';
+    trackCtx.stroke();
+  }
+
+  requestAnimationFrame(drawTrack);
+}
 requestAnimationFrame(drawTrack);
 
 
