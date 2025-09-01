@@ -193,6 +193,10 @@ let currentLap = [];
 let finalLap = [];
 let lapBuffer = [];
 let liveLapPct = 0;
+let prevLapPct = 0;
+let targetLapPct = 0;
+let lastPctUpdateTime = performance.now();
+const telemetryHz = 10; 
 
 
 
@@ -474,11 +478,25 @@ function drawTrack() {
     if (finalLap.length > 0 && liveLapPct > 0 && liveLapPct <= 1) {
         const smoothed = smooth(finalLap);
 
-        // Find the index along the lap
-        const idx = Math.floor(liveLapPct * smoothed.length);
-        const nextIdx = (idx + 1) % smoothed.length;
-        const t = (liveLapPct * smoothed.length) - idx; // interpolation factor
+        // Time since last telemetry update
+        const elapsed = (performance.now() - lastPctUpdateTime) / 1000; // seconds
+        // How far between prev and target we should be
+        const lerpFactor = Math.min(elapsed * telemetryHz, 1);
+        // Interpolated lap percentage
+        const interpPct = prevLapPct + (targetLapPct - prevLapPct) * lerpFactor;
 
+        // Wrap around if crossing start/finish
+        let pct = interpPct;
+        if (targetLapPct < prevLapPct && (prevLapPct - targetLapPct) > 0.5) {
+          // e.g. 0.99 → 0.01 wrap
+          pct = prevLapPct + ((targetLapPct + 1) - prevLapPct) * lerpFactor;
+          if (pct > 1) pct -= 1;
+        }
+
+        // Find the index along the lap
+        const idx = Math.floor(pct * smoothed.length);
+        const nextIdx = (idx + 1) % smoothed.length;
+        const t = (pct * smoothed.length) - idx;
         // Interpolate between points for smooth movement
         const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
         const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
