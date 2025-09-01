@@ -174,6 +174,9 @@
 
 <script>
 const socket = io('https://radianapp.onrender.com');
+// Load the car icon once
+const carImg = new Image();
+carImg.src = 'icon-active.png'; // your PNG path
 
 // === Pedal Canvas Setup ===
 const canvas = document.getElementById('pedalCanvas');
@@ -205,9 +208,11 @@ let lastTelemetryTime = null;
 
 // === Telemetry Listener ===
 socket.on('telemetry', (data) => {
-  liveLapPct = values.LapDistPct; // keep updating this every tick
+  
   const values = data?.values;
   if (!values) return;
+
+  liveLapPct = values.LapDistPct; // keep updating this every tick
 
   // === Refresh Rate Calculation ===
   const now = Date.now();
@@ -482,11 +487,15 @@ function drawTrack() {
         const markerX = px * autoScale + offsetX;
         const markerY = py * autoScale + offsetY;
 
+        // Custom Marker
+        const iconSize = 16; // pixels
+        trackCtx.drawImage(carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+
         // Draw the marker
-        trackCtx.fillStyle = 'yellow';
-        trackCtx.beginPath();
-        trackCtx.arc(markerX, markerY, 4, 0, Math.PI * 2);
-        trackCtx.fill();
+        //trackCtx.fillStyle = 'yellow';
+        //trackCtx.beginPath();
+        //trackCtx.arc(markerX, markerY, 4, 0, Math.PI * 2);
+        //trackCtx.fill();
     }
   }
 
