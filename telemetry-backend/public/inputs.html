@@ -186,7 +186,7 @@ const trackCanvas = document.getElementById('trackCanvas');
 const trackCtx = trackCanvas.getContext('2d');
 let x = 300, y = 300, heading = 0;
 const trackPoints = [];
-const scale = 0.2; // Adjust to fit canvas size
+//const scale = 0.2; // Adjust to fit canvas size
 
 // === Environment Trends Setup ===
 const envCanvas = document.getElementById('envCanvas');
@@ -380,19 +380,44 @@ requestAnimationFrame(drawEnvGraph);
 
 function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
+  
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+
+  trackPoints.forEach(pt => {
+    if (pt.x < minX) minX = pt.x;
+    if (pt.x > maxX) maxX = pt.x;
+    if (pt.y < minY) minY = pt.y;
+    if (pt.y > maxY) maxY = pt.y;
+  });
+
+  const padding = 20;
+  const traceWidth = maxX - minX;
+  const traceHeight = maxY - minY;
+
+  const scaleX = (trackCanvas.width - padding * 2) / traceWidth;
+  const scaleY = (trackCanvas.height - padding * 2) / traceHeight;
+  const autoScale = Math.min(scaleX, scaleY);
+
+  const offsetX = (trackCanvas.width - traceWidth * autoScale) / 2 - minX * autoScale;
+  const offsetY = (trackCanvas.height - traceHeight * autoScale) / 2 - minY * autoScale;
+
 
   // Draw path
   trackCtx.beginPath();
-  for (let i = 0; i < trackPoints.length; i++) {
-    const pt = trackPoints[i];
-    i === 0 ? trackCtx.moveTo(pt.x, pt.y) : trackCtx.lineTo(pt.x, pt.y);
-  }
+  trackPoints.forEach((pt, i) => {
+    const sx = pt.x * autoScale + offsetX;
+    const sy = pt.y * autoScale + offsetY;
+    i === 0 ? trackCtx.moveTo(sx, sy) : trackCtx.lineTo(sx, sy);
+  });
   trackCtx.strokeStyle = 'white';
   trackCtx.stroke();
 
-  // Draw current position as a dot
+  const dotX = x * autoScale + offsetX;
+  const dotY = y * autoScale + offsetY;
+  //red dot
   trackCtx.fillStyle = 'red';
-  trackCtx.fillRect(x - 2, y - 2, 4, 4);
+  trackCtx.fillRect(dotX - 2, dotY - 2, 4, 4);
 
   requestAnimationFrame(drawTrack);
 
