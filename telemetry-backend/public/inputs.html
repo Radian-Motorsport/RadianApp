@@ -355,6 +355,8 @@ function drawEnvGraph() {
 }
 requestAnimationFrame(drawEnvGraph);
 
+let lastLapPct = 0;
+
 // === Telemetry Listener ===
 socket.on('telemetry', (data) => {
   const values = data?.values;
@@ -388,6 +390,8 @@ socket.on('telemetry', (data) => {
   }
   console.log('LapDistPct:', values.LapDistPct);
   console.log('Lap tracking active:', lapStarted, lapCompleted, currentLap.length);
+
+  lastLapPct = LapDistPct;
 
 });
 
