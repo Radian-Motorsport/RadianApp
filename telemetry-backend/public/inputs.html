@@ -99,6 +99,11 @@
     <div id="refreshRate">Refresh Rate: --</div>
   </div>
 
+  <!-- Track Map -->
+  <div class="track-map">
+    <canvas id="trackCanvas" width="600" height="200"></canvas>
+  </div>
+
   <!-- Telemetry Block -->
   <div class="telemetry-block">
     <canvas id="pedalCanvas" width="600" height="200"></canvas>
@@ -166,208 +171,203 @@
     <li>Precipitation: <span id="Precipitation">--</span></li>
   </ul>
 
-  <script>
-const canvas = document.getElementById('pedalCanvas');
+
+<script>
 const socket = io('https://radianapp.onrender.com');
+
+// === Pedal Canvas Setup ===
+const canvas = document.getElementById('pedalCanvas');
 const ctx = canvas.getContext('2d');
 const buffer = [];
 const MAX_POINTS = 300;
-const maxSteeringRad = 1.5;
 
-// Push telemetry into buffer
+// === Track Map Setup ===
+const trackCanvas = document.getElementById('trackCanvas');
+const trackCtx = trackCanvas.getContext('2d');
+let x = 300, y = 300, heading = 0;
+const trackPoints = [];
+const scale = 2; // Adjust to fit canvas size
+
+// === Environment Trends Setup ===
+const envCanvas = document.getElementById('envCanvas');
+const envCtx = envCanvas.getContext('2d');
+const envBuffer = [];
+const MAX_ENV_POINTS = 600;
+
+// === Refresh Rate Setup ===
+const refreshRateDisplay = document.getElementById('refreshRate');
+let lastTelemetryTime = null;
+
+// === Telemetry Listener ===
 socket.on('telemetry', (data) => {
   const values = data?.values;
   if (!values) return;
 
+  // === Refresh Rate Calculation ===
+  const now = Date.now();
+  if (lastTelemetryTime) {
+    const interval = now - lastTelemetryTime;
+    const hz = (1000 / interval).toFixed(1);
+    refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
+  }
+  lastTelemetryTime = now;
+
+  // === Pedal Input Buffer ===
   buffer.push({
     throttle: values.ThrottleRaw * 100,
     brake: values.Brake * 100,
-    rpm: (values.RPM / 10000) * 100 
-    //steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
+    rpm: (values.RPM / 10000) * 100
+    // Optional: steering trace
+    // steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
   });
-
   if (buffer.length > MAX_POINTS) buffer.shift();
+
+  // === Environment Buffer ===
+  envBuffer.push({
+    trackTemp: values.TrackTemp,
+    airTemp: values.AirTemp,
+    humidity: values.RelativeHumidity
+  });
+  if (envBuffer.length > MAX_ENV_POINTS) envBuffer.shift();
+
+  // === Track Map Logic ===
+  const { Speed, SteeringWheelAngle, LapDistPct } = values;
+  const dt = 1 / 60; // Adjust if your telemetry rate differs
+
+  heading += SteeringWheelAngle * dt;
+  x += Math.cos(heading) * Speed * dt * scale;
+  y += Math.sin(heading) * Speed * dt * scale;
+  trackPoints.push({ x, y });
+
+  // Reset track map on lap start
+  if (LapDistPct < 0.01 && trackPoints.length > 100) {
+    trackPoints.length = 0;
+    x = 300; y = 300; heading = 0;
+  }
+
+  // === DOM Updates: Status ===
+  document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
+  document.getElementById('IsOnTrackCar').textContent = values.IsOnTrackCar;
+  document.getElementById('IsInGarage').textContent = values.IsInGarage;
+  document.getElementById('PlayerCarPosition').textContent = values.PlayerCarPosition;
+  document.getElementById('PlayerCarClassPosition').textContent = values.PlayerCarClassPosition;
+  document.getElementById('PlayerTrackSurface').textContent = values.PlayerTrackSurface;
+  document.getElementById('PlayerCarIdx').textContent = values.PlayerCarIdx;
+  document.getElementById('PlayerCarTeamIncidentCount').textContent = values.PlayerCarTeamIncidentCount;
+  document.getElementById('PlayerCarMyIncidentCount').textContent = values.PlayerCarMyIncidentCount;
+  document.getElementById('PlayerCarDriverIncidentCount').textContent = values.PlayerCarDriverIncidentCount;
+  document.getElementById('LapDistPct').textContent = values.LapDistPct?.toFixed(3);
+  document.getElementById('RaceLaps').textContent = values.RaceLaps;
+  document.getElementById('CarDistAhead').textContent = values.CarDistAhead;
+  document.getElementById('CarDistBehind').textContent = values.CarDistBehind;
+
+  // === DOM Updates: Driver Inputs ===
+  document.getElementById('Throttle').textContent = values.Throttle;
+  document.getElementById('Brake').textContent = values.Brake;
+  document.getElementById('Gear').textContent = values.Gear;
+  document.getElementById('RPM').textContent = values.RPM?.toFixed(0);
+  document.getElementById('Speed').textContent = values.Speed?.toFixed(3);
+  document.getElementById('Steering').textContent = values.SteeringWheelAngle;
+
+  // === DOM Updates: Driver Controls ===
+  document.getElementById('dcPitSpeedLimiterToggle').textContent = values.dcPitSpeedLimiterToggle;
+  document.getElementById('dpFuelAutoFillEnabled').textContent = values.dpFuelAutoFillEnabled;
+  document.getElementById('dpFuelAutoFillActive').textContent = values.dpFuelAutoFillActive;
+  document.getElementById('dcBrakeBias').textContent = values.dcBrakeBias?.toFixed(2);
+  document.getElementById('dcTractionControl').textContent = values.dcTractionControl;
+  document.getElementById('dcABS').textContent = values.dcABS;
+  document.getElementById('FuelLevel').textContent = values.FuelLevel?.toFixed(2);
+
+  // === DOM Updates: Environment ===
+  document.getElementById('TrackTemp').textContent = values.TrackTemp?.toFixed(1);
+  document.getElementById('AirTemp').textContent = values.AirTemp?.toFixed(1);
+  document.getElementById('TrackWetness').textContent = values.TrackWetness;
+  document.getElementById('Skies').textContent = values.Skies;
+  document.getElementById('AirDensity').textContent = values.AirDensity?.toFixed(3);
+  document.getElementById('AirPressure').textContent = values.AirPressure?.toFixed(1);
+  document.getElementById('WindVel').textContent = values.WindVel?.toFixed(1);
+  document.getElementById('WindDir').textContent = values.WindDir?.toFixed(1);
+  document.getElementById('RelativeHumidity').textContent = values.RelativeHumidity?.toFixed(2);
+  document.getElementById('FogLevel').textContent = values.FogLevel;
+  document.getElementById('Precipitation').textContent = values.Precipitation?.toFixed(3);
 });
 
-// Draw smooth scrolling graph
+// === Draw Pedal Graph ===
 function drawGraph() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Throttle (green)
   ctx.beginPath();
   ctx.strokeStyle = 'lime';
-  for (let i = 0; i < buffer.length; i++) {
+  buffer.forEach((point, i) => {
     const x = i * 2;
-    const y = canvas.height - buffer[i].throttle;
+    const y = canvas.height - point.throttle;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
+  });
   ctx.stroke();
 
   // Brake (red)
   ctx.beginPath();
   ctx.strokeStyle = 'red';
-  for (let i = 0; i < buffer.length; i++) {
+  buffer.forEach((point, i) => {
     const x = i * 2;
-    const y = canvas.height - buffer[i].brake;
+    const y = canvas.height - point.brake;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
+  });
   ctx.stroke();
 
   // RPM (yellow)
   ctx.beginPath();
   ctx.strokeStyle = 'yellow';
-  for (let i = 0; i < buffer.length; i++) {
+  buffer.forEach((point, i) => {
     const x = i * 2;
-    const y = canvas.height - buffer[i].rpm;
+    const y = canvas.height - point.rpm;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
+  });
   ctx.stroke();
-
-  // Steering (white)
-  /*ctx.beginPath();
-  ctx.strokeStyle = 'white';
-  for (let i = 0; i < buffer.length; i++) {
-    const x = i * 2;
-    const y = canvas.height / 2 - buffer[i].steering;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.stroke();*/
 
   requestAnimationFrame(drawGraph);
 }
+requestAnimationFrame(drawGraph);
 
-requestAnimationFrame(drawGraph); // Start the loop
-
-//Environment
-
-const envCanvas = document.getElementById('envCanvas');
-const envCtx = envCanvas.getContext('2d');
-const envBuffer = [];
-const MAX_ENV_POINTS = 600;
-
-socket.on('telemetry', (data) => {
-  const values = data?.values;
-  if (!values) return;
-
-  envBuffer.push({
-    trackTemp: values.TrackTemp,
-    airTemp: values.AirTemp,
-    humidity: values.RelativeHumidity
-  });
-
-  if (envBuffer.length > MAX_ENV_POINTS) envBuffer.shift();
-});
-
+// === Draw Environment Trends ===
 function drawEnvGraph() {
   envCtx.clearRect(0, 0, envCanvas.width, envCanvas.height);
 
   // Track Temp (orange)
   envCtx.beginPath();
   envCtx.strokeStyle = 'orange';
-  for (let i = 0; i < envBuffer.length; i++) {
+  envBuffer.forEach((point, i) => {
     const x = i;
-    const y = envCanvas.height - envBuffer[i].trackTemp * 2; // scale temp
+    const y = envCanvas.height - point.trackTemp * 2;
     i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
-  }
+  });
   envCtx.stroke();
 
   // Air Temp (cyan)
   envCtx.beginPath();
   envCtx.strokeStyle = 'cyan';
-  for (let i = 0; i < envBuffer.length; i++) {
+  envBuffer.forEach((point, i) => {
     const x = i;
-    const y = envCanvas.height - envBuffer[i].airTemp * 2;
+    const y = envCanvas.height - point.airTemp * 2;
     i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
-  }
+  });
   envCtx.stroke();
 
   // Humidity (purple)
   envCtx.beginPath();
   envCtx.strokeStyle = 'purple';
-  for (let i = 0; i < envBuffer.length; i++) {
+  envBuffer.forEach((point, i) => {
     const x = i;
-    const y = envCanvas.height - envBuffer[i].humidity;
+    const y = envCanvas.height - point.humidity;
     i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
-  }
+  });
   envCtx.stroke();
 
   requestAnimationFrame(drawEnvGraph);
 }
-
 requestAnimationFrame(drawEnvGraph);
 
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const refreshRateDisplay = document.getElementById('refreshRate');
-  let lastTelemetryTime = null;
-
-  socket.on('telemetry', () => {
-    const now = Date.now();
-    if (lastTelemetryTime && refreshRateDisplay) {
-      const interval = now - lastTelemetryTime;
-      const hz = (1000 / interval).toFixed(1);
-      refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
-    }
-    lastTelemetryTime = now;
-  });
-});
-
-   
-
-
-  
-
-  socket.on('telemetry', (data) => {
-    const values = data?.values;
-    if (!values) return;
-
-    // === Status ===
-    document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
-    document.getElementById('IsOnTrackCar').textContent = values.IsOnTrackCar;
-    document.getElementById('IsInGarage').textContent = values.IsInGarage;
-    document.getElementById('PlayerCarPosition').textContent = values.PlayerCarPosition;
-    document.getElementById('PlayerCarClassPosition').textContent = values.PlayerCarClassPosition;
-    document.getElementById('PlayerTrackSurface').textContent = values.PlayerTrackSurface;
-    document.getElementById('PlayerCarIdx').textContent = values.PlayerCarIdx;
-    document.getElementById('PlayerCarTeamIncidentCount').textContent = values.PlayerCarTeamIncidentCount;
-    document.getElementById('PlayerCarMyIncidentCount').textContent = values.PlayerCarMyIncidentCount;
-    document.getElementById('PlayerCarDriverIncidentCount').textContent = values.PlayerCarDriverIncidentCount;
-    document.getElementById('LapDistPct').textContent = values.LapDistPct?.toFixed(3);
-    document.getElementById('RaceLaps').textContent = values.RaceLaps;
-    document.getElementById('CarDistAhead').textContent = values.CarDistAhead;
-    document.getElementById('CarDistBehind').textContent = values.CarDistBehind;
-
-    // === Driver Inputs ===
-    document.getElementById('Throttle').textContent = values.Throttle;
-    document.getElementById('Brake').textContent = values.Brake;
-    document.getElementById('Gear').textContent = values.Gear;
-    document.getElementById('RPM').textContent = values.RPM?.toFixed(0);
-    document.getElementById('Speed').textContent = values.Speed?.toFixed(3);
-    document.getElementById('Steering').textContent = values.SteeringWheelAngle;
-
-    // === Driver Controls ===
-    document.getElementById('dcPitSpeedLimiterToggle').textContent = values.dcPitSpeedLimiterToggle;
-    document.getElementById('dpFuelAutoFillEnabled').textContent = values.dpFuelAutoFillEnabled;
-    document.getElementById('dpFuelAutoFillActive').textContent = values.dpFuelAutoFillActive;
-    document.getElementById('dcBrakeBias').textContent = values.dcBrakeBias?.toFixed(2);
-    document.getElementById('dcTractionControl').textContent = values.dcTractionControl;
-    document.getElementById('dcABS').textContent = values.dcABS;
-    document.getElementById('FuelLevel').textContent = values.FuelLevel?.toFixed(2);
-
-    // === Environment ===
-    document.getElementById('TrackTemp').textContent = values.TrackTemp?.toFixed(1);
-    document.getElementById('AirTemp').textContent = values.AirTemp?.toFixed(1);
-    document.getElementById('TrackWetness').textContent = values.TrackWetness;
-    document.getElementById('Skies').textContent = values.Skies;
-    document.getElementById('AirDensity').textContent = values.AirDensity?.toFixed(3);
-    document.getElementById('AirPressure').textContent = values.AirPressure?.toFixed(1);
-    document.getElementById('WindVel').textContent = values.WindVel?.toFixed(1);
-    document.getElementById('WindDir').textContent = values.WindDir?.toFixed(1);
-    document.getElementById('RelativeHumidity').textContent = values.RelativeHumidity?.toFixed(2);
-    document.getElementById('FogLevel').textContent = values.FogLevel;
-    document.getElementById('Precipitation').textContent = values.Precipitation?.toFixed(3);
-  });
 </script>
 
 </body>
