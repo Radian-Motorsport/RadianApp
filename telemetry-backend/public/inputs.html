@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy Planner</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      padding: 20px;
+    }
+    .nav {
+      margin-bottom: 20px;
+    }
+    .nav button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      font-family: inherit;
+      background-color: #333;
+      color: #0f0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <button onclick="location.href='index.html'">Telemetry</button>
+    <button onclick="location.href='strategy.html'">Strategy</button>
+  </div>
+
+  <h2>Strategy Planner</h2>
+  <div id="fuelWindow">Fuel Window: --</div>
+  <div id="tireDegradation">Tire Degradation Model: --</div>
+  <div id="stintProjection">Stint Projection: --</div>
+
+  <script>
+    const socket = io('https://radianapp.onrender.com');
+
+    socket.on('telemetry', (data) => {
+      const values = data?.values;
+      const fuelLevel = values?.FuelLevel;
+      const lap = values?.LapCompleted;
+
+      // Example: Project fuel window based on current fuel and avg usage
+      const avgFuelUsed = 2.5; // Replace with shared or calculated value
+      const projectedLaps = avgFuelUsed > 0 ? fuelLevel / avgFuelUsed : null;
+
+      document.getElementById('fuelWindow').textContent =
+        `Fuel Window: ${projectedLaps?.toFixed(2) ?? '--'} laps`;
+
+      // You can expand this with tire modeling, stint planning, etc.
+    });
+  </script>
+</body>
+</html>
