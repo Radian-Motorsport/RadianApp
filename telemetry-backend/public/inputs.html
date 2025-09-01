@@ -64,6 +64,7 @@
   <li>Gear: <span id="Gear">--</span></li>
   <li>RPM: <span id="RPM">--</span></li>
   <li>Speed: <span id="Speed">--</span></li>
+  <li>Steering: <span id="SteeringWheelAngle">--</span></li>
 </ul>
 
 <h2>Driver Controls</h2>
@@ -93,6 +94,53 @@
 </ul>
 
   <script>
+
+const canvas = document.getElementById('pedalCanvas');
+const ctx = canvas.getContext('2d');
+const buffer = [];
+const MAX_POINTS = 300;
+const maxSteeringRad = 1.5; // adjust if needed
+const normalizedSteering = (values.SteeringWheelAngle / maxSteeringRad) * 100;
+
+
+socket.on('telemetry', (data) => {
+  const values = data?.values;
+  if (!values) return;
+
+  buffer.push({
+  throttle: values.ThrottleRaw * 100,
+  brake: values.Brake * 100,
+  steering: (values.SteeringWheelAngle / 1.5) * 100 // normalized
+  });
+
+  if (buffer.length > MAX_POINTS) buffer.shift();
+  drawGraph();
+});
+
+function drawGraph() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < buffer.length; i++) {
+    const x = i * 2; // spacing
+    const throttleY = canvas.height - buffer[i].throttle;
+    const brakeY = canvas.height - buffer[i].brake;
+    const steerY = canvas.height / 2 - (buffer[i].steering); // already scaled to ±100
+
+    
+    // Throttle (green)
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(x, throttleY, 2, 2);
+
+    // Brake (red)
+    ctx.fillStyle = 'red';
+    ctx.fillRect(x, brakeY, 2, 2);
+
+    // Steering (white)
+    ctx.fillStyle = 'white';
+    ctx.fillRect(x, steerY, 2, 2);
+  }
+}
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -141,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('Gear').textContent = values.Gear;
     document.getElementById('RPM').textContent = values.RPM?.toFixed(0);
     document.getElementById('Speed').textContent = values.Speed?.toFixed(3);
+    document.getElementById('Steering').textContent = values.SteeringWheelAngle;
 
     // === Driver Controls ===
     document.getElementById('dcPitSpeedLimiterToggle').textContent = values.dcPitSpeedLimiterToggle;
@@ -168,5 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
