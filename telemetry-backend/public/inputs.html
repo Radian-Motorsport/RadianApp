@@ -10,90 +10,161 @@
       background-color: #121212;
       color: #fff;
       font-family: 'Orbitron', sans-serif;
-      padding: 20px;
+      margin: 0;
+      padding: 0 20px;
     }
-    .nav {
-      margin-bottom: 20px;
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1a1a1a;
+      padding: 10px 20px;
+      border-bottom: 1px solid #333;
     }
-    .nav button {
-      margin-right: 10px;
-      padding: 8px 16px;
-      font-family: inherit;
+
+    .top-bar button {
       background-color: #333;
       color: #0f0;
       border: none;
+      padding: 8px 16px;
       border-radius: 5px;
+      font-family: inherit;
       cursor: pointer;
     }
-  </style>
 
+    #refreshRate {
+      color: #0f0;
+      font-size: 0.9rem;
+    }
+
+    .telemetry-block {
+      margin-top: 20px;
+    }
+
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .inputs-grid div {
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.9rem;
+      border: 1px solid #333;
+    }
+
+    .inputs-grid label {
+      display: block;
+      font-weight: bold;
+      color: #0f0;
+      margin-bottom: 4px;
+    }
+
+    .inputs-grid span {
+      color: #fff;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+      border: 1px solid #333;
+    }
+
+    h2 {
+      margin-top: 30px;
+      color: #0f0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      margin-bottom: 6px;
+    }
+  </style>
 </head>
 <body>
-  <div class="nav">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
     <button onclick="location.href='index.html'">Strategy</button>
-      </div>
+    <div id="refreshRate">Refresh Rate: --</div>
+  </div>
 
+  <!-- Telemetry Block -->
+  <div class="telemetry-block">
+    <canvas id="pedalCanvas" width="600" height="200"></canvas>
 
-    <div id="refreshRate" style="margin-top: 10px; color: #0f0; font-size: 1rem;">
-  Refresh Rate: --
-</div>
+    <div class="inputs-grid">
+      <div><label>Throttle</label><span id="Throttle">--</span></div>
+      <div><label>Brake</label><span id="Brake">--</span></div>
+      <div><label>Gear</label><span id="Gear">--</span></div>
+      <div><label>RPM</label><span id="RPM">--</span></div>
+      <div><label>Speed</label><span id="Speed">--</span></div>
+      <div><label>Steering</label><span id="Steering">--</span></div>
+    </div>
+  </div>
 
-  <canvas id="pedalCanvas" width="600" height="200" style="background:#111;"></canvas>
-
-
+  <!-- Status -->
   <h2>Status</h2>
-<ul>
-  <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
-  <li>IsOnTrackCar: <span id="IsOnTrackCar">--</span></li>
-  <li>IsInGarage: <span id="IsInGarage">--</span></li>
-  <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
-  <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
-  <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
-  <li>PlayerCarIdx: <span id="PlayerCarIdx">--</span></li>
-  <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
-  <li>My Incidents: <span id="PlayerCarMyIncidentCount">--</span></li>
-  <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
-  <li>LapDistPct: <span id="LapDistPct">--</span></li>
-  <li>RaceLaps: <span id="RaceLaps">--</span></li>
-  <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
-  <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
-</ul>
+  <ul>
+    <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
+    <li>IsOnTrackCar: <span id="IsOnTrackCar">--</span></li>
+    <li>IsInGarage: <span id="IsInGarage">--</span></li>
+    <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
+    <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
+    <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
+    <li>PlayerCarIdx: <span id="PlayerCarIdx">--</span></li>
+    <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
+    <li>My Incidents: <span id="PlayerCarMyIncidentCount">--</span></li>
+    <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
+    <li>LapDistPct: <span id="LapDistPct">--</span></li>
+    <li>RaceLaps: <span id="RaceLaps">--</span></li>
+    <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
+    <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
+  </ul>
 
-<h2>Driver Inputs</h2>
-<ul>
-  <li>Throttle: <span id="Throttle">--</span></li>
-  <li>Brake: <span id="Brake">--</span></li>
-  <li>Gear: <span id="Gear">--</span></li>
-  <li>RPM: <span id="RPM">--</span></li>
-  <li>Speed: <span id="Speed">--</span></li>
-  <li>Steering: <span id="Steering">--</span></li>
-</ul>
+  <!-- Driver Controls -->
+  <h2>Driver Controls</h2>
+  <ul>
+    <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
+    <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
+    <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
+    <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
+    <li>Traction Control: <span id="dcTractionControl">--</span></li>
+    <li>ABS: <span id="dcABS">--</span></li>
+    <li>Fuel Level: <span id="FuelLevel">--</span></li>
+  </ul>
 
-<h2>Driver Controls</h2>
-<ul>
-  <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
-  <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
-  <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
-  <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
-  <li>Traction Control: <span id="dcTractionControl">--</span></li>
-  <li>ABS: <span id="dcABS">--</span></li>
-  <li>Fuel Level: <span id="FuelLevel">--</span></li>
-</ul>
+  <!-- Environment -->
+  <h2>Environment</h2>
+  
+  
+  <h2>Environment Trends</h2>
+    <canvas id="envCanvas" width="600" height="200"></canvas>
 
-<h2>Environment</h2>
-<ul>
-  <li>Track Temp: <span id="TrackTemp">--</span></li>
-  <li>Air Temp: <span id="AirTemp">--</span></li>
-  <li>Track Wetness: <span id="TrackWetness">--</span></li>
-  <li>Skies: <span id="Skies">--</span></li>
-  <li>Air Density: <span id="AirDensity">--</span></li>
-  <li>Air Pressure: <span id="AirPressure">--</span></li>
-  <li>Wind Velocity: <span id="WindVel">--</span></li>
-  <li>Wind Direction: <span id="WindDir">--</span></li>
-  <li>Humidity: <span id="RelativeHumidity">--</span></li>
-  <li>Fog Level: <span id="FogLevel">--</span></li>
-  <li>Precipitation: <span id="Precipitation">--</span></li>
-</ul>
+
+  <ul>
+    <li>Track Temp: <span id="TrackTemp">--</span></li>
+    <li>Air Temp: <span id="AirTemp">--</span></li>
+    <li>Track Wetness: <span id="TrackWetness">--</span></li>
+    <li>Skies: <span id="Skies">--</span></li>
+    <li>Air Density: <span id="AirDensity">--</span></li>
+    <li>Air Pressure: <span id="AirPressure">--</span></li>
+    <li>Wind Velocity: <span id="WindVel">--</span></li>
+    <li>Wind Direction: <span id="WindDir">--</span></li>
+    <li>Humidity: <span id="RelativeHumidity">--</span></li>
+    <li>Fog Level: <span id="FogLevel">--</span></li>
+    <li>Precipitation: <span id="Precipitation">--</span></li>
+  </ul>
 
   <script>
 const canvas = document.getElementById('pedalCanvas');
@@ -166,6 +237,64 @@ function drawGraph() {
 }
 
 requestAnimationFrame(drawGraph); // Start the loop
+
+//Environment
+
+const envCanvas = document.getElementById('envCanvas');
+const envCtx = envCanvas.getContext('2d');
+const envBuffer = [];
+const MAX_ENV_POINTS = 600;
+
+socket.on('telemetry', (data) => {
+  const values = data?.values;
+  if (!values) return;
+
+  envBuffer.push({
+    trackTemp: values.TrackTemp,
+    airTemp: values.AirTemp,
+    humidity: values.RelativeHumidity
+  });
+
+  if (envBuffer.length > MAX_ENV_POINTS) envBuffer.shift();
+});
+
+function drawEnvGraph() {
+  envCtx.clearRect(0, 0, envCanvas.width, envCanvas.height);
+
+  // Track Temp (orange)
+  envCtx.beginPath();
+  envCtx.strokeStyle = 'orange';
+  for (let i = 0; i < envBuffer.length; i++) {
+    const x = i;
+    const y = envCanvas.height - envBuffer[i].trackTemp * 2; // scale temp
+    i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
+  }
+  envCtx.stroke();
+
+  // Air Temp (cyan)
+  envCtx.beginPath();
+  envCtx.strokeStyle = 'cyan';
+  for (let i = 0; i < envBuffer.length; i++) {
+    const x = i;
+    const y = envCanvas.height - envBuffer[i].airTemp * 2;
+    i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
+  }
+  envCtx.stroke();
+
+  // Humidity (purple)
+  envCtx.beginPath();
+  envCtx.strokeStyle = 'purple';
+  for (let i = 0; i < envBuffer.length; i++) {
+    const x = i;
+    const y = envCanvas.height - envBuffer[i].humidity;
+    i === 0 ? envCtx.moveTo(x, y) : envCtx.lineTo(x, y);
+  }
+  envCtx.stroke();
+
+  requestAnimationFrame(drawEnvGraph);
+}
+
+requestAnimationFrame(drawEnvGraph);
 
 
 
