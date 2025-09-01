@@ -174,9 +174,10 @@
 
 <script>
 const socket = io('https://radianapp.onrender.com');
+
 // Load the car icon once
 const carImg = new Image();
-carImg.src = 'icon-active.png'; // your PNG path
+carImg.src = 'icon-active.png';
 
 // === Pedal Canvas Setup ===
 const canvas = document.getElementById('pedalCanvas');
@@ -192,16 +193,15 @@ let lapCompleted = false;
 let currentLap = [];
 let finalLap = [];
 let lapBuffer = [];
+let lapYaw = [];          // yaw values for current lap
+let finalLapYaw = [];     // yaw values for completed lap
+
 let liveLapPct = 0;
 let prevLapPct = 0;
 let targetLapPct = 0;
 let lastPctUpdateTime = performance.now();
-let lapSteering = [];        // steering values for the current lap
-let finalLapSteering = [];   // steering values for the completed lap
 
-const telemetryHz = 10; 
-
-
+const telemetryHz = 10;
 
 // === Environment Trends Setup ===
 const envCanvas = document.getElementById('envCanvas');
@@ -213,25 +213,18 @@ const MAX_ENV_POINTS = 600;
 const refreshRateDisplay = document.getElementById('refreshRate');
 let lastTelemetryTime = null;
 
-// === Telemetry Listener ===
+// === Telemetry Listener for UI/inputs ===
 socket.on('telemetry', (data) => {
-  
   const values = data?.values;
   if (!values) return;
 
-  // Shift the previous target into prevLapPct
+  // Lap % interpolation targets
   prevLapPct = targetLapPct;
-
-  // Set the new target from telemetry
   targetLapPct = values.LapDistPct;
-
-  // Record the time of this update
   lastPctUpdateTime = performance.now();
-
-  // Optional: still keep liveLapPct for other uses
   liveLapPct = values.LapDistPct;
 
-  // === Refresh Rate Calculation ===
+  // Refresh rate display
   const now = Date.now();
   if (lastTelemetryTime) {
     const interval = now - lastTelemetryTime;
@@ -240,17 +233,15 @@ socket.on('telemetry', (data) => {
   }
   lastTelemetryTime = now;
 
-  // === Pedal Input Buffer ===
+  // Pedal input buffer
   buffer.push({
     throttle: values.ThrottleRaw * 100,
     brake: values.Brake * 100,
     rpm: (values.RPM / 10000) * 100
-    // Optional: steering trace
-    // steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
   });
   if (buffer.length > MAX_POINTS) buffer.shift();
 
-  // === Environment Buffer ===
+  // Environment buffer
   envBuffer.push({
     trackTemp: values.TrackTemp,
     airTemp: values.AirTemp,
@@ -383,7 +374,7 @@ requestAnimationFrame(drawEnvGraph);
 
 let lastLapPct = 0;
 
-// === Telemetry Listener ===
+// === Telemetry Listener for lap tracking ===
 socket.on('telemetry', (data) => {
   const values = data?.values;
   if (!values || lapCompleted) return;
@@ -396,50 +387,47 @@ socket.on('telemetry', (data) => {
   const newX = last.x + Math.cos(YawNorth) * Speed * dt;
   const newY = last.y + Math.sin(YawNorth) * Speed * dt;
   lapBuffer.push({ x: newX, y: newY });
-  lapSteering.push(values.SteeringWheelAngle);
+  lapYaw.push(YawNorth);
 
-  // Detect lap wrap by drop in LapDistPct
+  // Detect lap wrap
   if (LapDistPct < lastLapPct - 0.5) {
-  if (!lapStarted) {
-    lapStarted = true;
-    currentLap = [...lapBuffer];
-    lapBuffer = [];
-
-    // steering
-    finalLapSteering = [...lapSteering];
-    lapSteering = [];
-
-  } else {
-    lapCompleted = true;
-    finalLap = [...lapBuffer];
-
-    // steering
-    finalLapSteering = [...lapSteering];
+    if (!lapStarted) {
+      lapStarted = true;
+      currentLap = [...lapBuffer];
+      lapBuffer = [];
+      finalLapYaw = [...lapYaw];
+      lapYaw = [];
+    } else {
+      lapCompleted = true;
+      finalLap = [...lapBuffer];
+      finalLapYaw = [...lapYaw];
+    }
   }
-}
-
 
   lastLapPct = LapDistPct;
-
-  console.log('Lap tracking active:', lapStarted, lapCompleted, lapBuffer.length);
 });
 
-function findStraightBlendZone(points, steering, threshold = 0.02) {
+// === Yaw-based straight section finder ===
+function findStraightBlendZoneFromYaw(points, yawArray, yawRateThreshold = 0.001) {
   const total = points.length;
+  const yawDelta = (a, b) => {
+    let diff = a - b;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    return diff;
+  };
 
-  // Find last straight point before start/finish
   let startIdx = 0;
   for (let i = total - 1; i > 0; i--) {
-    if (Math.abs(steering[i]) > threshold) {
+    if (Math.abs(yawDelta(yawArray[i], yawArray[i - 1])) > yawRateThreshold) {
       startIdx = (i + 1) % total;
       break;
     }
   }
 
-  // Find first straight point after start/finish
   let endIdx = 0;
-  for (let i = 0; i < total; i++) {
-    if (Math.abs(steering[i]) > threshold) {
+  for (let i = 1; i < total; i++) {
+    if (Math.abs(yawDelta(yawArray[i], yawArray[i - 1])) > yawRateThreshold) {
       endIdx = (i - 1 + total) % total;
       break;
     }
@@ -448,18 +436,16 @@ function findStraightBlendZone(points, steering, threshold = 0.02) {
   return { startIdx, endIdx };
 }
 
-function blendLapEndsFromSteering(points, startIdx, endIdx) {
+// === Blend lap ends along a straight section ===
+function blendLapEndsStraightSection(points, startIdx, endIdx) {
   const blended = [...points];
   const total = points.length;
-
-  // Direction vector from startIdx to next point
   const dx = points[(startIdx + 1) % total].x - points[startIdx].x;
   const dy = points[(startIdx + 1) % total].y - points[startIdx].y;
   const len = Math.hypot(dx, dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
 
-  // Walk forward from startIdx to endIdx, wrapping if needed
   let i = startIdx;
   while (true) {
     const dist = ((i - startIdx + total) % total) * len;
@@ -470,7 +456,6 @@ function blendLapEndsFromSteering(points, startIdx, endIdx) {
     if (i === endIdx) break;
     i = (i + 1) % total;
   }
-
   return blended;
 }
 
@@ -484,48 +469,17 @@ function smooth(points, windowSize = 5) {
   });
 }
 
-function blendLapEndsStraight(points, blendCount = 5) {
-  const blended = [...points];
-  const total = points.length;
-
-  // Direction vector from first two points
-  const dx = points[1].x - points[0].x;
-  const dy = points[1].y - points[0].y;
-  const len = Math.hypot(dx, dy) || 1;
-  const ux = dx / len;
-  const uy = dy / len;
-
-  const startX = points[0].x;
-  const startY = points[0].y;
-
-  // First N points along the straight
-  for (let i = 0; i < blendCount; i++) {
-    const dist = i * len;
-    blended[i] = { x: startX + ux * dist, y: startY + uy * dist };
-  }
-
-  // Last N points along the same straight, ending at start
-  for (let i = total - blendCount; i < total; i++) {
-    const dist = (total - i) * len;
-    blended[i] = { x: startX - ux * dist, y: startY - uy * dist };
-  }
-
-  return blended;
-}
-
-
 // === Draw Final Lap Only ===
-
 function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
 
   if (finalLap.length > 0) {
     let smoothed = smooth(finalLap);
 
-    // --- Steering-aware blend ---
-    if (finalLapSteering && finalLapSteering.length === smoothed.length) {
-      const { startIdx, endIdx } = findStraightBlendZone(smoothed, finalLapSteering, 0.02);
-      smoothed = blendLapEndsFromSteering(smoothed, startIdx, endIdx);
+    // --- Yaw-aware blend ---
+    if (finalLapYaw && finalLapYaw.length === smoothed.length) {
+      const { startIdx, endIdx } = findStraightBlendZoneFromYaw(smoothed, finalLapYaw, 0.001);
+      smoothed = blendLapEndsStraightSection(smoothed, startIdx, endIdx);
     }
 
     // Auto-scale and center
@@ -557,7 +511,7 @@ function drawTrack() {
     trackCtx.lineTo(smoothed[0].x * autoScale + offsetX, smoothed[0].y * autoScale + offsetY);
     trackCtx.strokeStyle = 'white';
     trackCtx.stroke();
-
+    
     // Finish line marker
     const finishX = smoothed[0].x * autoScale + offsetX;
     const finishY = smoothed[0].y * autoScale + offsetY;
