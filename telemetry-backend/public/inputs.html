@@ -111,7 +111,8 @@ socket.on('telemetry', (data) => {
   buffer.push({
     throttle: values.ThrottleRaw * 100,
     brake: values.Brake * 100,
-    steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
+    rpm: (values.RPM / 10000) * 100 
+    //steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
   });
 
   if (buffer.length > MAX_POINTS) buffer.shift();
@@ -141,15 +142,25 @@ function drawGraph() {
   }
   ctx.stroke();
 
-  // Steering (white)
+  // RPM (yellow)
   ctx.beginPath();
+  ctx.strokeStyle = 'yellow';
+  for (let i = 0; i < buffer.length; i++) {
+    const x = i * 2;
+    const y = canvas.height - buffer[i].rpm;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Steering (white)
+  /*ctx.beginPath();
   ctx.strokeStyle = 'white';
   for (let i = 0; i < buffer.length; i++) {
     const x = i * 2;
     const y = canvas.height / 2 - buffer[i].steering;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
-  ctx.stroke();
+  ctx.stroke();*/
 
   requestAnimationFrame(drawGraph);
 }
