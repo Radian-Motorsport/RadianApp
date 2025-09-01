@@ -406,7 +406,21 @@ function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
 
   if (finalLap.length > 0) {
-    const smoothed = smooth(finalLap);
+    // Smooth the lap first
+    let smoothed = smooth(finalLap);
+
+    // --- Blend start and end points ---
+    const blendCount = 5; // number of points to average at each end
+    const avgPoints = (arr) => {
+      const sum = arr.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+      return { x: sum.x / arr.length, y: sum.y / arr.length };
+    };
+    const startAvg = avgPoints(smoothed.slice(0, blendCount));
+    const endAvg = avgPoints(smoothed.slice(-blendCount));
+
+    // Replace first and last few points with blended coords
+    for (let i = 0; i < blendCount; i++) smoothed[i] = startAvg;
+    for (let i = smoothed.length - blendCount; i < smoothed.length; i++) smoothed[i] = endAvg;
 
     // Auto-scale and center
     let minX = Infinity, maxX = -Infinity;
@@ -434,6 +448,11 @@ function drawTrack() {
       const sy = pt.y * autoScale + offsetY;
       i === 0 ? trackCtx.moveTo(sx, sy) : trackCtx.lineTo(sx, sy);
     });
+
+    // Close the loop
+    const first = smoothed[0];
+    trackCtx.lineTo(first.x * autoScale + offsetX, first.y * autoScale + offsetY);
+
     trackCtx.strokeStyle = 'white';
     trackCtx.stroke();
 
@@ -443,6 +462,7 @@ function drawTrack() {
   requestAnimationFrame(drawTrack);
 }
 requestAnimationFrame(drawTrack);
+
 
 
 </script>
