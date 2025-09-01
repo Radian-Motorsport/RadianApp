@@ -184,7 +184,6 @@ const MAX_POINTS = 300;
 // === Track Map Setup ===
 const trackCanvas = document.getElementById('trackCanvas');
 const trackCtx = trackCanvas.getContext('2d');
-let x = 300, y = 300;
 let lapStarted = false;
 let lapCompleted = false;
 let currentLap = [];
@@ -232,31 +231,6 @@ socket.on('telemetry', (data) => {
     humidity: values.RelativeHumidity
   });
   if (envBuffer.length > MAX_ENV_POINTS) envBuffer.shift();
-
-  // === Track Map Logic ===
-  const { Speed, SteeringWheelAngle, LapDistPct } = values;
-  const dt = 1 / 60; // Adjust if your telemetry rate differs
-
-  //console.log(Speed, SteeringWheelAngle, LapDistPct);
-
-  const heading = values.YawNorth; // or values.YawNorth if you want geographic alignment
-
-  x += Math.cos(heading) * Speed * dt;
-  y += Math.sin(heading) * Speed * dt;
-  trackPoints.push({ x, y });
-
-  trackCtx.fillStyle = 'red';
-  trackCtx.fillRect(x - 2, y - 2, 4, 4);
-
-  //console.log('Canvas bounds check:', x, y);
-
-  // Reset track map on lap start
-  if (LapDistPct < 0.01 && trackPoints.length > 100) {
-    //trackPoints.length = 0;
-    //x = 300; y = 300; heading = 0;
-  }
-
-  //console.log('Track point:', x.toFixed(2), y.toFixed(2));
 
   // === DOM Updates: Status ===
   document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
