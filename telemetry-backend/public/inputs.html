@@ -367,7 +367,7 @@ socket.on('telemetry', (data) => {
 
 
   // Detect lap transition
-  if (LapDistPct < 0.01 && currentLap.length > 100) {
+  if (LapDistPct < 0.05 && currentLap.length > 100) {
     if (!lapStarted) {
       lapStarted = true; // First lap complete, start tracking
       currentLap = [];
