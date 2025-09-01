@@ -421,9 +421,38 @@ function smooth(points, windowSize = 5) {
   });
 }
 
+function blendLapEndsStraight(points, blendCount = 5) {
+  const blended = [...points];
+  const total = points.length;
+
+  // Direction vector from first two points
+  const dx = points[1].x - points[0].x;
+  const dy = points[1].y - points[0].y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+
+  const startX = points[0].x;
+  const startY = points[0].y;
+
+  // First N points along the straight
+  for (let i = 0; i < blendCount; i++) {
+    const dist = i * len;
+    blended[i] = { x: startX + ux * dist, y: startY + uy * dist };
+  }
+
+  // Last N points along the same straight, ending at start
+  for (let i = total - blendCount; i < total; i++) {
+    const dist = (total - i) * len;
+    blended[i] = { x: startX - ux * dist, y: startY - uy * dist };
+  }
+
+  return blended;
+}
 
 
 // === Draw Final Lap Only ===
+
 function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
 
@@ -431,15 +460,10 @@ function drawTrack() {
     let smoothed = smooth(finalLap);
 
     // --- Blend start and end points ---
-    const blendCount = 5;
-    const avgPoints = (arr) => {
-      const sum = arr.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
-      return { x: sum.x / arr.length, y: sum.y / arr.length };
-    };
-    const startAvg = avgPoints(smoothed.slice(0, blendCount));
-    const endAvg = avgPoints(smoothed.slice(-blendCount));
-    for (let i = 0; i < blendCount; i++) smoothed[i] = startAvg;
-    for (let i = smoothed.length - blendCount; i < smoothed.length; i++) smoothed[i] = endAvg;
+
+    smoothed = blendLapEndsStraight(smoothed, 5);
+
+    
 
     // Auto-scale and center
     let minX = Infinity, maxX = -Infinity;
