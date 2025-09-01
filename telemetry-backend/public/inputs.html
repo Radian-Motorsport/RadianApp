@@ -32,28 +32,112 @@
     <button onclick="location.href='index.html'">Strategy</button>
       </div>
 
-  <h2>Strategy Planner</h2>
-  <div id="fuelWindow">Fuel Window: --</div>
-  <div id="tireDegradation">Tire Degradation Model: --</div>
-  <div id="stintProjection">Stint Projection: --</div>
+  <h2>Status</h2>
+<ul>
+  <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
+  <li>IsOnTrackCar: <span id="IsOnTrackCar">--</span></li>
+  <li>IsInGarage: <span id="IsInGarage">--</span></li>
+  <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
+  <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
+  <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
+  <li>PlayerCarIdx: <span id="PlayerCarIdx">--</span></li>
+  <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
+  <li>My Incidents: <span id="PlayerCarMyIncidentCount">--</span></li>
+  <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
+  <li>LapDistPct: <span id="LapDistPct">--</span></li>
+  <li>RaceLaps: <span id="RaceLaps">--</span></li>
+  <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
+  <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
+</ul>
+
+<h2>Driver Inputs</h2>
+<ul>
+  <li>Throttle: <span id="Throttle">--</span></li>
+  <li>Brake: <span id="Brake">--</span></li>
+  <li>Gear: <span id="Gear">--</span></li>
+  <li>RPM: <span id="RPM">--</span></li>
+  <li>Speed: <span id="Speed">--</span></li>
+</ul>
+
+<h2>Driver Controls</h2>
+<ul>
+  <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
+  <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
+  <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
+  <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
+  <li>Traction Control: <span id="dcTractionControl">--</span></li>
+  <li>ABS: <span id="dcABS">--</span></li>
+  <li>Fuel Level: <span id="FuelLevel">--</span></li>
+</ul>
+
+<h2>Environment</h2>
+<ul>
+  <li>Track Temp: <span id="TrackTemp">--</span></li>
+  <li>Air Temp: <span id="AirTemp">--</span></li>
+  <li>Track Wetness: <span id="TrackWetness">--</span></li>
+  <li>Skies: <span id="Skies">--</span></li>
+  <li>Air Density: <span id="AirDensity">--</span></li>
+  <li>Air Pressure: <span id="AirPressure">--</span></li>
+  <li>Wind Velocity: <span id="WindVel">--</span></li>
+  <li>Wind Direction: <span id="WindDir">--</span></li>
+  <li>Humidity: <span id="RelativeHumidity">--</span></li>
+  <li>Fog Level: <span id="FogLevel">--</span></li>
+  <li>Precipitation: <span id="Precipitation">--</span></li>
+</ul>
 
   <script>
-    const socket = io('https://radianapp.onrender.com');
+  const socket = io('https://radianapp.onrender.com');
 
-    socket.on('telemetry', (data) => {
-      const values = data?.values;
-      const fuelLevel = values?.FuelLevel;
-      const lap = values?.LapCompleted;
+  socket.on('telemetry', (data) => {
+    const values = data?.values;
+    if (!values) return;
 
-      // Example: Project fuel window based on current fuel and avg usage
-      const avgFuelUsed = 2.5; // Replace with shared or calculated value
-      const projectedLaps = avgFuelUsed > 0 ? fuelLevel / avgFuelUsed : null;
+    // === Status ===
+    document.getElementById('IsOnTrack').textContent = values.IsOnTrack;
+    document.getElementById('IsOnTrackCar').textContent = values.IsOnTrackCar;
+    document.getElementById('IsInGarage').textContent = values.IsInGarage;
+    document.getElementById('PlayerCarPosition').textContent = values.PlayerCarPosition;
+    document.getElementById('PlayerCarClassPosition').textContent = values.PlayerCarClassPosition;
+    document.getElementById('PlayerTrackSurface').textContent = values.PlayerTrackSurface;
+    document.getElementById('PlayerCarIdx').textContent = values.PlayerCarIdx;
+    document.getElementById('PlayerCarTeamIncidentCount').textContent = values.PlayerCarTeamIncidentCount;
+    document.getElementById('PlayerCarMyIncidentCount').textContent = values.PlayerCarMyIncidentCount;
+    document.getElementById('PlayerCarDriverIncidentCount').textContent = values.PlayerCarDriverIncidentCount;
+    document.getElementById('LapDistPct').textContent = values.LapDistPct?.toFixed(3);
+    document.getElementById('RaceLaps').textContent = values.RaceLaps;
+    document.getElementById('CarDistAhead').textContent = values.CarDistAhead;
+    document.getElementById('CarDistBehind').textContent = values.CarDistBehind;
 
-      document.getElementById('fuelWindow').textContent =
-        `Fuel Window: ${projectedLaps?.toFixed(2) ?? '--'} laps`;
+    // === Driver Inputs ===
+    document.getElementById('Throttle').textContent = values.Throttle;
+    document.getElementById('Brake').textContent = values.Brake;
+    document.getElementById('Gear').textContent = values.Gear;
+    document.getElementById('RPM').textContent = values.RPM?.toFixed(0);
+    document.getElementById('Speed').textContent = values.Speed?.toFixed(3);
 
-      // You can expand this with tire modeling, stint planning, etc.
-    });
-  </script>
+    // === Driver Controls ===
+    document.getElementById('dcPitSpeedLimiterToggle').textContent = values.dcPitSpeedLimiterToggle;
+    document.getElementById('dpFuelAutoFillEnabled').textContent = values.dpFuelAutoFillEnabled;
+    document.getElementById('dpFuelAutoFillActive').textContent = values.dpFuelAutoFillActive;
+    document.getElementById('dcBrakeBias').textContent = values.dcBrakeBias?.toFixed(2);
+    document.getElementById('dcTractionControl').textContent = values.dcTractionControl;
+    document.getElementById('dcABS').textContent = values.dcABS;
+    document.getElementById('FuelLevel').textContent = values.FuelLevel?.toFixed(2);
+
+    // === Environment ===
+    document.getElementById('TrackTemp').textContent = values.TrackTemp?.toFixed(1);
+    document.getElementById('AirTemp').textContent = values.AirTemp?.toFixed(1);
+    document.getElementById('TrackWetness').textContent = values.TrackWetness;
+    document.getElementById('Skies').textContent = values.Skies;
+    document.getElementById('AirDensity').textContent = values.AirDensity?.toFixed(3);
+    document.getElementById('AirPressure').textContent = values.AirPressure?.toFixed(1);
+    document.getElementById('WindVel').textContent = values.WindVel?.toFixed(1);
+    document.getElementById('WindDir').textContent = values.WindDir?.toFixed(1);
+    document.getElementById('RelativeHumidity').textContent = values.RelativeHumidity?.toFixed(2);
+    document.getElementById('FogLevel').textContent = values.FogLevel;
+    document.getElementById('Precipitation').textContent = values.Precipitation?.toFixed(3);
+  });
+</script>
+
 </body>
 </html>
