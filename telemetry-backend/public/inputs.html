@@ -189,6 +189,8 @@ let lapCompleted = false;
 let currentLap = [];
 let finalLap = [];
 let lapBuffer = [];
+let liveLapPct = 0;
+
 
 
 // === Environment Trends Setup ===
@@ -203,6 +205,7 @@ let lastTelemetryTime = null;
 
 // === Telemetry Listener ===
 socket.on('telemetry', (data) => {
+  liveLapPct = values.LapDistPct; // keep updating this every tick
   const values = data?.values;
   if (!values) return;
 
@@ -406,19 +409,16 @@ function drawTrack() {
   trackCtx.clearRect(0, 0, trackCanvas.width, trackCanvas.height);
 
   if (finalLap.length > 0) {
-    // Smooth the lap first
     let smoothed = smooth(finalLap);
 
     // --- Blend start and end points ---
-    const blendCount = 5; // number of points to average at each end
+    const blendCount = 5;
     const avgPoints = (arr) => {
       const sum = arr.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
       return { x: sum.x / arr.length, y: sum.y / arr.length };
     };
     const startAvg = avgPoints(smoothed.slice(0, blendCount));
     const endAvg = avgPoints(smoothed.slice(-blendCount));
-
-    // Replace first and last few points with blended coords
     for (let i = 0; i < blendCount; i++) smoothed[i] = startAvg;
     for (let i = smoothed.length - blendCount; i < smoothed.length; i++) smoothed[i] = endAvg;
 
@@ -448,20 +448,52 @@ function drawTrack() {
       const sy = pt.y * autoScale + offsetY;
       i === 0 ? trackCtx.moveTo(sx, sy) : trackCtx.lineTo(sx, sy);
     });
-
-    // Close the loop
-    const first = smoothed[0];
-    trackCtx.lineTo(first.x * autoScale + offsetX, first.y * autoScale + offsetY);
-
+    trackCtx.lineTo(smoothed[0].x * autoScale + offsetX, smoothed[0].y * autoScale + offsetY);
     trackCtx.strokeStyle = 'white';
     trackCtx.stroke();
 
+    // === Draw Finish Line Marker ===
+    const finishX = smoothed[0].x * autoScale + offsetX;
+    const finishY = smoothed[0].y * autoScale + offsetY;
+    trackCtx.strokeStyle = 'red';
+    trackCtx.lineWidth = 2;
+    trackCtx.beginPath();
+    trackCtx.moveTo(finishX - 5, finishY - 5); // small diagonal bar
+    trackCtx.lineTo(finishX + 5, finishY + 5);
+    trackCtx.stroke();
+    trackCtx.lineWidth = 1; // reset
+
     console.log('Drawing final lap with', finalLap.length, 'points');
+
+    // === Draw Position Marker for Live Lap ===
+    if (finalLap.length > 0 && liveLapPct > 0 && liveLapPct <= 1) {
+        const smoothed = smooth(finalLap);
+
+        // Find the index along the lap
+        const idx = Math.floor(liveLapPct * smoothed.length);
+        const nextIdx = (idx + 1) % smoothed.length;
+        const t = (liveLapPct * smoothed.length) - idx; // interpolation factor
+
+        // Interpolate between points for smooth movement
+        const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
+        const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
+
+        // Apply same scaling/offset as the lap
+        const markerX = px * autoScale + offsetX;
+        const markerY = py * autoScale + offsetY;
+
+        // Draw the marker
+        trackCtx.fillStyle = 'yellow';
+        trackCtx.beginPath();
+        trackCtx.arc(markerX, markerY, 4, 0, Math.PI * 2);
+        trackCtx.fill();
+    }
   }
 
   requestAnimationFrame(drawTrack);
 }
 requestAnimationFrame(drawTrack);
+
 
 
 
