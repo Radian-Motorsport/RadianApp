@@ -96,51 +96,64 @@
 </ul>
 
   <script>
-const socket = io('https://radianapp.onrender.com');
 const canvas = document.getElementById('pedalCanvas');
 const ctx = canvas.getContext('2d');
 const buffer = [];
 const MAX_POINTS = 300;
-const maxSteeringRad = 1.5; // adjust if needed
+const maxSteeringRad = 1.5;
 
-
+// Push telemetry into buffer
 socket.on('telemetry', (data) => {
   const values = data?.values;
   if (!values) return;
 
   buffer.push({
-  throttle: values.ThrottleRaw * 100,
-  brake: values.Brake * 100,
-  steering: (values.SteeringWheelAngle / 1.5) * 100 // normalized
+    throttle: values.ThrottleRaw * 100,
+    brake: values.Brake * 100,
+    steering: (values.SteeringWheelAngle / maxSteeringRad) * 100
   });
 
   if (buffer.length > MAX_POINTS) buffer.shift();
-  drawGraph();
 });
 
+// Draw smooth scrolling graph
 function drawGraph() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Throttle (green)
+  ctx.beginPath();
+  ctx.strokeStyle = 'lime';
   for (let i = 0; i < buffer.length; i++) {
-    const x = i * 2; // spacing
-    const throttleY = canvas.height - buffer[i].throttle;
-    const brakeY = canvas.height - buffer[i].brake;
-    const steerY = canvas.height / 2 - (buffer[i].steering); // already scaled to ±100
-
-    
-    // Throttle (green)
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(x, throttleY, 2, 2);
-
-    // Brake (red)
-    ctx.fillStyle = 'red';
-    ctx.fillRect(x, brakeY, 2, 2);
-
-    // Steering (white)
-    ctx.fillStyle = 'white';
-    ctx.fillRect(x, steerY, 2, 2);
+    const x = i * 2;
+    const y = canvas.height - buffer[i].throttle;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
+  ctx.stroke();
+
+  // Brake (red)
+  ctx.beginPath();
+  ctx.strokeStyle = 'red';
+  for (let i = 0; i < buffer.length; i++) {
+    const x = i * 2;
+    const y = canvas.height - buffer[i].brake;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Steering (white)
+  ctx.beginPath();
+  ctx.strokeStyle = 'white';
+  for (let i = 0; i < buffer.length; i++) {
+    const x = i * 2;
+    const y = canvas.height / 2 - buffer[i].steering;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  requestAnimationFrame(drawGraph);
 }
+
+requestAnimationFrame(drawGraph); // Start the loop
 
 
 
@@ -218,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
