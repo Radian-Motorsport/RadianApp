@@ -186,7 +186,7 @@ const trackCanvas = document.getElementById('trackCanvas');
 const trackCtx = trackCanvas.getContext('2d');
 let x = 300, y = 300, heading = 0;
 const trackPoints = [];
-//const scale = 0.2; // Adjust to fit canvas size
+
 
 // === Environment Trends Setup ===
 const envCanvas = document.getElementById('envCanvas');
@@ -412,20 +412,16 @@ function drawTrack() {
   });
   trackCtx.strokeStyle = 'white';
   trackCtx.stroke();
-  const sx = pt.x * autoScale + offsetX;
-  const sy = pt.y * autoScale + offsetY;
 
-  //red dot
+  // Red dot for current position
   const dotX = x * autoScale + offsetX;
   const dotY = y * autoScale + offsetY;
-  
   trackCtx.fillStyle = 'red';
   trackCtx.fillRect(dotX - 2, dotY - 2, 4, 4);
 
   requestAnimationFrame(drawTrack);
-
   console.log('Drawing track with', trackPoints.length, 'points');
-}
+  }
 
 requestAnimationFrame(drawTrack);
 
