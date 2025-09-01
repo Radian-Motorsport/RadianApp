@@ -94,6 +94,9 @@
         <button onclick="location.href='inputs.html'">Inputs</button>
   </div>
 
+  <div id="refreshRate" style="margin-top: 10px; color: #0f0; font-size: 1rem;">
+  Refresh Rate: --
+  </div>
 
 
 
@@ -143,6 +146,21 @@
 
 
 <script>
+
+  let lastTelemetryTime = null;
+  let refreshRateDisplay = document.getElementById('refreshRate');
+
+  socket.on('telemetry', () => {
+    const now = Date.now();
+    if (lastTelemetryTime) {
+      const interval = now - lastTelemetryTime;
+      const hz = (1000 / interval).toFixed(1);
+      refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
+    }
+    lastTelemetryTime = now;
+  });
+
+
   const socket = io('https://radianapp.onrender.com');
 
   // === Live Value Display ===
