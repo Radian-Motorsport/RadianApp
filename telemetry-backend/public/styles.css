@@ -245,6 +245,128 @@ h2 {
   font-weight: bold;
 }
 
+/* Endurance Planner Styles */
+.race-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.race-info-grid div {
+  background-color: #222;
+  padding: 10px;
+  border-left: 3px solid #0f0;
+}
+
+.race-info-grid label {
+  display: block;
+  margin-bottom: 5px;
+  color: #999;
+}
+
+.race-info-grid span {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
+}
+
+.stint-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+/* Calculation Variables Section Styles */
+.calculation-variables div {
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.calculation-variables div:hover {
+  background-color: #2a2a2a;
+}
+
+.info-badge {
+  font-size: 0.8em;
+  background-color: #333;
+  border-radius: 50%;
+  padding: 2px 6px;
+  margin-left: 8px;
+  cursor: help;
+}
+
+.variable-trend {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 0.8em;
+}
+
+.trend-up {
+  color: #ff4d4d;
+}
+
+.trend-down {
+  color: #4dff4d;
+}
+
+.trend-stable {
+  color: #ffff4d;
+}
+
+/* Tooltip styles */
+.tooltip {
+  display: none;
+  position: absolute;
+  bottom: -40px;
+  left: 0;
+  right: 0;
+  background-color: #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.calculation-variables div:hover .tooltip {
+  display: block;
+}
+
+.stint-table th, 
+.stint-table td {
+  padding: 8px 12px;
+  border: 1px solid #333;
+  text-align: center;
+}
+
+.stint-table th {
+  background-color: #222;
+  color: #0f0;
+}
+
+.stint-table .stint-row {
+  background-color: #1a1a1a;
+}
+
+.stint-table .pit-row {
+  background-color: #222;
+  font-size: 0.9em;
+}
+
+.stint-table .current-stint {
+  background-color: #585500;
+  color: #fff;
+}
+
+.stint-table .current-pit {
+  background-color: #8B4000;
+  color: #fff;
+}
+
 /* Updated styles for the revamped index page */
 .status-indicators {
   display: flex;
