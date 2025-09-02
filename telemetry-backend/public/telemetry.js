@@ -319,8 +319,48 @@ function setupSocketListeners() {
 // Initialize the dashboard when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initDashboard);
 
-// Export public methods
+// Export public methods and data for other files to use
 window.telemetryDashboard = {
   initDashboard,
-  updateFuelGauge
+  updateFuelGauge,
+  // Expose fuel and lap time data for endurance planner
+  getFuelData: () => ({
+    fuelUsageHistory,
+    avgFuelUsed3: fuelUsageHistory.length >= 3
+      ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : null,
+    fuelAtLapStart,
+    currentFuelLevel: bufferedData?.values?.FuelLevel || 0,
+    maxFuel: tankCapacity,
+    avgFuelPerLap: avgFuelPerLap
+  }),
+  getLapTimeData: () => ({
+    lapTimeHistory,
+    avgLapTime: lapTimeHistory.length >= 3
+      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : lapAvg3,
+    lastLapTime,
+    bestLapTime
+  }),
+  getRaceData: () => ({
+    isRaceRunning: bufferedData?.values?.SessionTimeRemain < lastSessionTimeRemain,
+    raceTimeRemaining: bufferedData?.values?.SessionTimeRemain || 0,
+    currentLap,
+    sessionInfo: bufferedData?.sessionInfo,
+    sessionType,
+    trackName,
+    sessionLaps,
+    sessionTime
+  }),
+  getDriverData: () => ({
+    driverName,
+    teamName,
+    carNumber
+  }),
+  getTireData: () => ({
+    tireWearFL,
+    tireWearFR,
+    tireWearRL,
+    tireWearRR
+  })
 };
