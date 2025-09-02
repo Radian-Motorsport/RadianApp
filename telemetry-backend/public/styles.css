@@ -412,8 +412,8 @@ h2 {
 }
 
 #fuelGaugeContainer {
-  width: calc(100% - 30px); /* Subtract padding to prevent overflow */
-  padding: 15px;
+  width: 100%;
+  padding: 10px 10px; /* Even padding on all sides */
   background-color: #222;
   border-radius: 5px;
   margin: 20px 0;
@@ -432,7 +432,7 @@ h2 {
 
 #fuelGauge {
   width: 100%;
-  height: 6px; /* Your preferred height */
+  height: 7px; /* Increased to 7px as requested */
   border-radius: 4px;
   background-color: #000; /* Black when empty */
   appearance: none; /* Remove default appearance */
