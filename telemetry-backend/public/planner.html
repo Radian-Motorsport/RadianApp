@@ -33,30 +33,30 @@
     </div>
   </div>
   
-  <!-- Stint Table -->
+  <!-- Calculation Variables Section -->
   <div class="telemetry-block">
-    <h2>Stint Plan</h2>
-    <div id="live-table">
-      <table id="live-stint-table" class="stint-table">
-        <thead>
-          <tr>
-            <th>Stint</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Stint Duration</th>
-            <th>Stint Laps</th>
-            <th>Fuel Per Stint (L)</th>
-          </tr>
-        </thead>
-        <tbody id="live-stint-table-body">
-          <!-- Stint rows will be dynamically added here -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- JavaScript Resources -->
-  <script src="telemetry.js"></script>
-  <script src="planner.js"></script>
-</body>
-</html>
+    <h2>Calculation Variables <span class="info-badge" title="These values are used in the stint calculations">ℹ️</span></h2>
+    <div class="race-info-grid calculation-variables">
+      <div>
+        <label>Fuel Per Lap (3-lap avg):</label>
+        <span id="fuel-per-lap">--</span>
+        <div class="variable-trend" id="fuel-trend"></div>
+        <div class="tooltip">Average fuel consumption calculated from the last 3 laps for accuracy</div>
+      </div>
+      <div>
+        <label>Lap Time (3-lap avg):</label>
+        <span id="avg-lap-time">--</span>
+        <div class="variable-trend" id="laptime-trend"></div>
+        <div class="tooltip">Average lap time calculated from the last 3 laps for consistency</div>
+      </div>
+      <div>
+        <label>Tank Capacity:</label>
+        <span id="max-fuel">--</span>
+      </div>
+      <div>
+        <label>Current Fuel Level:</label>
+        <span id="current-fuel">--</span>
+      </div>
+      <div>
+        <label>Pit Stop Duration (avg):</label>
+        <span id="pit-stop-time">--</span>
