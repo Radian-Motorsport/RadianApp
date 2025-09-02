@@ -1,0 +1,246 @@
+/* Main styles for Telemetry Dashboard */
+body {
+  background-color: #121212;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  margin: 0;
+}
+
+/* Index page layout */
+body.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 0;
+}
+
+/* Navigation */
+.nav {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+}
+
+.nav button {
+  background-color: #1e1e1e;
+  color: #00ff00;
+  border: 1px solid #00ff00;
+  border-radius: 5px;
+  padding: 8px 16px;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav button:hover {
+  background-color: #00ff00;
+  color: #000;
+}
+
+/* Status indicators */
+#refreshRate {
+  margin-top: 10px;
+  color: #0f0;
+  font-size: 1rem;
+}
+
+#streamingStatus {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#coastingStatus {
+  color: grey;
+  transition: color 0.2s ease;
+}
+
+#overlapStatus {
+  color: grey;
+  transition: color 0.2s ease;
+}
+
+.coasting-active {
+  color: orange;
+}
+
+.overlap-active {
+  color: turquoise;
+}
+
+#teamLapDisplay {
+  margin-top: 20px;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+#bufferStatus {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #888;
+}
+
+/* Fuel gauge styling */
+#fuelGaugeContainer {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  width: 300px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+#fuelGaugeContainer label {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+#fuelGauge {
+  width: 100%;
+  height: 30px;
+  appearance: none;
+  background: #333;
+  border-radius: 5px;
+}
+
+#fuelGauge::-webkit-progress-bar {
+  background-color: #222;
+  border-radius: 5px;
+}
+
+#fuelGauge::-webkit-progress-value {
+  background-color: #00ff00;
+  border-radius: 5px;
+}
+
+#fuelGauge::-moz-progress-bar {
+  background-color: #00ff00;
+  border-radius: 5px;
+}
+
+#fuelValue {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #aaa;
+}
+
+/* Stint summary section */
+#stintSummary {
+  margin-top: 20px;
+  font-size: 1rem;
+  color: #aaa;
+}
+
+#stintSummary h3 {
+  color: #0f0;
+  font-size: 1.2rem;
+}
+
+#tireWearSummary {
+  margin-top: 10px;
+}
+
+/* Utility classes */
+.dimmed {
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+/* Inputs page styles */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1a1a1a;
+  padding: 10px 20px;
+  border-bottom: 1px solid #333;
+}
+
+.top-bar button {
+  background-color: #333;
+  color: #0f0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.top-bar button:hover {
+  background-color: #444;
+  color: #fff;
+}
+
+.telemetry-block {
+  margin-top: 20px;
+}
+
+.inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.inputs-grid div {
+  background-color: #1e1e1e;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+  border: 1px solid #333;
+}
+
+.inputs-grid label {
+  display: block;
+  font-weight: bold;
+  color: #0f0;
+  margin-bottom: 4px;
+}
+
+.inputs-grid span {
+  color: #fff;
+}
+
+canvas {
+  display: block;
+  margin: 0 auto;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+
+h2 {
+  margin-top: 30px;
+  color: #0f0;
+  font-size: 1.3rem;
+}
+
+.data-section {
+  margin: 20px 0;
+}
+
+.data-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.data-list li {
+  margin-bottom: 6px;
+  background-color: #1a1a1a;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 3px solid #0f0;
+}
+
+.data-list span {
+  float: right;
+  font-weight: bold;
+}

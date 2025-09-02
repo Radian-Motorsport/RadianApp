@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy Planner</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button onclick="location.href='index.html'">Strategy</button>
+    <div id="refreshRate">Refresh Rate: --</div>
+  </div>
+
+  <!-- Track Map -->
+  <div class="telemetry-block">
+    <canvas id="trackCanvas" width="600" height="600"></canvas>
+  </div>
+
+  <!-- Pedal Trace -->
+  <div class="telemetry-block">
+    <canvas id="pedalCanvas" width="600" height="200"></canvas>
+
+    <div class="inputs-grid">
+      <div><label>Throttle</label><span id="Throttle">--</span></div>
+      <div><label>Brake</label><span id="Brake">--</span></div>
+      <div><label>Clutch</label><span id="Clutch">--</span></div>
+      <div><label>Gear</label><span id="Gear">--</span></div>
+      <div><label>RPM</label><span id="RPM">--</span></div>
+      <div><label>Speed</label><span id="Speed">--</span></div>
+      <div><label>Steering</label><span id="Steering">--</span></div>
+    </div>
+  </div>
+
+  <!-- Status Section -->
+  <section class="data-section">
+    <h2>Status</h2>
+    <ul class="data-list">
+      <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
+      <li>IsOnTrackCar: <span id="IsOnTrackCar">--</span></li>
+      <li>IsInGarage: <span id="IsInGarage">--</span></li>
+      <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
+      <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
+      <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
+      <li>PlayerCarIdx: <span id="PlayerCarIdx">--</span></li>
+      <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
+      <li>My Incidents: <span id="PlayerCarMyIncidentCount">--</span></li>
+      <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
+      <li>LapDistPct: <span id="LapDistPct">--</span></li>
+      <li>RaceLaps: <span id="RaceLaps">--</span></li>
+      <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
+      <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
+    </ul>
+  </section>
+
+  <!-- Driver Controls Section -->
+  <section class="data-section">
+    <h2>Driver Controls</h2>
+    <ul class="data-list">
+      <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
+      <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
+      <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
+      <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
+      <li>Traction Control: <span id="dcTractionControl">--</span></li>
+      <li>ABS: <span id="dcABS">--</span></li>
+      <li>Fuel Level: <span id="FuelLevel">--</span></li>
+    </ul>
+  </section>
+
+  <!-- Environment Section -->
+  <section class="data-section">
+    <h2>Environment</h2>
+    <h3>Environment Trends</h3>
+    <canvas id="envCanvas" width="600" height="200"></canvas>
+
+    <ul class="data-list">
+      <li>Track Temp: <span id="TrackTemp">--</span></li>
+      <li>Air Temp: <span id="AirTemp">--</span></li>
+      <li>Track Wetness: <span id="TrackWetness">--</span></li>
+      <li>Skies: <span id="Skies">--</span></li>
+      <li>Air Density: <span id="AirDensity">--</span></li>
+      <li>Air Pressure: <span id="AirPressure">--</span></li>
+      <li>Wind Velocity: <span id="WindVel">--</span></li>
+      <li>Wind Direction: <span id="WindDir">--</span></li>
+      <li>Humidity: <span id="RelativeHumidity">--</span></li>
+      <li>Fog Level: <span id="FogLevel">--</span></li>
+      <li>Precipitation: <span id="Precipitation">--</span></li>
+    </ul>
+  </section>
+
+  <!-- JavaScript Resources -->
+  <script src="trackmap.js"></script>
+  <script src="pedaltrace.js"></script>
+  <script src="envirotrace.js"></script>
+  <script src="inputs.js"></script>
+</body>
+</html>
