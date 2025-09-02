@@ -60,3 +60,50 @@
       <div>
         <label>Pit Stop Duration (avg):</label>
         <span id="pit-stop-time">--</span>
+      </div>
+      <div>
+        <label>Safety Margin:</label>
+        <span id="safety-margin-display">5% (default)</span>
+        <div class="tooltip">5% of tank capacity is reserved for safety</div>
+      </div>
+      <div>
+        <label>Session Type:</label>
+        <span id="session-type">--</span>
+      </div>
+      <div>
+        <label>Track Name:</label>
+        <span id="track-name">--</span>
+      </div>
+      <div>
+        <label>Driver Name:</label>
+        <span id="driver-name">--</span>
+      </div>
+    </div>
+  </div>
+  <!-- Stint Table -->
+  <div class="telemetry-block">
+    <h2>Stint Plan</h2>
+    <div id="live-table">
+      <table id="live-stint-table" class="stint-table">
+        <thead>
+          <tr>
+            <th>Stint</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Stint Duration</th>
+            <th>Stint Laps</th>
+            <th>Fuel Per Stint (L)</th>
+          </tr>
+        </thead>
+        <tbody id="live-stint-table-body">
+          <!-- Stint rows will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="telemetry.js"></script>
+  <script src="planner.js"></script>
+</body>
+</html>
