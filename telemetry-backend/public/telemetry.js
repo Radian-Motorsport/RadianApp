@@ -36,6 +36,7 @@ function initDashboard() {
     fuelPerLap: document.getElementById('fuelPerLap'),
     fuelAvg: document.getElementById('fuelAvg'),
     fuelAvg5: document.getElementById('fuelAvg5'),
+    lastLapTime: document.getElementById('lastLapTime'),
     lapAvg3: document.getElementById('lapAvg3'),
     lapAvg5: document.getElementById('lapAvg5'),
     fuelProjectedLaps: document.getElementById('fuelProjectedLaps'),
@@ -178,8 +179,8 @@ function handleDriverExit(values, teamLap) {
   
   updateTireWear(lastStintTireWear);
 
-  elements.fuelPerLap.textContent = `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
-  elements.fuelAvg.textContent = `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+  elements.fuelPerLap.textContent = `${lastFuelUsed?.toFixed(2) ?? '--'} L`;
+  elements.fuelAvg.textContent = `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
   driverWasOnTrack = false;
   elements.bufferStatus.textContent = 'Waiting for driver…';
@@ -232,14 +233,14 @@ function processLapCompletion(lapCompleted, fuel) {
       ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
       : null;
 
-    elements.lapAvg3.textContent = `3-Lap Avg Lap Time: ${lapAvg3?.toFixed(2) ?? '--'}s`;
+    elements.lapAvg3.textContent = lapAvg3 ? formatTimeMS(lapAvg3) : '--:--';
 
     // 5-Lap Time Average
     const lapAvg5 = lapTimeHistory.length === 5
       ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
       : null;
 
-    elements.lapAvg5.textContent = `5-Lap Avg Lap Time: ${lapAvg5?.toFixed(2) ?? '--'}s`;
+    elements.lapAvg5.textContent = lapAvg5 ? formatTimeMS(lapAvg5) : '--:--';
   }
   lastLapStartTime = now;
 
@@ -262,10 +263,10 @@ function processLapCompletion(lapCompleted, fuel) {
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
         : null;
 
-      elements.fuelAvg5.textContent = `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+      elements.fuelAvg5.textContent = `${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
 
       // Display last lap fuel
-      elements.fuelPerLap.textContent = `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+      elements.fuelPerLap.textContent = `${fuelUsed.toFixed(2)} L`;
     }
   }
 
@@ -278,15 +279,12 @@ function processLapCompletion(lapCompleted, fuel) {
     ? projectedLaps * lapAvg3
     : null;
 
-  elements.fuelProjectedLaps.textContent = `Projected Laps Remaining: ${projectedLaps?.toFixed(2) ?? '--'}`;
+  elements.fuelProjectedLaps.textContent = `${projectedLaps?.toFixed(2) ?? '--'}`;
 
   if (projectedTimeSec) {
-    const minutes = Math.floor(projectedTimeSec / 60);
-    const seconds = Math.floor(projectedTimeSec % 60);
-    elements.fuelProjectedTime.textContent = 
-      `Projected Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    elements.fuelProjectedTime.textContent = formatTimeMS(projectedTimeSec);
   } else {
-    elements.fuelProjectedTime.textContent = 'Projected Time Remaining: --';
+    elements.fuelProjectedTime.textContent = '--:--';
   }
 
   fuelAtLapStart = fuel;
@@ -315,6 +313,11 @@ function setupSocketListeners() {
       const carIdx = values?.PlayerCarIdx;
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
       const isOnTrack = values?.IsOnTrack;
+      
+      // Update last lap time if available
+      if (values?.LapLastLapTime !== undefined && values.LapLastLapTime > 0) {
+        elements.lastLapTime.textContent = formatTimeMS(values.LapLastLapTime);
+      }
       
       // Track incidents if available in telemetry
       if (driverWasOnTrack && values.PlayerCarMyIncidentCount !== undefined) {

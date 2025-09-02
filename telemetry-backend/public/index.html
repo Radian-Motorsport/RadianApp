@@ -46,34 +46,49 @@
   <!-- Fuel Statistics -->
   <div class="telemetry-block">
     <h2>Fuel Statistics <span class="info-badge" title="Based on real-time telemetry data">ℹ️</span></h2>
-    <div class="race-info-grid">
-      <div>
-        <label>Fuel Used Last Lap:</label>
-        <span id="fuelPerLap">--</span>
+    <div class="fuel-stats-grid">
+      <!-- Column 1: Fuel Consumption -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Fuel Used Last Lap:</label>
+          <span id="fuelPerLap">--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Fuel:</label>
+          <span id="fuelAvg">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Fuel:</label>
+          <span id="fuelAvg5">--</span>
+        </div>
       </div>
-      <div>
-        <label>3-Lap Avg Fuel:</label>
-        <span id="fuelAvg">--</span>
+      
+      <!-- Column 2: Lap Times -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Last Lap Time:</label>
+          <span id="lastLapTime">--:--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Time:</label>
+          <span id="lapAvg3">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Time:</label>
+          <span id="lapAvg5">--</span>
+        </div>
       </div>
-      <div>
-        <label>5-Lap Avg Fuel:</label>
-        <span id="fuelAvg5">--</span>
-      </div>
-      <div>
-        <label>3-Lap Avg Time:</label>
-        <span id="lapAvg3">--</span>
-      </div>
-      <div>
-        <label>5-Lap Avg Time:</label>
-        <span id="lapAvg5">--</span>
-      </div>
-      <div>
-        <label>Projected Laps:</label>
-        <span id="fuelProjectedLaps">--</span>
-      </div>
-      <div>
-        <label>Projected Time:</label>
-        <span id="fuelProjectedTime">--</span>
+      
+      <!-- Column 3: Projections -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Projected Laps:</label>
+          <span id="fuelProjectedLaps">--</span>
+        </div>
+        <div>
+          <label>Projected Time:</label>
+          <span id="fuelProjectedTime">--</span>
+        </div>
       </div>
     </div>
   </div>

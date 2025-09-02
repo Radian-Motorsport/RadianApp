@@ -207,6 +207,38 @@ h2 {
   margin: 15px 0;
 }
 
+/* Fuel statistics 3-column layout */
+.fuel-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.fuel-stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fuel-stats-column div {
+  background-color: #222;
+  padding: 10px;
+  border-left: 3px solid #0f0;
+}
+
+.fuel-stats-column label {
+  display: block;
+  margin-bottom: 5px;
+  color: #999;
+}
+
+.fuel-stats-column span {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
+}
+
 .race-info-grid div {
   background-color: #222;
   padding: 10px;
@@ -544,4 +576,85 @@ h2 {
 .action-button:hover {
   background-color: #0f0;
   color: #000;
+}
+
+/* Tire wear visualization */
+.tire-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 15px auto;
+  width: 320px;
+}
+
+.tire-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.tire-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  padding: 10px;
+  width: 140px;
+}
+
+.tire-cell label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #0f0;
+}
+
+.tire-visual {
+  display: flex;
+  width: 90px; /* Width for a 5:3 ratio */
+  height: 120px; /* Height for a 5:3 ratio */
+  border: 2px solid #444;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.tire-band {
+  flex: 1;
+  height: 100%;
+  background-color: #333;
+  transition: background-color 0.3s ease;
+  border-right: 1px solid #222;
+}
+
+.tire-band:last-child {
+  border-right: none;
+}
+
+/* Tire wear color scheme */
+.wear-100 { background-color: #000000; } /* Black (97.5-100%) */
+.wear-97 { background-color: #8a2be2; }  /* Purple (95-97.5%) */
+.wear-95 { background-color: #4169e1; }  /* Blue (92.5-95%) */
+.wear-92 { background-color: #008080; }  /* Teal (90-92.5%) */
+.wear-90 { background-color: #00a86b; }  /* Green (87.5-90%) */
+.wear-87 { background-color: #9acd32; }  /* Lime (85-87.5%) */
+.wear-85 { background-color: #ffd700; }  /* Yellow (82.5-85%) */
+.wear-82 { background-color: #daa520; }  /* Gold (80-82.5%) */
+.wear-80 { background-color: #ff8c00; }  /* Orange (77.5-80%) */
+.wear-77 { background-color: #ff0000; }  /* Red (75-77.5%) */
+.wear-60 { background-color: #ff7f50; }  /* Coral (60-75%) */
+.wear-50 { background-color: #ffffff; }  /* White (0-60%) */
+
+/* Tire value display */
+.tire-cell span {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-top: 5px;
+  font-size: 0.9rem;
+}
+
+.tire-value {
+  flex: 1;
+  text-align: center;
 }
