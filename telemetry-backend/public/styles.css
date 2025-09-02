@@ -81,52 +81,6 @@ body.dashboard-layout {
   color: #888;
 }
 
-/* Fuel gauge styling */
-#fuelGaugeContainer {
-  background: #1e1e1e;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-  width: 300px;
-  text-align: center;
-  margin-top: 20px;
-}
-
-#fuelGaugeContainer label {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  display: block;
-}
-
-#fuelGauge {
-  width: 100%;
-  height: 30px;
-  appearance: none;
-  background: #333;
-  border-radius: 5px;
-}
-
-#fuelGauge::-webkit-progress-bar {
-  background-color: #222;
-  border-radius: 5px;
-}
-
-#fuelGauge::-webkit-progress-value {
-  background-color: #00ff00;
-  border-radius: 5px;
-}
-
-#fuelGauge::-moz-progress-bar {
-  background-color: #00ff00;
-  border-radius: 5px;
-}
-
-#fuelValue {
-  margin-top: 10px;
-  font-size: 1rem;
-  color: #aaa;
-}
-
 /* Stint summary section */
 #stintSummary {
   margin-top: 20px;
