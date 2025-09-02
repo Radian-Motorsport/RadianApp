@@ -1,0 +1,45 @@
+/* Additional styles specific to staticplanner.html */
+
+/* Fine-tune the input styling for staticplanner */
+.telemetry-block .input-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 15px;
+}
+
+.telemetry-block .input-group div {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+/* Additional styling to ensure inputs look good */
+.telemetry-block input[type="number"] {
+  background-color: #222;
+  color: white;
+  border: 1px solid #333;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: 'Orbitron', sans-serif;
+  width: 100%;
+}
+
+/* Make input hints more visible */
+.input-hint {
+  font-size: 0.8em;
+  color: #999;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Button styling */
+.telemetry-block .button-group {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-start;
+}
+
+/* Space the sections properly */
+.telemetry-block {
+  margin-bottom: 20px;
+}
