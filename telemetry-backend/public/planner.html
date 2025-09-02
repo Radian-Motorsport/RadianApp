@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endurance Planner</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button onclick="location.href='index.html'">Strategy</button>
+    <button onclick="location.href='inputs.html'">Inputs</button>
+    <div id="refreshRate">Refresh Rate: --</div>
+  </div>
+
+  <!-- Endurance Planner Content -->
+  <div class="telemetry-block">
+    <h2>Endurance Planner</h2>
+    
+    <!-- Race Info Summary -->
+    <div class="race-info-grid">
+      <div><label>Race Time Remaining:</label><span id="countdown-timer">--:--:--</span></div>
+      <div><label>Next Pit Stop In:</label><span id="next-pitstop-time">--:--:--</span></div>
+      <div><label>Current Stint:</label><span id="current-stint-display">--</span></div>
+      <div><label>Stint Duration:</label><span id="live-stint-duration-display">--:--:--</span></div>
+      <div><label>Laps Per Stint:</label><span id="live-laps-per-stint-display">--</span></div>
+      <div><label>Total Pit Stops:</label><span id="live-pit-stops-display">--</span></div>
+    </div>
+  </div>
+  
+  <!-- Stint Table -->
+  <div class="telemetry-block">
+    <h2>Stint Plan</h2>
+    <div id="live-table">
+      <table id="live-stint-table" class="stint-table">
+        <thead>
+          <tr>
+            <th>Stint</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Stint Duration</th>
+            <th>Stint Laps</th>
+            <th>Fuel Per Stint (L)</th>
+          </tr>
+        </thead>
+        <tbody id="live-stint-table-body">
+          <!-- Stint rows will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="telemetry.js"></script>
+  <script src="planner.js"></script>
+</body>
+</html>
