@@ -18,6 +18,16 @@ let driverWasOnTrack = false;
 let lastTelemetryTime = null;
 let stintStartTime = null;
 let lastPitStopTimeValue = null;
+
+// Previous value tracking for color coding
+let previousValues = {
+  fuelPerLap: null,
+  fuelAvg: null,
+  fuelAvg5: null,
+  lastLapTime: null,
+  lapAvg3: null,
+  lapAvg5: null
+};
 let stintIncidentCount = 0;
 
 const MIN_LAPS_FOR_VALID_DATA = 2;
@@ -108,6 +118,67 @@ function updateTireVisual(position, tire) {
 }
 
 // Update a single tire band's color based on wear percentage
+// Helper function to update value with color based on context
+function updateValueWithColor(element, text, value, type, id) {
+  if (!element) return;
+  
+  // Remove any existing value classes
+  element.classList.remove('value-good', 'value-warn', 'value-bad');
+  element.textContent = text;
+  
+  if (value === null || value === undefined) return;
+  
+  // Default threshold for considering values "the same"
+  const THRESHOLD = 0.05; // 5% threshold
+  
+  if (type === 'projection') {
+    // For projections - use fixed thresholds
+    if (value > 10) element.classList.add('value-good');       // Lots of laps/time left
+    else if (value > 5) element.classList.add('value-warn');   // Getting low
+    else element.classList.add('value-bad');                   // Critical
+  } 
+  else if (id && previousValues[id] !== null) {
+    // Compare with previous value
+    const prevValue = previousValues[id];
+    const percentDiff = Math.abs(value - prevValue) / prevValue;
+    
+    if (type === 'fuel') {
+      // For fuel - lower is better
+      if (percentDiff < THRESHOLD) {
+        // Values are similar (within threshold)
+        element.classList.add('value-warn');
+      } else if (value < prevValue) {
+        // Using less fuel than before - good
+        element.classList.add('value-good');
+      } else {
+        // Using more fuel than before - bad
+        element.classList.add('value-bad');
+      }
+    } 
+    else if (type === 'lapTime') {
+      // For lap time - lower is better
+      if (percentDiff < THRESHOLD) {
+        // Times are similar (within threshold)
+        element.classList.add('value-warn');
+      } else if (value < prevValue) {
+        // Faster lap than before - good
+        element.classList.add('value-good');
+      } else {
+        // Slower lap than before - bad
+        element.classList.add('value-bad');
+      }
+    }
+  } else {
+    // First value, no comparison possible - use neutral color
+    element.classList.add('value-warn');
+  }
+  
+  // Store current value for next comparison
+  if (id) {
+    previousValues[id] = value;
+  }
+}
+
 function updateTireBandColor(elementId, wearPercentage) {
   const element = document.getElementById(elementId);
   if (!element) return;
@@ -179,8 +250,8 @@ function handleDriverExit(values, teamLap) {
   
   updateTireWear(lastStintTireWear);
 
-  elements.fuelPerLap.textContent = `${lastFuelUsed?.toFixed(2) ?? '--'} L`;
-  elements.fuelAvg.textContent = `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+  updateValueWithColor(elements.fuelPerLap, `${lastFuelUsed?.toFixed(2) ?? '--'} L`, lastFuelUsed, 'fuel', 'fuelPerLap');
+  updateValueWithColor(elements.fuelAvg, `${avgFuelUsed?.toFixed(2) ?? '--'} L`, avgFuelUsed, 'fuel', 'fuelAvg');
 
   driverWasOnTrack = false;
   elements.bufferStatus.textContent = 'Waiting for driver…';
@@ -233,14 +304,14 @@ function processLapCompletion(lapCompleted, fuel) {
       ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
       : null;
 
-    elements.lapAvg3.textContent = lapAvg3 ? formatTimeMS(lapAvg3) : '--:--';
+    updateValueWithColor(elements.lapAvg3, lapAvg3 ? formatTimeMS(lapAvg3) : '--:--', lapAvg3, 'lapTime', 'lapAvg3');
 
     // 5-Lap Time Average
     const lapAvg5 = lapTimeHistory.length === 5
       ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
       : null;
 
-    elements.lapAvg5.textContent = lapAvg5 ? formatTimeMS(lapAvg5) : '--:--';
+    updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
   }
   lastLapStartTime = now;
 
@@ -263,10 +334,10 @@ function processLapCompletion(lapCompleted, fuel) {
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
         : null;
 
-      elements.fuelAvg5.textContent = `${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+      updateValueWithColor(elements.fuelAvg5, `${avgFuelUsed5?.toFixed(2) ?? '--'} L`, avgFuelUsed5, 'fuel', 'fuelAvg5');
 
       // Display last lap fuel
-      elements.fuelPerLap.textContent = `${fuelUsed.toFixed(2)} L`;
+      updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
     }
   }
 
@@ -279,10 +350,10 @@ function processLapCompletion(lapCompleted, fuel) {
     ? projectedLaps * lapAvg3
     : null;
 
-  elements.fuelProjectedLaps.textContent = `${projectedLaps?.toFixed(2) ?? '--'}`;
+  updateValueWithColor(elements.fuelProjectedLaps, `${projectedLaps?.toFixed(2) ?? '--'}`, projectedLaps, 'projection');
 
   if (projectedTimeSec) {
-    elements.fuelProjectedTime.textContent = formatTimeMS(projectedTimeSec);
+    updateValueWithColor(elements.fuelProjectedTime, formatTimeMS(projectedTimeSec), projectedTimeSec, 'projection');
   } else {
     elements.fuelProjectedTime.textContent = '--:--';
   }
@@ -316,7 +387,7 @@ function setupSocketListeners() {
       
       // Update last lap time if available
       if (values?.LapLastLapTime !== undefined && values.LapLastLapTime > 0) {
-        elements.lastLapTime.textContent = formatTimeMS(values.LapLastLapTime);
+        updateValueWithColor(elements.lastLapTime, formatTimeMS(values.LapLastLapTime), values.LapLastLapTime, 'lapTime', 'lastLapTime');
       }
       
       // Track incidents if available in telemetry

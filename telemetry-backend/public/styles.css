@@ -239,6 +239,19 @@ h2 {
   color: #fff;
 }
 
+/* Value color indicators */
+.value-good {
+  color: #4dff4d !important; /* Green for better/good values */
+}
+
+.value-warn {
+  color: #ffff4d !important; /* Yellow for on-target/warning values */
+}
+
+.value-bad {
+  color: #ff4d4d !important; /* Red for worse/bad values */
+}
+
 .race-info-grid div {
   background-color: #222;
   padding: 10px;
