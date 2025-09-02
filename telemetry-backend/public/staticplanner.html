@@ -7,59 +7,6 @@
   <!-- External Dependencies -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .input-form {
-      background-color: #1a1a1a;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 15px auto;
-      max-width: 800px;
-    }
-    .input-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-      margin: 15px 0;
-    }
-    .input-group label {
-      display: block;
-      margin-bottom: 5px;
-      color: #0f0;
-      font-weight: bold;
-    }
-    .input-group input {
-      width: 100%;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #333;
-      background-color: #222;
-      color: white;
-      font-family: 'Orbitron', sans-serif;
-    }
-    .input-group input:focus {
-      border-color: #0f0;
-      outline: none;
-    }
-    .button-group {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-    }
-    .button-group button {
-      background-color: #333;
-      color: #0f0;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-family: 'Orbitron', sans-serif;
-      transition: all 0.2s;
-    }
-    .button-group button:hover {
-      background-color: #0f0;
-      color: #000;
-    }
-  </style>
 </head>
 <body>
   <!-- Top Bar -->
@@ -89,6 +36,11 @@
       <div>
         <label for="raceDuration">Race Duration (min):</label>
         <input type="number" id="raceDuration" value="60" step="5">
+      </div>
+      <div>
+        <label for="safetyMargin">Safety Margin (%):</label>
+        <input type="number" id="safetyMargin" value="5" min="0" max="20" step="1">
+        <div class="input-hint">Amount of fuel to reserve (% of tank)</div>
       </div>
     </div>
     
@@ -159,6 +111,11 @@
         <label>Pit Stop Duration:</label>
         <span id="pit-stop-time">--</span>
       </div>
+      <div>
+        <label>Safety Margin:</label>
+        <span id="safety-margin-display">--</span>
+        <div class="tooltip">Amount of fuel reserved for safety</div>
+      </div>
     </div>
   </div>
   
@@ -201,6 +158,7 @@
     let stintDuration = 0;
     let lapsPerStint = 0;
     let isPitting = false;
+    let safetyMargin = 5; // Default 5% safety margin
 
     // Initialize the page when DOM is loaded
     document.addEventListener('DOMContentLoaded', initStaticPlanner);
@@ -225,6 +183,7 @@
       currentLap = parseInt(document.getElementById('currentLap').value) || 1;
       currentStintNumber = parseInt(document.getElementById('currentStintNumber').value) || 1;
       pitStopTime = parseFloat(document.getElementById('pitStopTime').value) || 45;
+      safetyMargin = parseFloat(document.getElementById('safetyMargin').value) || 5;
       
       // Update race time remaining based on current lap
       const elapsedTime = (currentLap - 1) * avgLapTime;
@@ -245,6 +204,7 @@
       document.getElementById('currentLap').value = 1;
       document.getElementById('currentStintNumber').value = 1;
       document.getElementById('pitStopTime').value = 45;
+      document.getElementById('safetyMargin').value = 5;
       
       // Reset to default values
       tankCapacity = 104;
@@ -256,6 +216,7 @@
       currentStintNumber = 1;
       pitStopTime = 45;
       raceTimeRemaining = 3600;
+      safetyMargin = 5;
       
       // Recalculate stint plan with default values
       calculateStintPlan();
@@ -283,11 +244,14 @@
         tankCapacity = tankCapacity || 104;
       }
       
+      // Ensure safety margin is within reasonable bounds
+      safetyMargin = Math.max(0, Math.min(20, safetyMargin));
+      
       // Clear previous stint data
       stintData = [];
       
       // Calculate basic stint values
-      const fuelPerStint = tankCapacity * 0.95; // Using 95% of tank capacity (leave 5% margin)
+      const fuelPerStint = tankCapacity * (1 - (safetyMargin / 100)); // Using user-defined safety margin
       lapsPerStint = Math.floor(fuelPerStint / fuelPerLap);
       stintDuration = lapsPerStint * avgLapTime;
       
@@ -410,6 +374,7 @@
       document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
       document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
       document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
+      document.getElementById('safety-margin-display').textContent = safetyMargin + "% (" + (tankCapacity * safetyMargin / 100).toFixed(1) + " L)";
 
       // Update stint table
       const tbody = document.getElementById('live-stint-table-body');
