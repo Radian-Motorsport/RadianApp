@@ -111,7 +111,8 @@ function setupDataSharing() {
     getNextPitTime: () => nextPitStop,
     getLapsPerStint: () => lapsPerStint,
     getStintDuration: () => stintDuration,
-    isPitting: () => isPitting
+    isPitting: () => isPitting,
+    getSafetyMargin: () => 5 // Fixed 5% safety margin
   };
   
   // Log data sharing setup
@@ -324,8 +325,11 @@ function calculateStintPlan() {
   // Clear previous stint data
   stintData = [];
   
+  // Use a 5% safety margin (same as default in static planner)
+  const safetyMargin = 5; // 5% safety margin
+  
   // Calculate basic stint values
-  const fuelPerStint = tankCapacity * 0.95; // Using 95% of tank capacity (leave 5% margin)
+  const fuelPerStint = tankCapacity * (1 - (safetyMargin / 100)); // Using 95% of tank capacity (leave 5% margin)
   lapsPerStint = Math.floor(fuelPerStint / fuelPerLap);
   stintDuration = lapsPerStint * avgLapTime;
   
@@ -456,6 +460,7 @@ function updateUI() {
   document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
   document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
   document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
+  document.getElementById('safety-margin-display').textContent = "5% (" + (tankCapacity * 0.05).toFixed(1) + " L)";
   
   // Update additional info if available from telemetryDashboard
   if (window.telemetryDashboard) {
