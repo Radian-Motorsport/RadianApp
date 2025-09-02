@@ -109,23 +109,64 @@
     </div>
     
     <h3>Tire Wear</h3>
-    <div id="tireWearSummary" class="race-info-grid">
-      <div>
-        <label>Right Front:</label>
-        <span id="tireRF">L-- M-- R--</span>
+    <div id="tireWearSummary" class="tire-grid">
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>Left Front:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLFL"></div>
+            <div class="tire-band" id="tireLFM"></div>
+            <div class="tire-band" id="tireLFR"></div>
+          </div>
+          <span id="tireLF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>Right Front:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRFL"></div>
+            <div class="tire-band" id="tireRFM"></div>
+            <div class="tire-band" id="tireRFR"></div>
+          </div>
+          <span id="tireRF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
       </div>
-      <div>
-        <label>Left Front:</label>
-        <span id="tireLF">L-- M-- R--</span>
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>Left Rear:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLRL"></div>
+            <div class="tire-band" id="tireLRM"></div>
+            <div class="tire-band" id="tireLRR"></div>
+          </div>
+          <span id="tireLR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>Right Rear:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRRL"></div>
+            <div class="tire-band" id="tireRRM"></div>
+            <div class="tire-band" id="tireRRR"></div>
+          </div>
+          <span id="tireRR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
       </div>
-      <div>
-        <label>Right Rear:</label>
-        <span id="tireRR">L-- M-- R--</span>
-      </div>
-      <div>
-        <label>Left Rear:</label>
-        <span id="tireLR">L-- M-- R--</span>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -150,6 +191,47 @@
 
 
   const socket = io('https://radianapp.onrender.com');
+
+  // === Tire Wear Visualization ===
+  function getTireWearClass(wearPercentage) {
+    // Convert decimal wear to percentage and get appropriate CSS class
+    const wear = wearPercentage * 100;
+    if (wear >= 97.5) return 'wear-100';   // Purple (97.5-100%)
+    if (wear >= 95) return 'wear-97';      // Violet (95-97.5%)
+    if (wear >= 92.5) return 'wear-95';    // Blue (92.5-95%)
+    if (wear >= 90) return 'wear-92';      // Turquoise (90-92.5%)
+    if (wear >= 87.5) return 'wear-90';    // Green (87.5-90%)
+    if (wear >= 85) return 'wear-87';      // Lime (85-87.5%)
+    if (wear >= 82.5) return 'wear-85';    // Yellow (82.5-85%)
+    if (wear >= 80) return 'wear-82';      // Gold (80-82.5%)
+    if (wear >= 77.5) return 'wear-80';    // Orange (77.5-80%)
+    if (wear >= 75) return 'wear-77';      // Coral (75-77.5%)
+    if (wear >= 60) return 'wear-60';      // Red (60-75%)
+    return 'wear-50';                      // Pink (0-60%)
+  }
+  
+  function updateTireVisual(position, wearData) {
+    // Update the visual representation for each tire band (L, M, R)
+    const leftBand = document.getElementById(`tire${position}L`);
+    const middleBand = document.getElementById(`tire${position}M`);
+    const rightBand = document.getElementById(`tire${position}R`);
+    
+    // Remove all wear classes
+    const wearClasses = [
+      'wear-100', 'wear-97', 'wear-95', 'wear-92', 
+      'wear-90', 'wear-87', 'wear-85', 'wear-82', 
+      'wear-80', 'wear-77', 'wear-60', 'wear-50'
+    ];
+    
+    leftBand.classList.remove(...wearClasses);
+    middleBand.classList.remove(...wearClasses);
+    rightBand.classList.remove(...wearClasses);
+    
+    // Add appropriate wear class based on percentage
+    leftBand.classList.add(getTireWearClass(wearData.L));
+    middleBand.classList.add(getTireWearClass(wearData.M));
+    rightBand.classList.add(getTireWearClass(wearData.R));
+  }
 
   // === Live Value Display ===
   function updateFuelGauge(level) {
@@ -242,6 +324,12 @@
         `L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireLR').textContent =
         `L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
+        
+      // Update tire wear visualization
+      updateTireVisual('RF', lastStintTireWear.RF);
+      updateTireVisual('LF', lastStintTireWear.LF);
+      updateTireVisual('RR', lastStintTireWear.RR);
+      updateTireVisual('LR', lastStintTireWear.LR);
 
       // Display fuel summary
       document.getElementById('fuelPerLap').textContent =
