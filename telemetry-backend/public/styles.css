@@ -484,6 +484,17 @@ h2 {
   font-family: 'Orbitron', sans-serif;
 }
 
+/* Additional selectors to ensure styles are applied */
+.input-form input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+}
+
 .input-group input:focus {
   border-color: #0f0;
   outline: none;
@@ -501,7 +512,8 @@ h2 {
   margin-top: 15px;
 }
 
-.button-group button {
+.button-group button, 
+.action-button {
   background-color: #333;
   color: #0f0;
   border: none;
@@ -512,7 +524,8 @@ h2 {
   transition: all 0.2s;
 }
 
-.button-group button:hover {
+.button-group button:hover,
+.action-button:hover {
   background-color: #0f0;
   color: #000;
 }
