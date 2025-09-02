@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telemetry Dashboard</title>
+  <title>Telemetry Dashboard - Strategy</title>
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
@@ -19,14 +19,16 @@
     <div id="streamingStatus">Live: —</div>
   </div>
   
-  <!-- Driving Status Indicators -->
-  <div class="status-indicators">
-    <div id="coastingStatus">Coasting</div>
-    <div id="overlapStatus">Overlap</div>
-  </div>
-  
-  <!-- Main Content -->
+  <!-- Main Dashboard Header -->
   <div class="telemetry-block">
+    <h2>Strategy Dashboard</h2>
+    
+    <!-- Driving Status Indicators -->
+    <div class="status-indicators">
+      <div id="coastingStatus">Coasting</div>
+      <div id="overlapStatus">Overlap</div>
+    </div>
+    
     <!-- Fuel Gauge -->
     <div id="fuelGaugeContainer">
       <label for="fuelGauge">Fuel Level</label>
@@ -43,31 +45,86 @@
 
   <!-- Fuel Statistics -->
   <div class="telemetry-block">
-    <h2>Fuel Statistics</h2>
-    <section class="stats-container">
-      <div id="fuelPerLap">Fuel Used Last Lap: --</div>
-      <div id="fuelAvg">3-Lap Avg: --</div>
-      <div id="fuelAvg5">5-Lap Avg: --</div>
-      <div id="lapAvg3">3-Lap Avg Lap Time: --</div>
-      <div id="lapAvg5">5-Lap Avg Lap Time: --</div>
-      <div id="fuelProjectedLaps">Projected Laps Remaining: --</div>
-      <div id="fuelProjectedTime">Projected Time Remaining: --</div>
-    </section>
+    <h2>Fuel Statistics <span class="info-badge" title="Based on real-time telemetry data">ℹ️</span></h2>
+    <div class="race-info-grid">
+      <div>
+        <label>Fuel Used Last Lap:</label>
+        <span id="fuelPerLap">--</span>
+      </div>
+      <div>
+        <label>3-Lap Avg Fuel:</label>
+        <span id="fuelAvg">--</span>
+      </div>
+      <div>
+        <label>5-Lap Avg Fuel:</label>
+        <span id="fuelAvg5">--</span>
+      </div>
+      <div>
+        <label>3-Lap Avg Time:</label>
+        <span id="lapAvg3">--</span>
+      </div>
+      <div>
+        <label>5-Lap Avg Time:</label>
+        <span id="lapAvg5">--</span>
+      </div>
+      <div>
+        <label>Projected Laps:</label>
+        <span id="fuelProjectedLaps">--</span>
+      </div>
+      <div>
+        <label>Projected Time:</label>
+        <span id="fuelProjectedTime">--</span>
+      </div>
+    </div>
   </div>
   
   <!-- Stint Summary -->
   <div class="telemetry-block">
-    <h2>Last Stint Summary</h2>
-    <div id="stintSummary">
-      <div id="stintLapCount">Stint Lap Count: --</div>
-      <div id="stintFuelAvg">Stint Avg Fuel: --</div>
-      
-      <h3>Tire Wear</h3>
-      <div id="tireWearSummary" class="tire-wear-grid">
-        <div id="tireRF">RF: L-- M-- R--</div>
-        <div id="tireLF">LF: L-- M-- R--</div>
-        <div id="tireRR">RR: L-- M-- R--</div>
-        <div id="tireLR">LR: L-- M-- R--</div>
+    <h2>Last Stint Summary <span class="info-badge" title="Data from your most recent completed stint">ℹ️</span></h2>
+    <div class="race-info-grid">
+      <div>
+        <label>Stint Lap Count:</label>
+        <span id="stintLapCount">--</span>
+      </div>
+      <div>
+        <label>Stint Avg Fuel:</label>
+        <span id="stintFuelAvg">--</span>
+      </div>
+      <div>
+        <label>Total Stint Time:</label>
+        <span id="stintTotalTime">--:--:--</span>
+      </div>
+      <div>
+        <label>Stint Avg Lap Time:</label>
+        <span id="stintAvgLapTime">--:--</span>
+      </div>
+      <div>
+        <label>Last Pit Stop Time:</label>
+        <span id="lastPitStopTime">--:--</span>
+      </div>
+      <div>
+        <label>Incidents:</label>
+        <span id="stintIncidents">--</span>
+      </div>
+    </div>
+    
+    <h3>Tire Wear</h3>
+    <div id="tireWearSummary" class="race-info-grid">
+      <div>
+        <label>Right Front:</label>
+        <span id="tireRF">L-- M-- R--</span>
+      </div>
+      <div>
+        <label>Left Front:</label>
+        <span id="tireLF">L-- M-- R--</span>
+      </div>
+      <div>
+        <label>Right Rear:</label>
+        <span id="tireRR">L-- M-- R--</span>
+      </div>
+      <div>
+        <label>Left Rear:</label>
+        <span id="tireLR">L-- M-- R--</span>
       </div>
     </div>
   </div>
@@ -172,25 +229,25 @@
 
       // Display stint lap count and fuel average
       document.getElementById('stintLapCount').textContent =
-        `Stint Lap Count: ${stintLapCount ?? '--'}`;
+        `${stintLapCount ?? '--'}`;
       document.getElementById('stintFuelAvg').textContent =
-        `Stint Avg Fuel: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
       // Display tire wear as percentages
       document.getElementById('tireRF').textContent =
-        `RF: L${(lastStintTireWear.RF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RF.R * 100)?.toFixed(2)}%`;
+        `L${(lastStintTireWear.RF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RF.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireLF').textContent =
-        `LF: L${(lastStintTireWear.LF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LF.R * 100)?.toFixed(2)}%`;
+        `L${(lastStintTireWear.LF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LF.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireRR').textContent =
-        `RR: L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
+        `L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
       document.getElementById('tireLR').textContent =
-        `LR: L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
+        `L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
 
       // Display fuel summary
       document.getElementById('fuelPerLap').textContent =
-        `Fuel Used Last Lap: ${lastFuelUsed?.toFixed(2) ?? '--'} L`;
+        `${lastFuelUsed?.toFixed(2) ?? '--'} L`;
       document.getElementById('fuelAvg').textContent =
-        `3-Lap Avg: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
 
       driverWasOnTrack = false;
       document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
@@ -257,7 +314,7 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
       : null;
 
     document.getElementById('lapAvg3').textContent =
-      `3-Lap Avg Lap Time: ${lapAvg3?.toFixed(2) ?? '--'}s`;
+      `${lapAvg3?.toFixed(2) ?? '--'}s`;
 
     // === 5-Lap Time Average ===
     const lapAvg5 = lapTimeHistory.length === 5
@@ -265,7 +322,7 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
       : null;
 
     document.getElementById('lapAvg5').textContent =
-      `5-Lap Avg Lap Time: ${lapAvg5?.toFixed(2) ?? '--'}s`;
+      `${lapAvg5?.toFixed(2) ?? '--'}s`;
   }
   lastLapStartTime = now;
 
@@ -282,7 +339,7 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
         : null;
 
       document.getElementById('fuelAvg').textContent =
-        `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+        `${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
 
       // === 5-Lap Fuel Average ===
       const avgFuelUsed5 = fuelUsageHistory.length === 5
@@ -290,11 +347,11 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
         : null;
 
       document.getElementById('fuelAvg5').textContent =
-        `5-Lap Avg Fuel: ${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+        `${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
 
       // Display last lap fuel
       document.getElementById('fuelPerLap').textContent =
-        `Fuel Used Last Lap: ${fuelUsed.toFixed(2)} L`;
+        `${fuelUsed.toFixed(2)} L`;
     }
   }
 
@@ -308,16 +365,15 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
     : null;
 
   document.getElementById('fuelProjectedLaps').textContent =
-    `Projected Laps Remaining: ${projectedLaps?.toFixed(2) ?? '--'}`;
+    `${projectedLaps?.toFixed(2) ?? '--'}`;
 
   if (projectedTimeSec) {
     const minutes = Math.floor(projectedTimeSec / 60);
     const seconds = Math.floor(projectedTimeSec % 60);
     document.getElementById('fuelProjectedTime').textContent =
-      `Projected Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+      `${minutes}:${seconds.toString().padStart(2, '0')}`;
   } else {
-    document.getElementById('fuelProjectedTime').textContent =
-      'Projected Time Remaining: --';
+    document.getElementById('fuelProjectedTime').textContent = '--';
   }
 
   fuelAtLapStart = fuel;

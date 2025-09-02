@@ -1,452 +1,205 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Static Endurance Planner</title>
-  <!-- External Dependencies -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .input-form {
-      background-color: #1a1a1a;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 15px auto;
-      max-width: 800px;
-    }
-    .input-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-      margin: 15px 0;
-    }
-    .input-group label {
-      display: block;
-      margin-bottom: 5px;
-      color: #0f0;
-      font-weight: bold;
-    }
-    .input-group input {
-      width: 100%;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #333;
-      background-color: #222;
-      color: white;
-      font-family: 'Orbitron', sans-serif;
-    }
-    .input-group input:focus {
-      border-color: #0f0;
-      outline: none;
-    }
-    .button-group {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-    }
-    .button-group button {
-      background-color: #333;
-      color: #0f0;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-family: 'Orbitron', sans-serif;
-      transition: all 0.2s;
-    }
-    .button-group button:hover {
-      background-color: #0f0;
-      color: #000;
-    }
-  </style>
-</head>
-<body>
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <button onclick="location.href='index.html'">Strategy</button>
-    <button onclick="location.href='inputs.html'">Inputs</button>
-    <button onclick="location.href='planner.html'">Endurance</button>
-    <div id="refreshRate">Static Planner</div>
-  </div>
+// inputs.js - Handles the inputs visualization and data display
 
-  <!-- Input Form -->
-  <div class="input-form">
-    <h2>Race Parameters</h2>
-    <div class="input-group">
-      <div>
-        <label for="tankCapacity">Fuel Tank Capacity (L):</label>
-        <input type="number" id="tankCapacity" value="104" step="0.1">
-      </div>
-      <div>
-        <label for="fuelPerLap">Fuel Per Lap (L):</label>
-        <input type="number" id="fuelPerLap" value="2.8" step="0.1">
-      </div>
-      <div>
-        <label for="avgLapTime">Average Lap Time (sec):</label>
-        <input type="number" id="avgLapTime" value="90" step="0.1">
-      </div>
-      <div>
-        <label for="raceDuration">Race Duration (min):</label>
-        <input type="number" id="raceDuration" value="60" step="5">
-      </div>
-    </div>
-    
-    <h2>Current Status</h2>
-    <div class="input-group">
-      <div>
-        <label for="currentFuelLevel">Current Fuel Level (L):</label>
-        <input type="number" id="currentFuelLevel" value="104" step="0.1">
-      </div>
-      <div>
-        <label for="currentLap">Current Lap:</label>
-        <input type="number" id="currentLap" value="1" step="1">
-      </div>
-      <div>
-        <label for="currentStintNumber">Current Stint:</label>
-        <input type="number" id="currentStintNumber" value="1" step="1">
-      </div>
-      <div>
-        <label for="pitStopTime">Pit Stop Duration (sec):</label>
-        <input type="number" id="pitStopTime" value="45" step="1">
-      </div>
-    </div>
-    
-    <div class="button-group">
-      <button id="calculateButton">Calculate Stint Plan</button>
-      <button id="resetButton">Reset to Defaults</button>
-    </div>
-  </div>
+// Initialize socket connection
+const socket = io('https://radianapp.onrender.com');
 
-  <!-- Endurance Planner Content -->
-  <div class="telemetry-block">
-    <h2>Endurance Planner Results</h2>
-    
-    <!-- Race Info Summary -->
-    <div class="race-info-grid">
-      <div><label>Race Time Remaining:</label><span id="countdown-timer">--:--:--</span></div>
-      <div><label>Next Pit Stop In:</label><span id="next-pitstop-time">--:--:--</span></div>
-      <div><label>Current Stint:</label><span id="current-stint-display">--</span></div>
-      <div><label>Stint Duration:</label><span id="live-stint-duration-display">--:--:--</span></div>
-      <div><label>Laps Per Stint:</label><span id="live-laps-per-stint-display">--</span></div>
-      <div><label>Total Pit Stops:</label><span id="live-pit-stops-display">--</span></div>
-    </div>
-  </div>
+// DOM elements cache
+const elements = {};
+
+// Initialization function
+function initInputsPage() {
+  // Cache DOM elements for better performance
+  cacheElements();
   
-  <!-- Calculation Variables Section -->
-  <div class="telemetry-block">
-    <h2>Calculation Variables <span class="info-badge" title="These values are used in the stint calculations">ℹ️</span></h2>
-    <div class="race-info-grid calculation-variables">
-      <div>
-        <label>Fuel Per Lap:</label>
-        <span id="fuel-per-lap">--</span>
-        <div class="tooltip">Defined in the input form above</div>
-      </div>
-      <div>
-        <label>Lap Time:</label>
-        <span id="avg-lap-time">--</span>
-        <div class="tooltip">Defined in the input form above</div>
-      </div>
-      <div>
-        <label>Tank Capacity:</label>
-        <span id="max-fuel">--</span>
-      </div>
-      <div>
-        <label>Current Fuel Level:</label>
-        <span id="current-fuel">--</span>
-      </div>
-      <div>
-        <label>Pit Stop Duration:</label>
-        <span id="pit-stop-time">--</span>
-      </div>
-    </div>
-  </div>
+  // Initialize components
+  initializeComponents();
   
-  <!-- Stint Table -->
-  <div class="telemetry-block">
-    <h2>Stint Plan</h2>
-    <div id="live-table">
-      <table id="live-stint-table" class="stint-table">
-        <thead>
-          <tr>
-            <th>Stint</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Stint Duration</th>
-            <th>Stint Laps</th>
-            <th>Fuel Per Stint (L)</th>
-          </tr>
-        </thead>
-        <tbody id="live-stint-table-body">
-          <!-- Stint rows will be dynamically added here -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+  // Set up event listeners
+  setupEventListeners();
+}
 
-  <!-- JavaScript -->
-  <script>
-    // State variables for stint calculations
-    let stintData = [];
-    let tankCapacity = 104;
-    let fuelPerLap = 2.8;
-    let avgLapTime = 90;
-    let raceDuration = 3600; // 60 minutes in seconds
-    let currentFuelLevel = 104;
-    let currentLap = 1;
-    let currentStintNumber = 1;
-    let pitStopTime = 45;
-    let raceTimeRemaining = 3600;
-    let nextPitStop = 0;
-    let stintDuration = 0;
-    let lapsPerStint = 0;
-    let isPitting = false;
+// Cache all DOM elements we'll need to update
+function cacheElements() {
+  // Status elements
+  ['IsOnTrack', 'IsOnTrackCar', 'IsInGarage', 'PlayerCarPosition', 
+   'PlayerCarClassPosition', 'PlayerTrackSurface', 'PlayerCarIdx',
+   'PlayerCarTeamIncidentCount', 'PlayerCarMyIncidentCount', 
+   'PlayerCarDriverIncidentCount', 'LapDistPct', 'RaceLaps',
+   'CarDistAhead', 'CarDistBehind'].forEach(id => {
+    elements[id] = document.getElementById(id);
+  });
 
-    // Initialize the page when DOM is loaded
-    document.addEventListener('DOMContentLoaded', initStaticPlanner);
+  // Driver input elements
+  ['Throttle', 'Brake', 'Clutch', 'Gear', 'RPM', 'Speed', 'Steering'].forEach(id => {
+    elements[id] = document.getElementById(id);
+  });
 
-    function initStaticPlanner() {
-      // Set up event listeners
-      document.getElementById('calculateButton').addEventListener('click', readFormValues);
-      document.getElementById('resetButton').addEventListener('click', resetToDefaults);
-      
-      // Calculate initial stint plan with default values
-      calculateStintPlan();
-      updateUI();
-    }
+  // Driver control elements
+  ['dcPitSpeedLimiterToggle', 'dpFuelAutoFillEnabled', 'dpFuelAutoFillActive',
+   'dcBrakeBias', 'dcTractionControl', 'dcABS', 'FuelLevel'].forEach(id => {
+    elements[id] = document.getElementById(id);
+  });
 
-    function readFormValues() {
-      // Read values from form inputs
-      tankCapacity = parseFloat(document.getElementById('tankCapacity').value) || 104;
-      fuelPerLap = parseFloat(document.getElementById('fuelPerLap').value) || 2.8;
-      avgLapTime = parseFloat(document.getElementById('avgLapTime').value) || 90;
-      raceDuration = (parseFloat(document.getElementById('raceDuration').value) || 60) * 60; // Convert minutes to seconds
-      currentFuelLevel = parseFloat(document.getElementById('currentFuelLevel').value) || 104;
-      currentLap = parseInt(document.getElementById('currentLap').value) || 1;
-      currentStintNumber = parseInt(document.getElementById('currentStintNumber').value) || 1;
-      pitStopTime = parseFloat(document.getElementById('pitStopTime').value) || 45;
-      
-      // Update race time remaining based on current lap
-      const elapsedTime = (currentLap - 1) * avgLapTime;
-      raceTimeRemaining = Math.max(0, raceDuration - elapsedTime);
-      
-      // Recalculate stint plan with new values
-      calculateStintPlan();
-      updateUI();
-    }
+  // Environment elements
+  ['TrackTemp', 'AirTemp', 'TrackWetness', 'Skies', 'AirDensity',
+   'AirPressure', 'WindVel', 'WindDir', 'RelativeHumidity',
+   'FogLevel', 'Precipitation'].forEach(id => {
+    elements[id] = document.getElementById(id);
+  });
 
-    function resetToDefaults() {
-      // Reset form to default values
-      document.getElementById('tankCapacity').value = 104;
-      document.getElementById('fuelPerLap').value = 2.8;
-      document.getElementById('avgLapTime').value = 90;
-      document.getElementById('raceDuration').value = 60;
-      document.getElementById('currentFuelLevel').value = 104;
-      document.getElementById('currentLap').value = 1;
-      document.getElementById('currentStintNumber').value = 1;
-      document.getElementById('pitStopTime').value = 45;
-      
-      // Reset to default values
-      tankCapacity = 104;
-      fuelPerLap = 2.8;
-      avgLapTime = 90;
-      raceDuration = 3600;
-      currentFuelLevel = 104;
-      currentLap = 1;
-      currentStintNumber = 1;
-      pitStopTime = 45;
-      raceTimeRemaining = 3600;
-      
-      // Recalculate stint plan with default values
-      calculateStintPlan();
-      updateUI();
-    }
+  // Other UI elements
+  elements.refreshRate = document.getElementById('refreshRate');
+}
 
-    // This function formats time from seconds into HH:MM:SS format
-    function formatTime(totalSeconds) {
-      if (totalSeconds === undefined || totalSeconds === null) return "--:--:--";
-      
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = Math.floor(totalSeconds % 60);
-      const pad = (num) => String(num).padStart(2, '0');
-      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    }
+// Initialize visualization components
+function initializeComponents() {
+  // Initialize track map
+  window.trackMap = new TrackMap(socket, 'trackCanvas');
+  
+  // Initialize pedal trace
+  window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
+    maxPoints: 300,
+    maxRpm: 10000
+  });
+  
+  // Initialize environment trace
+  window.enviroTrace = new EnviroTrace(socket, 'envCanvas', {
+    maxPoints: 600,
+    tempScale: 2
+  });
+}
 
-    // Calculate the stint plan based on current values
-    function calculateStintPlan() {
-      // Don't calculate if we don't have valid data yet
-      if (fuelPerLap <= 0 || avgLapTime <= 0 || tankCapacity <= 0) {
-        // Set some reasonable defaults if we don't have real data
-        fuelPerLap = fuelPerLap || 2.8;
-        avgLapTime = avgLapTime || 90;
-        tankCapacity = tankCapacity || 104;
-      }
+// Set up socket event listeners
+function setupEventListeners() {
+  let lastTelemetryTime = null;
+  
+  socket.on('telemetry', (data) => {
+    try {
+      const values = data?.values;
+      if (!values) return;
       
-      // Clear previous stint data
-      stintData = [];
+      // Update refresh rate display
+      updateRefreshRate();
       
-      // Calculate basic stint values
-      const fuelPerStint = tankCapacity * 0.95; // Using 95% of tank capacity (leave 5% margin)
-      lapsPerStint = Math.floor(fuelPerStint / fuelPerLap);
-      stintDuration = lapsPerStint * avgLapTime;
+      // Update all UI elements with latest values
+      updateStatusElements(values);
+      updateDriverInputElements(values);
+      updateDriverControlElements(values);
+      updateEnvironmentElements(values);
       
-      // Use the race time remaining if available, otherwise use a default
-      const estimatedRaceDuration = raceTimeRemaining > 0 ? raceTimeRemaining : 3600;
-      
-      // Calculate total number of stints needed
-      const raceLaps = Math.ceil(estimatedRaceDuration / avgLapTime);
-      const totalStints = Math.ceil(raceLaps / lapsPerStint);
-      
-      // Determine current race progress based on inputs
-      let raceElapsedTime = raceDuration - raceTimeRemaining;
-      
-      // Generate stint data starting from current race state
-      let currentTime = raceElapsedTime;
-      
-      // Account for current stint progress
-      let stintOffset = 0;
-      if (currentStintNumber > 1) {
-        stintOffset = currentStintNumber - 1;
-      }
-      
-      // Calculate fuel remaining in current stint
-      let currentStintFuelRemaining = currentFuelLevel;
-      
-      // Calculate laps remaining in current stint
-      const currentStintLapsRemaining = Math.floor(currentStintFuelRemaining / fuelPerLap);
-      
-      // Calculate time remaining in current stint
-      const currentStintTimeRemaining = currentStintLapsRemaining * avgLapTime;
-      
-      // Generate stint data for remaining race
-      for (let i = currentStintNumber; i <= totalStints + stintOffset; i++) {
-        // For current stint, use actual remaining time and fuel
-        let stintStartTime = currentTime;
-        let stintEndTime, actualStintDuration, actualLaps, fuelUsed;
-        
-        if (i === currentStintNumber && currentStintTimeRemaining > 0) {
-          // Current active stint
-          stintEndTime = stintStartTime + currentStintTimeRemaining;
-          actualStintDuration = currentStintTimeRemaining;
-          actualLaps = currentStintLapsRemaining;
-          fuelUsed = currentStintFuelRemaining;
-        } else {
-          // Future stints
-          stintEndTime = Math.min(stintStartTime + stintDuration, estimatedRaceDuration);
-          actualStintDuration = stintEndTime - stintStartTime;
-          actualLaps = Math.floor(actualStintDuration / avgLapTime);
-          fuelUsed = actualLaps * fuelPerLap;
+      // Track telemetry timestamp for refresh rate calculation
+      function updateRefreshRate() {
+        const now = Date.now();
+        if (lastTelemetryTime && elements.refreshRate) {
+          const interval = now - lastTelemetryTime;
+          const hz = (1000 / interval).toFixed(1);
+          elements.refreshRate.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
         }
-        
-        // Add to stint data if there's any time in this stint
-        if (actualStintDuration > 0) {
-          stintData.push({
-            stintNumber: i,
-            startTime: stintStartTime,
-            endTime: stintEndTime,
-            stintDuration: actualStintDuration,
-            laps: actualLaps,
-            fuel: typeof fuelUsed === 'number' ? fuelUsed.toFixed(2) + ' L' : fuelUsed
-          });
-          
-          currentTime = stintEndTime;
-          
-          // Add pit stop after stint (except for the last stint)
-          if (currentTime < estimatedRaceDuration && i < totalStints + stintOffset) {
-            const pitStartTime = currentTime;
-            const pitEndTime = pitStartTime + pitStopTime;
-            
-            stintData.push({
-              stintNumber: `PIT ${i}`,
-              startTime: pitStartTime,
-              endTime: pitEndTime,
-              stintDuration: pitStopTime,
-              laps: "—",
-              fuel: "Refueling"
-            });
-            
-            currentTime = pitEndTime;
-          }
-        }
-        
-        // If we've reached race duration, stop adding stints
-        if (currentTime >= estimatedRaceDuration) break;
+        lastTelemetryTime = now;
       }
-      
-      // Calculate next pit stop time
-      if (stintData.length > 0) {
-        // Find the next pit stop
-        const currentStintIndex = stintData.findIndex(stint => 
-          !String(stint.stintNumber).startsWith('PIT') && 
-          stint.stintNumber === currentStintNumber
-        );
-        
-        if (currentStintIndex !== -1 && currentStintIndex < stintData.length - 1) {
-          // Next pit stop is the end time of the current stint
-          nextPitStop = stintData[currentStintIndex].endTime - raceElapsedTime;
-        } else {
-          // No more pit stops
-          nextPitStop = 0;
-        }
-      } else {
-        nextPitStop = 0;
-      }
+    } catch (error) {
+      console.error('Error processing telemetry data:', error);
     }
+  });
+}
 
-    // Update UI with calculation results
-    function updateUI() {
-      // Update race info
-      document.getElementById('countdown-timer').textContent = formatTime(raceTimeRemaining);
-      document.getElementById('next-pitstop-time').textContent = formatTime(nextPitStop);
-      document.getElementById('current-stint-display').textContent = currentStintNumber;
-      document.getElementById('live-stint-duration-display').textContent = formatTime(stintDuration);
-      document.getElementById('live-laps-per-stint-display').textContent = lapsPerStint;
-      document.getElementById('live-pit-stops-display').textContent = Math.max(0, stintData.filter(s => String(s.stintNumber).startsWith('PIT')).length);
-      
-      // Update calculation variables
-      document.getElementById('fuel-per-lap').textContent = fuelPerLap.toFixed(2) + " L";
-      document.getElementById('avg-lap-time').textContent = formatTime(avgLapTime);
-      document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
-      document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
-      document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
+// Update status elements with current values
+function updateStatusElements(values) {
+  if (!values) return;
+  
+  safeUpdateElement('IsOnTrack', values.IsOnTrack);
+  safeUpdateElement('IsOnTrackCar', values.IsOnTrackCar);
+  safeUpdateElement('IsInGarage', values.IsInGarage);
+  safeUpdateElement('PlayerCarPosition', values.PlayerCarPosition);
+  safeUpdateElement('PlayerCarClassPosition', values.PlayerCarClassPosition);
+  safeUpdateElement('PlayerTrackSurface', values.PlayerTrackSurface);
+  safeUpdateElement('PlayerCarIdx', values.PlayerCarIdx);
+  safeUpdateElement('PlayerCarTeamIncidentCount', values.PlayerCarTeamIncidentCount);
+  safeUpdateElement('PlayerCarMyIncidentCount', values.PlayerCarMyIncidentCount);
+  safeUpdateElement('PlayerCarDriverIncidentCount', values.PlayerCarDriverIncidentCount);
+  safeUpdateElement('LapDistPct', values.LapDistPct?.toFixed(3));
+  safeUpdateElement('RaceLaps', values.RaceLaps);
+  safeUpdateElement('CarDistAhead', values.CarDistAhead);
+  safeUpdateElement('CarDistBehind', values.CarDistBehind);
+}
 
-      // Update stint table
-      const tbody = document.getElementById('live-stint-table-body');
-      tbody.innerHTML = '';
-      
-      if (stintData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No stint data available</td></tr>';
-      } else {
-        stintData.forEach(stint => {
-          const stintRow = document.createElement('tr');
-          const isPitRow = String(stint.stintNumber).startsWith('PIT');
+// Update driver input elements
+function updateDriverInputElements(values) {
+  if (!values) return;
+  
+  safeUpdateElement('Throttle', formatValue(values.Throttle, 'percent'));
+  safeUpdateElement('Brake', formatValue(values.Brake, 'percent'));
+  safeUpdateElement('Clutch', formatValue(values.Clutch, 'percent'));
+  safeUpdateElement('Gear', values.Gear);
+  safeUpdateElement('RPM', formatValue(values.RPM, 'rpm'));
+  safeUpdateElement('Speed', formatValue(values.Speed, 'speed'));
+  safeUpdateElement('Steering', formatValue(values.SteeringWheelAngle, 'angle'));
+}
 
-          // Apply appropriate classes based on stint type and status
-          if (isPitRow) {
-            stintRow.classList.add('pit-row');
-            if (isPitting && stint.stintNumber === `PIT ${currentStintNumber}`) {
-              stintRow.classList.add('current-pit');
-            }
-          } else {
-            stintRow.classList.add('stint-row');
-            if (!isPitting && stint.stintNumber === currentStintNumber) {
-              stintRow.classList.add('current-stint');
-            }
-          }
+// Update driver control elements
+function updateDriverControlElements(values) {
+  if (!values) return;
+  
+  safeUpdateElement('dcPitSpeedLimiterToggle', values.dcPitSpeedLimiterToggle);
+  safeUpdateElement('dpFuelAutoFillEnabled', values.dpFuelAutoFillEnabled);
+  safeUpdateElement('dpFuelAutoFillActive', values.dpFuelAutoFillActive);
+  safeUpdateElement('dcBrakeBias', values.dcBrakeBias?.toFixed(2));
+  safeUpdateElement('dcTractionControl', values.dcTractionControl);
+  safeUpdateElement('dcABS', values.dcABS);
+  safeUpdateElement('FuelLevel', values.FuelLevel?.toFixed(2));
+}
 
-          stintRow.innerHTML = `
-              <td>${stint.stintNumber}</td>
-              <td>${formatTime(stint.startTime)}</td>
-              <td>${formatTime(stint.endTime)}</td>
-              <td>${formatTime(stint.stintDuration)}</td>
-              <td>${stint.laps}</td>
-              <td>${stint.fuel}</td>
-          `;
-          tbody.appendChild(stintRow);
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+// Update environment elements
+function updateEnvironmentElements(values) {
+  if (!values) return;
+  
+  safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
+  safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
+  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percent'));
+  safeUpdateElement('Skies', values.Skies);
+  safeUpdateElement('AirDensity', formatValue(values.AirDensity, 'pressure'));
+  safeUpdateElement('AirPressure', formatValue(values.AirPressure, 'pressure'));
+  safeUpdateElement('WindVel', `${values.WindVel?.toFixed(1)} km/h`);
+  safeUpdateElement('WindDir', `${values.WindDir?.toFixed(1)}°`);
+  safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percent'));
+  safeUpdateElement('FogLevel', values.FogLevel);
+  safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percent'));
+}
+
+// Safely update an element's text content
+function safeUpdateElement(id, value) {
+  const element = elements[id];
+  if (element && value !== undefined) {
+    element.textContent = value;
+  }
+}
+
+// Format values with appropriate units
+function formatValue(value, type) {
+  if (value === undefined || value === null) return '--';
+  
+  switch(type) {
+    case 'percent':
+      return `${(value * 100).toFixed(1)}%`;
+    case 'rpm':
+      return `${value.toFixed(0)} RPM`;
+    case 'speed':
+      return `${value.toFixed(1)} km/h`;
+    case 'angle':
+      return `${value.toFixed(2)}°`;
+    case 'temperature':
+      return `${value.toFixed(1)}°C`;
+    case 'pressure':
+      return `${value.toFixed(1)} kPa`;
+    default:
+      return value.toString();
+  }
+}
+
+// Initialize the page when DOM is loaded
+document.addEventListener('DOMContentLoaded', initInputsPage);
+
+// Export public interface
+window.inputsPage = {
+  initInputsPage
+};

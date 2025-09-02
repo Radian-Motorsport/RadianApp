@@ -16,6 +16,9 @@ let lapEntryPoint = null;
 let bufferFrozen = true;
 let driverWasOnTrack = false;
 let lastTelemetryTime = null;
+let stintStartTime = null;
+let lastPitStopTimeValue = null;
+let stintIncidentCount = 0;
 
 const MIN_LAPS_FOR_VALID_DATA = 2;
 
@@ -43,6 +46,10 @@ function initDashboard() {
     bufferStatus: document.getElementById('bufferStatus'),
     stintLapCount: document.getElementById('stintLapCount'),
     stintFuelAvg: document.getElementById('stintFuelAvg'),
+    stintTotalTime: document.getElementById('stintTotalTime'),
+    stintAvgLapTime: document.getElementById('stintAvgLapTime'),
+    lastPitStopTime: document.getElementById('lastPitStopTime'),
+    stintIncidents: document.getElementById('stintIncidents'),
     tireRF: document.getElementById('tireRF'),
     tireLF: document.getElementById('tireLF'),
     tireRR: document.getElementById('tireRR'),
@@ -91,6 +98,18 @@ function handleDriverExit(values, teamLap) {
   lapEntryPoint = null;
   lastTeamLap = null;
 
+  // Calculate stint time and average lap time
+  const stintEndTime = Date.now();
+  const stintTotalTimeSeconds = stintStartTime ? (stintEndTime - stintStartTime) / 1000 : null;
+  
+  // Average lap time calculation (only if we have laps)
+  const stintAvgLapTimeSeconds = (stintLapCount > 0 && stintTotalTimeSeconds) 
+    ? stintTotalTimeSeconds / stintLapCount 
+    : null;
+  
+  // Update last pit stop time
+  lastPitStopTimeValue = stintTotalTimeSeconds ? formatTimeMS(stintTotalTimeSeconds) : '--:--';
+
   // Tire wear snapshot
   const lastStintTireWear = {
     RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
@@ -100,8 +119,12 @@ function handleDriverExit(values, teamLap) {
   };
 
   // Update UI
-  elements.stintLapCount.textContent = `Stint Lap Count: ${stintLapCount ?? '--'}`;
-  elements.stintFuelAvg.textContent = `Stint Avg Fuel: ${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+  elements.stintLapCount.textContent = stintLapCount ?? '--';
+  elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
+  elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
+  elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
+  elements.lastPitStopTime.textContent = lastPitStopTimeValue;
+  elements.stintIncidents.textContent = stintIncidentCount.toString();
   
   updateTireWear(lastStintTireWear);
 
@@ -114,12 +137,32 @@ function handleDriverExit(values, teamLap) {
 }
 
 // Handle driver entering the track
+// Format time in minutes:seconds or hours:minutes:seconds
+function formatTimeMS(timeInSeconds) {
+  if (isNaN(timeInSeconds)) return '--:--';
+  
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function formatTimeHMS(timeInSeconds) {
+  if (isNaN(timeInSeconds)) return '--:--:--';
+  
+  const hours = Math.floor(timeInSeconds / 3600);
+  const minutes = Math.floor((timeInSeconds % 3600) / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
 function handleDriverEntry(teamLap) {
   lapEntryPoint = teamLap;
   bufferFrozen = true;
   elements.bufferStatus.textContent = 'Waiting for next lap…';
   elements.panel.classList.add('dimmed');
   driverWasOnTrack = true;
+  stintStartTime = Date.now();
+  stintIncidentCount = 0;
 }
 
 // Process lap completion data
@@ -223,6 +266,15 @@ function setupSocketListeners() {
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
       const isOnTrack = values?.IsOnTrack;
       
+      // Track incidents if available in telemetry
+      if (driverWasOnTrack && values.PlayerCarMyIncidentCount !== undefined) {
+        // Check if incident count increased
+        const currentIncidents = values.PlayerCarMyIncidentCount;
+        if (bufferedData && currentIncidents > bufferedData.values.PlayerCarMyIncidentCount) {
+          stintIncidentCount += (currentIncidents - bufferedData.values.PlayerCarMyIncidentCount);
+        }
+      }
+      
       // Handle coasting and overlap indicators
       if (elements.coastingStatus && elements.overlapStatus) {
         const isCoasting = values.Brake < 0.02 && values.ThrottleRaw > 0.50;
@@ -260,6 +312,20 @@ function setupSocketListeners() {
       if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
         lastTeamLap = teamLap;
         bufferedData = data;
+      }
+
+      // Update stint stats in real-time if we have a start time
+      if (isOnTrack && stintStartTime && !bufferFrozen) {
+        const currentStintTime = (Date.now() - stintStartTime) / 1000;
+        elements.stintTotalTime.textContent = formatTimeHMS(currentStintTime);
+        
+        const currentStintLapCount = teamLap - lapEntryPoint;
+        if (currentStintLapCount > 0) {
+          const currentAvgLapTime = currentStintTime / currentStintLapCount;
+          elements.stintAvgLapTime.textContent = formatTimeMS(currentAvgLapTime);
+        }
+        
+        elements.stintIncidents.textContent = stintIncidentCount.toString();
       }
 
       // Update fuel gauge with live data

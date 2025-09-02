@@ -372,8 +372,32 @@ h2 {
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: 10px;
+  margin-top: 15px;
   margin-bottom: 20px;
+}
+
+.status-indicators div {
+  padding: 8px 15px;
+  border-radius: 4px;
+  background-color: #222;
+  border: 1px solid #333;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Enhanced styling for coasting and overlap indicators */
+#coastingStatus.coasting-active {
+  color: orange;
+  border-color: orange;
+  box-shadow: 0 0 8px rgba(255, 165, 0, 0.5);
+}
+
+#overlapStatus.overlap-active {
+  color: turquoise;
+  border-color: turquoise;
+  box-shadow: 0 0 8px rgba(64, 224, 208, 0.5);
 }
 
 .telemetry-block {
@@ -435,20 +459,33 @@ h2 {
 
 #fuelGaugeContainer {
   width: 100%;
-  padding: 10px;
+  padding: 15px;
   background-color: #222;
   border-radius: 5px;
+  margin: 20px 0;
+  border: 1px solid #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#fuelGaugeContainer label {
+  color: #0f0;
+  font-size: 1.2em;
+  margin-bottom: 8px;
+  display: block;
 }
 
 #fuelGauge {
   width: 100%;
-  height: 25px;
+  height: 30px;
+  border-radius: 5px;
 }
 
 #fuelValue {
   text-align: center;
   font-weight: bold;
-  margin-top: 5px;
+  margin-top: 8px;
+  font-size: 1.2em;
+  color: white;
 }
 
 /* Static Planner Form Styles */
