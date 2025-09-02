@@ -45,8 +45,17 @@ The endurance planner feature helps teams manage race strategy for long races:
 - Shows fuel usage per stint and expected laps per stint
 - Adjusts calculations in real-time as driving style changes
 - Highlights the current stint and updates next pit stop timing
+- Uses a 5% safety margin to ensure sufficient fuel reserve
 
 ### Static Planner
+
+The static planner provides a testing environment for the endurance planner:
+
+- Allows manual input of race parameters for testing
+- Simulates race conditions without requiring active telemetry
+- Ideal for pre-race strategy planning
+- Includes adjustable safety margin (0-20%) for fuel calculations
+- Shows calculation variables with explanatory tooltips
 
 A testing version of the endurance planner is also available:
 
