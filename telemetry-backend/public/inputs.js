@@ -1,205 +1,102 @@
-// inputs.js - Handles the inputs visualization and data display
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy Planner</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button onclick="location.href='index.html'">Strategy</button>
+    <button onclick="location.href='planner.html'">Endurance</button>
+    <div id="refreshRate">Refresh Rate: --</div>
+  </div>
 
-// Initialize socket connection
-const socket = io('https://radianapp.onrender.com');
+  <!-- Track Map -->
+  <div class="telemetry-block">
+    <canvas id="trackCanvas" width="600" height="600"></canvas>
+  </div>
 
-// DOM elements cache
-const elements = {};
+  <!-- Pedal Trace -->
+  <div class="telemetry-block">
+    <canvas id="pedalCanvas" width="600" height="200"></canvas>
 
-// Initialization function
-function initInputsPage() {
-  // Cache DOM elements for better performance
-  cacheElements();
-  
-  // Initialize components
-  initializeComponents();
-  
-  // Set up event listeners
-  setupEventListeners();
-}
+    <div class="inputs-grid">
+      <div><label>Throttle</label><span id="Throttle">--</span></div>
+      <div><label>Brake</label><span id="Brake">--</span></div>
+      <div><label>Clutch</label><span id="Clutch">--</span></div>
+      <div><label>Gear</label><span id="Gear">--</span></div>
+      <div><label>RPM</label><span id="RPM">--</span></div>
+      <div><label>Speed</label><span id="Speed">--</span></div>
+      <div><label>Steering</label><span id="Steering">--</span></div>
+    </div>
+  </div>
 
-// Cache all DOM elements we'll need to update
-function cacheElements() {
-  // Status elements
-  ['IsOnTrack', 'IsOnTrackCar', 'IsInGarage', 'PlayerCarPosition', 
-   'PlayerCarClassPosition', 'PlayerTrackSurface', 'PlayerCarIdx',
-   'PlayerCarTeamIncidentCount', 'PlayerCarMyIncidentCount', 
-   'PlayerCarDriverIncidentCount', 'LapDistPct', 'RaceLaps',
-   'CarDistAhead', 'CarDistBehind'].forEach(id => {
-    elements[id] = document.getElementById(id);
-  });
+  <!-- Status Section -->
+  <section class="data-section">
+    <h2>Status</h2>
+    <ul class="data-list">
+      <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
+      <li>IsOnTrackCar: <span id="IsOnTrackCar">--</span></li>
+      <li>IsInGarage: <span id="IsInGarage">--</span></li>
+      <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
+      <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
+      <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
+      <li>PlayerCarIdx: <span id="PlayerCarIdx">--</span></li>
+      <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
+      <li>My Incidents: <span id="PlayerCarMyIncidentCount">--</span></li>
+      <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
+      <li>LapDistPct: <span id="LapDistPct">--</span></li>
+      <li>RaceLaps: <span id="RaceLaps">--</span></li>
+      <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
+      <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
+    </ul>
+  </section>
 
-  // Driver input elements
-  ['Throttle', 'Brake', 'Clutch', 'Gear', 'RPM', 'Speed', 'Steering'].forEach(id => {
-    elements[id] = document.getElementById(id);
-  });
+  <!-- Driver Controls Section -->
+  <section class="data-section">
+    <h2>Driver Controls</h2>
+    <ul class="data-list">
+      <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
+      <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
+      <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
+      <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
+      <li>Traction Control: <span id="dcTractionControl">--</span></li>
+      <li>ABS: <span id="dcABS">--</span></li>
+      <li>Fuel Level: <span id="FuelLevel">--</span></li>
+    </ul>
+  </section>
 
-  // Driver control elements
-  ['dcPitSpeedLimiterToggle', 'dpFuelAutoFillEnabled', 'dpFuelAutoFillActive',
-   'dcBrakeBias', 'dcTractionControl', 'dcABS', 'FuelLevel'].forEach(id => {
-    elements[id] = document.getElementById(id);
-  });
+  <!-- Environment Section -->
+  <section class="data-section">
+    <h2>Environment</h2>
+    <h3>Environment Trends</h3>
+    <canvas id="envCanvas" width="600" height="200"></canvas>
 
-  // Environment elements
-  ['TrackTemp', 'AirTemp', 'TrackWetness', 'Skies', 'AirDensity',
-   'AirPressure', 'WindVel', 'WindDir', 'RelativeHumidity',
-   'FogLevel', 'Precipitation'].forEach(id => {
-    elements[id] = document.getElementById(id);
-  });
+    <ul class="data-list">
+      <li>Track Temp: <span id="TrackTemp">--</span></li>
+      <li>Air Temp: <span id="AirTemp">--</span></li>
+      <li>Track Wetness: <span id="TrackWetness">--</span></li>
+      <li>Skies: <span id="Skies">--</span></li>
+      <li>Air Density: <span id="AirDensity">--</span></li>
+      <li>Air Pressure: <span id="AirPressure">--</span></li>
+      <li>Wind Velocity: <span id="WindVel">--</span></li>
+      <li>Wind Direction: <span id="WindDir">--</span></li>
+      <li>Humidity: <span id="RelativeHumidity">--</span></li>
+      <li>Fog Level: <span id="FogLevel">--</span></li>
+      <li>Precipitation: <span id="Precipitation">--</span></li>
+    </ul>
+  </section>
 
-  // Other UI elements
-  elements.refreshRate = document.getElementById('refreshRate');
-}
-
-// Initialize visualization components
-function initializeComponents() {
-  // Initialize track map
-  window.trackMap = new TrackMap(socket, 'trackCanvas');
-  
-  // Initialize pedal trace
-  window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
-    maxPoints: 300,
-    maxRpm: 10000
-  });
-  
-  // Initialize environment trace
-  window.enviroTrace = new EnviroTrace(socket, 'envCanvas', {
-    maxPoints: 600,
-    tempScale: 2
-  });
-}
-
-// Set up socket event listeners
-function setupEventListeners() {
-  let lastTelemetryTime = null;
-  
-  socket.on('telemetry', (data) => {
-    try {
-      const values = data?.values;
-      if (!values) return;
-      
-      // Update refresh rate display
-      updateRefreshRate();
-      
-      // Update all UI elements with latest values
-      updateStatusElements(values);
-      updateDriverInputElements(values);
-      updateDriverControlElements(values);
-      updateEnvironmentElements(values);
-      
-      // Track telemetry timestamp for refresh rate calculation
-      function updateRefreshRate() {
-        const now = Date.now();
-        if (lastTelemetryTime && elements.refreshRate) {
-          const interval = now - lastTelemetryTime;
-          const hz = (1000 / interval).toFixed(1);
-          elements.refreshRate.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
-        }
-        lastTelemetryTime = now;
-      }
-    } catch (error) {
-      console.error('Error processing telemetry data:', error);
-    }
-  });
-}
-
-// Update status elements with current values
-function updateStatusElements(values) {
-  if (!values) return;
-  
-  safeUpdateElement('IsOnTrack', values.IsOnTrack);
-  safeUpdateElement('IsOnTrackCar', values.IsOnTrackCar);
-  safeUpdateElement('IsInGarage', values.IsInGarage);
-  safeUpdateElement('PlayerCarPosition', values.PlayerCarPosition);
-  safeUpdateElement('PlayerCarClassPosition', values.PlayerCarClassPosition);
-  safeUpdateElement('PlayerTrackSurface', values.PlayerTrackSurface);
-  safeUpdateElement('PlayerCarIdx', values.PlayerCarIdx);
-  safeUpdateElement('PlayerCarTeamIncidentCount', values.PlayerCarTeamIncidentCount);
-  safeUpdateElement('PlayerCarMyIncidentCount', values.PlayerCarMyIncidentCount);
-  safeUpdateElement('PlayerCarDriverIncidentCount', values.PlayerCarDriverIncidentCount);
-  safeUpdateElement('LapDistPct', values.LapDistPct?.toFixed(3));
-  safeUpdateElement('RaceLaps', values.RaceLaps);
-  safeUpdateElement('CarDistAhead', values.CarDistAhead);
-  safeUpdateElement('CarDistBehind', values.CarDistBehind);
-}
-
-// Update driver input elements
-function updateDriverInputElements(values) {
-  if (!values) return;
-  
-  safeUpdateElement('Throttle', formatValue(values.Throttle, 'percent'));
-  safeUpdateElement('Brake', formatValue(values.Brake, 'percent'));
-  safeUpdateElement('Clutch', formatValue(values.Clutch, 'percent'));
-  safeUpdateElement('Gear', values.Gear);
-  safeUpdateElement('RPM', formatValue(values.RPM, 'rpm'));
-  safeUpdateElement('Speed', formatValue(values.Speed, 'speed'));
-  safeUpdateElement('Steering', formatValue(values.SteeringWheelAngle, 'angle'));
-}
-
-// Update driver control elements
-function updateDriverControlElements(values) {
-  if (!values) return;
-  
-  safeUpdateElement('dcPitSpeedLimiterToggle', values.dcPitSpeedLimiterToggle);
-  safeUpdateElement('dpFuelAutoFillEnabled', values.dpFuelAutoFillEnabled);
-  safeUpdateElement('dpFuelAutoFillActive', values.dpFuelAutoFillActive);
-  safeUpdateElement('dcBrakeBias', values.dcBrakeBias?.toFixed(2));
-  safeUpdateElement('dcTractionControl', values.dcTractionControl);
-  safeUpdateElement('dcABS', values.dcABS);
-  safeUpdateElement('FuelLevel', values.FuelLevel?.toFixed(2));
-}
-
-// Update environment elements
-function updateEnvironmentElements(values) {
-  if (!values) return;
-  
-  safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
-  safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
-  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percent'));
-  safeUpdateElement('Skies', values.Skies);
-  safeUpdateElement('AirDensity', formatValue(values.AirDensity, 'pressure'));
-  safeUpdateElement('AirPressure', formatValue(values.AirPressure, 'pressure'));
-  safeUpdateElement('WindVel', `${values.WindVel?.toFixed(1)} km/h`);
-  safeUpdateElement('WindDir', `${values.WindDir?.toFixed(1)}°`);
-  safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percent'));
-  safeUpdateElement('FogLevel', values.FogLevel);
-  safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percent'));
-}
-
-// Safely update an element's text content
-function safeUpdateElement(id, value) {
-  const element = elements[id];
-  if (element && value !== undefined) {
-    element.textContent = value;
-  }
-}
-
-// Format values with appropriate units
-function formatValue(value, type) {
-  if (value === undefined || value === null) return '--';
-  
-  switch(type) {
-    case 'percent':
-      return `${(value * 100).toFixed(1)}%`;
-    case 'rpm':
-      return `${value.toFixed(0)} RPM`;
-    case 'speed':
-      return `${value.toFixed(1)} km/h`;
-    case 'angle':
-      return `${value.toFixed(2)}°`;
-    case 'temperature':
-      return `${value.toFixed(1)}°C`;
-    case 'pressure':
-      return `${value.toFixed(1)} kPa`;
-    default:
-      return value.toString();
-  }
-}
-
-// Initialize the page when DOM is loaded
-document.addEventListener('DOMContentLoaded', initInputsPage);
-
-// Export public interface
-window.inputsPage = {
-  initInputsPage
-};
+  <!-- JavaScript Resources -->
+  <script src="trackmap.js"></script>
+  <script src="pedaltrace.js"></script>
+  <script src="envirotrace.js"></script>
+  <script src="inputs.js"></script>
+</body>
+</html>
