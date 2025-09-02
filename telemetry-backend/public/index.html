@@ -61,9 +61,8 @@
 
   <!-- JavaScript Resources -->
   <script src="telemetry.js"></script>
-</body>
-</html>
-
+  
+  <script>
   document.addEventListener('DOMContentLoaded', () => {
   const refreshRateDisplay = document.getElementById('refreshRate');
   let lastTelemetryTime = null;
@@ -327,11 +326,6 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
         document.getElementById('streamingStatus').textContent = 'Live: —';
       }
     });
-</script>
-
-
-
+  </script>
 </body>
 </html>
-
-
