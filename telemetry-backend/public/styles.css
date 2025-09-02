@@ -244,3 +244,87 @@ h2 {
   float: right;
   font-weight: bold;
 }
+
+/* Updated styles for the revamped index page */
+.status-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.telemetry-block {
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px auto;
+  max-width: 800px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.telemetry-block h2 {
+  color: #0f0;
+  margin-top: 0;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.telemetry-block h3 {
+  color: #0f0;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.stats-container div {
+  padding: 8px;
+  border-left: 3px solid #0f0;
+  background-color: #222;
+}
+
+.lap-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.tire-wear-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.tire-wear-grid div {
+  background-color: #222;
+  padding: 8px;
+  border-left: 3px solid #0f0;
+}
+
+#streamingStatus {
+  margin-left: 20px;
+  color: #0f0;
+}
+
+#fuelGaugeContainer {
+  width: 100%;
+  padding: 10px;
+  background-color: #222;
+  border-radius: 5px;
+}
+
+#fuelGauge {
+  width: 100%;
+  height: 25px;
+}
+
+#fuelValue {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 5px;
+}
