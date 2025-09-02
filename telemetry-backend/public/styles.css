@@ -450,3 +450,69 @@ h2 {
   font-weight: bold;
   margin-top: 5px;
 }
+
+/* Static Planner Form Styles */
+.input-form {
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px auto;
+  max-width: 800px;
+}
+
+.input-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #0f0;
+  font-weight: bold;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.input-group input:focus {
+  border-color: #0f0;
+  outline: none;
+}
+
+.input-hint {
+  font-size: 0.8em;
+  color: #999;
+  margin-top: 3px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.button-group button {
+  background-color: #333;
+  color: #0f0;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  transition: all 0.2s;
+}
+
+.button-group button:hover {
+  background-color: #0f0;
+  color: #000;
+}
