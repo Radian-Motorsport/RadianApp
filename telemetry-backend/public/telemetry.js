@@ -74,13 +74,63 @@ function updateFuelGauge(level) {
 function updateTireWear(tireData) {
   if (!tireData) return;
   
-  const formatTireWear = (tire, location) => 
-    `${location}: L${(tire.L * 100).toFixed(2)}% M${(tire.M * 100).toFixed(2)}% R${(tire.R * 100).toFixed(2)}%`;
+  // Update tire wear visuals and values for each tire
+  updateTireVisual('RF', tireData.RF);
+  updateTireVisual('LF', tireData.LF);
+  updateTireVisual('RR', tireData.RR);
+  updateTireVisual('LR', tireData.LR);
+}
+
+// Update visual representation and values for a single tire
+function updateTireVisual(position, tire) {
+  if (!tire) return;
   
-  elements.tireRF.textContent = formatTireWear(tireData.RF, 'RF');
-  elements.tireLF.textContent = formatTireWear(tireData.LF, 'LF');
-  elements.tireRR.textContent = formatTireWear(tireData.RR, 'RR');
-  elements.tireLR.textContent = formatTireWear(tireData.LR, 'LR');
+  // Get percentage values (0-100)
+  const leftWear = Math.round(tire.L * 100);
+  const middleWear = Math.round(tire.M * 100);
+  const rightWear = Math.round(tire.R * 100);
+  
+  // Update the band colors based on wear percentages
+  updateTireBandColor(`tire${position}L`, leftWear);
+  updateTireBandColor(`tire${position}M`, middleWear);
+  updateTireBandColor(`tire${position}R`, rightWear);
+  
+  // Update the span with individual values
+  const spanElement = elements[`tire${position}`];
+  if (spanElement) {
+    spanElement.innerHTML = `
+      <span class="tire-value">${leftWear}</span>
+      <span class="tire-value">${middleWear}</span>
+      <span class="tire-value">${rightWear}</span>
+    `;
+  }
+}
+
+// Update a single tire band's color based on wear percentage
+function updateTireBandColor(elementId, wearPercentage) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  // Remove all existing wear classes
+  element.classList.remove(
+    'wear-100', 'wear-97', 'wear-95', 'wear-92', 'wear-90', 
+    'wear-87', 'wear-85', 'wear-82', 'wear-80', 'wear-77', 
+    'wear-60', 'wear-50'
+  );
+  
+  // Add the appropriate wear class based on percentage
+  if (wearPercentage >= 97.5) element.classList.add('wear-100');
+  else if (wearPercentage >= 95) element.classList.add('wear-97');
+  else if (wearPercentage >= 92.5) element.classList.add('wear-95');
+  else if (wearPercentage >= 90) element.classList.add('wear-92');
+  else if (wearPercentage >= 87.5) element.classList.add('wear-90');
+  else if (wearPercentage >= 85) element.classList.add('wear-87');
+  else if (wearPercentage >= 82.5) element.classList.add('wear-85');
+  else if (wearPercentage >= 80) element.classList.add('wear-82');
+  else if (wearPercentage >= 77.5) element.classList.add('wear-80');
+  else if (wearPercentage >= 75) element.classList.add('wear-77');
+  else if (wearPercentage >= 60) element.classList.add('wear-60');
+  else element.classList.add('wear-50');
 }
 
 // Handle driver exiting the track
