@@ -133,6 +133,35 @@
     </div>
   </div>
   
+  <!-- Calculation Variables Section -->
+  <div class="telemetry-block">
+    <h2>Calculation Variables <span class="info-badge" title="These values are used in the stint calculations">ℹ️</span></h2>
+    <div class="race-info-grid calculation-variables">
+      <div>
+        <label>Fuel Per Lap:</label>
+        <span id="fuel-per-lap">--</span>
+        <div class="tooltip">Defined in the input form above</div>
+      </div>
+      <div>
+        <label>Lap Time:</label>
+        <span id="avg-lap-time">--</span>
+        <div class="tooltip">Defined in the input form above</div>
+      </div>
+      <div>
+        <label>Tank Capacity:</label>
+        <span id="max-fuel">--</span>
+      </div>
+      <div>
+        <label>Current Fuel Level:</label>
+        <span id="current-fuel">--</span>
+      </div>
+      <div>
+        <label>Pit Stop Duration:</label>
+        <span id="pit-stop-time">--</span>
+      </div>
+    </div>
+  </div>
+  
   <!-- Stint Table -->
   <div class="telemetry-block">
     <h2>Stint Plan</h2>
@@ -365,7 +394,7 @@
       }
     }
 
-    // Update the UI with current values
+    // Update UI with calculation results
     function updateUI() {
       // Update race info
       document.getElementById('countdown-timer').textContent = formatTime(raceTimeRemaining);
@@ -374,6 +403,13 @@
       document.getElementById('live-stint-duration-display').textContent = formatTime(stintDuration);
       document.getElementById('live-laps-per-stint-display').textContent = lapsPerStint;
       document.getElementById('live-pit-stops-display').textContent = Math.max(0, stintData.filter(s => String(s.stintNumber).startsWith('PIT')).length);
+      
+      // Update calculation variables
+      document.getElementById('fuel-per-lap').textContent = fuelPerLap.toFixed(2) + " L";
+      document.getElementById('avg-lap-time').textContent = formatTime(avgLapTime);
+      document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
+      document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
+      document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
 
       // Update stint table
       const tbody = document.getElementById('live-stint-table-body');
