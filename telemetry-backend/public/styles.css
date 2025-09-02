@@ -419,6 +419,7 @@ h2 {
   margin: 20px 0;
   border: 1px solid #333;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  overflow: hidden; /* Prevent contents from spilling out */
 }
 
 #fuelGaugeContainer label {
@@ -430,8 +431,27 @@ h2 {
 
 #fuelGauge {
   width: 100%;
-  height: 30px;
-  border-radius: 5px;
+  height: 6px; /* Reduced height */
+  border-radius: 4px;
+  background-color: #000; /* Black when empty */
+  appearance: none; /* Remove default appearance */
+  -webkit-appearance: none; /* For WebKit browsers */
+  border: none;
+}
+
+#fuelGauge::-webkit-progress-bar {
+  background-color: #000; /* Black background for empty gauge */
+  border-radius: 4px;
+}
+
+#fuelGauge::-webkit-progress-value {
+  background-color: #00ff00; /* Green for filled portion */
+  border-radius: 4px;
+}
+
+#fuelGauge::-moz-progress-bar {
+  background-color: #00ff00; /* Green for filled portion in Firefox */
+  border-radius: 4px;
 }
 
 #fuelValue {
