@@ -17,6 +17,7 @@ A real-time telemetry dashboard for sim racing that displays fuel consumption, l
 - `index.html` - Main dashboard view
 - `inputs.html` - Input monitoring view
 - `planner.html` - Endurance race stint planning view
+- `staticplanner.html` - Static version of the endurance planner with input fields for testing
 - `styles.css` - CSS styles for the dashboard
 - `telemetry.js` - Core telemetry data processing
 - `pedaltrace.js` - Pedal input visualization
@@ -44,6 +45,16 @@ The endurance planner feature helps teams manage race strategy for long races:
 - Shows fuel usage per stint and expected laps per stint
 - Adjusts calculations in real-time as driving style changes
 - Highlights the current stint and updates next pit stop timing
+
+### Static Planner
+
+A testing version of the endurance planner is also available:
+
+- Provides input fields for all key race parameters
+- Uses the same calculation logic as the live planner
+- Allows testing different race scenarios without live telemetry
+- Perfect for pre-race planning and strategy development
+- Easily accessible from all pages via the top navigation bar
 
 ## Data Sharing
 
