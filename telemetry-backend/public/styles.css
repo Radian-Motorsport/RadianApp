@@ -459,32 +459,34 @@ h2 {
 
 #fuelGaugeContainer {
   width: 100%;
-  padding: 15px;
+  padding: 10px 15px;
   background-color: #222;
   border-radius: 5px;
-  margin: 20px 0;
+  margin: 15px 0;
   border: 1px solid #333;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  overflow: hidden; /* Prevent contents from spilling out */
 }
 
 #fuelGaugeContainer label {
   color: #0f0;
-  font-size: 1.2em;
-  margin-bottom: 8px;
+  font-size: 1.1em;
+  margin-bottom: 5px;
   display: block;
 }
 
 #fuelGauge {
   width: 100%;
-  height: 30px;
-  border-radius: 5px;
+  height: 8px; /* Reduced to 1/4 of original height */
+  border-radius: 4px;
+  margin: 0;
 }
 
 #fuelValue {
   text-align: center;
   font-weight: bold;
-  margin-top: 8px;
-  font-size: 1.2em;
+  margin-top: 4px;
+  font-size: 1em;
   color: white;
 }
 
