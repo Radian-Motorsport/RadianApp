@@ -36,6 +36,10 @@ function initPlannerPage() {
   setupEventListeners();
   setupDataSharing();
   
+  // Initialize trend tracking variables
+  window.lastFuelPerLap = null;
+  window.lastAvgLapTime = null;
+  
   // Try to get initial values from telemetryDashboard if available
   if (window.telemetryDashboard) {
     // Get race data
@@ -445,6 +449,41 @@ function updateUI() {
   document.getElementById('live-stint-duration-display').textContent = formatTime(stintDuration);
   document.getElementById('live-laps-per-stint-display').textContent = lapsPerStint;
   document.getElementById('live-pit-stops-display').textContent = Math.max(0, stintData.filter(s => String(s.stintNumber).startsWith('PIT')).length);
+  
+  // Update calculation variables
+  document.getElementById('fuel-per-lap').textContent = fuelPerLap.toFixed(2) + " L";
+  document.getElementById('avg-lap-time').textContent = formatTime(avgLapTime);
+  document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
+  document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
+  document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
+  
+  // Update additional info if available from telemetryDashboard
+  if (window.telemetryDashboard) {
+    if (window.telemetryDashboard.getRaceData) {
+      const raceData = window.telemetryDashboard.getRaceData();
+      if (raceData.sessionType) {
+        document.getElementById('session-type').textContent = raceData.sessionType;
+      }
+      if (raceData.trackName) {
+        document.getElementById('track-name').textContent = raceData.trackName;
+      }
+    }
+    
+    if (window.telemetryDashboard.getDriverData) {
+      const driverData = window.telemetryDashboard.getDriverData();
+      if (driverData.driverName) {
+        document.getElementById('driver-name').textContent = driverData.driverName;
+      }
+    }
+  }
+  
+  // Update trend indicators for fuel and lap time
+  updateTrendIndicator('fuel-trend', window.lastFuelPerLap, fuelPerLap);
+  updateTrendIndicator('laptime-trend', window.lastAvgLapTime, avgLapTime);
+  
+  // Store current values for next trend calculation
+  window.lastFuelPerLap = fuelPerLap;
+  window.lastAvgLapTime = avgLapTime;
 
   // Update stint table
   const tbody = document.getElementById('live-stint-table-body');
@@ -496,4 +535,36 @@ function updateRefreshRate() {
   }
   
   lastTelemetryTime = now;
+}
+
+// Function to update trend indicators (up, down, stable)
+function updateTrendIndicator(elementId, previousValue, currentValue) {
+  const element = document.getElementById(elementId);
+  if (!element || previousValue === undefined || currentValue === undefined) {
+    return;
+  }
+  
+  // Remove existing classes
+  element.classList.remove('trend-up', 'trend-down', 'trend-stable');
+  
+  // Determine trend direction
+  const difference = currentValue - previousValue;
+  const threshold = (previousValue * 0.02); // 2% change threshold
+  
+  if (Math.abs(difference) < threshold) {
+    // Stable
+    element.innerHTML = "━";
+    element.classList.add('trend-stable');
+    element.title = "Value is stable";
+  } else if (difference > 0) {
+    // Increasing (showing up arrow)
+    element.innerHTML = "▲";
+    element.classList.add('trend-up');
+    element.title = `Increased by ${Math.abs(difference).toFixed(2)}`;
+  } else {
+    // Decreasing (showing down arrow)
+    element.innerHTML = "▼";
+    element.classList.add('trend-down');
+    element.title = `Decreased by ${Math.abs(difference).toFixed(2)}`;
+  }
 }
