@@ -4,31 +4,72 @@
 const socket = io('https://radianapp.onrender.com');
 
 // State Variables
-let lastLapCompleted = -1;
-let fuelAtLapStart = null;
-let fuelUsageHistory = [];
-let lapTimeHistory = [];
-let lastLapStartTime = null;
-let currentLap = 0;
-let lastTeamLap = null;
-let bufferedData = null;
-let lapEntryPoint = null;
-let bufferFrozen = true;
-let driverWasOnTrack = false;
-let lastTelemetryTime = null;
-let stintStartTime = null;
-let lastPitStopTimeValue = null;
+let lastLapCompleted = loadFromStorage('lastLapCompleted', -1);
+let fuelAtLapStart = loadFromStorage('fuelAtLapStart', null);
+let fuelUsageHistory = loadFromStorage('fuelUsageHistory', []);
+let lapTimeHistory = loadFromStorage('lapTimeHistory', []);
+let lastLapStartTime = loadFromStorage('lastLapStartTime', null);
+let currentLap = loadFromStorage('currentLap', 0);
+let lastTeamLap = loadFromStorage('lastTeamLap', null);
+let bufferedData = loadFromStorage('bufferedData', null);
+let lapEntryPoint = loadFromStorage('lapEntryPoint', null);
+let bufferFrozen = loadFromStorage('bufferFrozen', true);
+let driverWasOnTrack = loadFromStorage('driverWasOnTrack', false);
+let lastTelemetryTime = loadFromStorage('lastTelemetryTime', null);
+let stintStartTime = loadFromStorage('stintStartTime', null);
+let lastPitStopTimeValue = loadFromStorage('lastPitStopTimeValue', null);
+let lastSessionId = loadFromStorage('lastSessionId', null);
+let lastSessionDate = loadFromStorage('lastSessionDate', new Date().toDateString());
 
 // Previous value tracking for color coding
-let previousValues = {
+let previousValues = loadFromStorage('previousValues', {
   fuelPerLap: null,
   fuelAvg: null,
   fuelAvg5: null,
   lastLapTime: null,
   lapAvg3: null,
   lapAvg5: null
-};
-let stintIncidentCount = 0;
+});
+let stintIncidentCount = loadFromStorage('stintIncidentCount', 0);
+
+// Functions to handle localStorage persistence
+function saveToStorage(key, value) {
+  try {
+    localStorage.setItem('telemetry_' + key, JSON.stringify(value));
+  } catch (error) {
+    console.warn('Failed to save to localStorage:', error);
+  }
+}
+
+function loadFromStorage(key, defaultValue) {
+  try {
+    const storedValue = localStorage.getItem('telemetry_' + key);
+    return storedValue ? JSON.parse(storedValue) : defaultValue;
+  } catch (error) {
+    console.warn(`Failed to load ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+}
+
+// Save all state variables to localStorage
+function saveState() {
+  saveToStorage('lastLapCompleted', lastLapCompleted);
+  saveToStorage('fuelAtLapStart', fuelAtLapStart);
+  saveToStorage('fuelUsageHistory', fuelUsageHistory);
+  saveToStorage('lapTimeHistory', lapTimeHistory);
+  saveToStorage('lastLapStartTime', lastLapStartTime);
+  saveToStorage('currentLap', currentLap);
+  saveToStorage('lastTeamLap', lastTeamLap);
+  saveToStorage('bufferedData', bufferedData);
+  saveToStorage('lapEntryPoint', lapEntryPoint);
+  saveToStorage('bufferFrozen', bufferFrozen);
+  saveToStorage('driverWasOnTrack', driverWasOnTrack);
+  saveToStorage('lastTelemetryTime', lastTelemetryTime);
+  saveToStorage('stintStartTime', stintStartTime);
+  saveToStorage('lastPitStopTimeValue', lastPitStopTimeValue);
+  saveToStorage('previousValues', previousValues);
+  saveToStorage('stintIncidentCount', stintIncidentCount);
+}
 
 const MIN_LAPS_FOR_VALID_DATA = 2;
 
@@ -256,6 +297,9 @@ function handleDriverExit(values, teamLap) {
   driverWasOnTrack = false;
   elements.bufferStatus.textContent = 'Waiting for driver…';
   elements.panel.classList.add('dimmed');
+  
+  // Save state after driver exit
+  saveState();
 }
 
 // Handle driver entering the track
@@ -285,6 +329,9 @@ function handleDriverEntry(teamLap) {
   driverWasOnTrack = true;
   stintStartTime = Date.now();
   stintIncidentCount = 0;
+  
+  // Save state after driver entry
+  saveState();
 }
 
 // Process lap completion data
@@ -360,6 +407,9 @@ function processLapCompletion(lapCompleted, fuel) {
 
   fuelAtLapStart = fuel;
   lastLapCompleted = lapCompleted;
+  
+  // Save state after lap completion
+  saveState();
 }
 
 // Set up socket event listeners
@@ -488,6 +538,25 @@ function setupSocketListeners() {
         elements.streamingStatus.textContent = 
           `Live: ${info.driver} (Session ${info.sessionId})`;
       }
+      
+      // Check if this is a new session or a new day
+      const currentDate = new Date().toDateString();
+      if ((lastSessionId && info.sessionId !== lastSessionId) || 
+          (lastSessionDate && currentDate !== lastSessionDate)) {
+        
+        // Update session tracking
+        lastSessionId = info.sessionId;
+        lastSessionDate = currentDate;
+        saveToStorage('lastSessionId', lastSessionId);
+        saveToStorage('lastSessionDate', lastSessionDate);
+        
+        // Ask user if they want to reset data for the new session
+        setTimeout(() => {
+          if (confirm("It looks like a new race session has started. Would you like to reset the telemetry data?")) {
+            resetTelemetryData();
+          }
+        }, 2000); // Small delay to ensure the page is fully loaded
+      }
     } catch (error) {
       console.error('Error updating broadcaster info:', error);
     }
@@ -508,6 +577,69 @@ function setupSocketListeners() {
 
 // Initialize the dashboard when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initDashboard);
+
+// Save state to localStorage periodically and before page unload
+setInterval(saveState, 5000); // Save every 5 seconds
+
+// Save state when leaving the page
+window.addEventListener('beforeunload', saveState);
+window.addEventListener('pagehide', saveState);
+
+// Function to reset all telemetry data
+function resetTelemetryData() {
+  // Clear all telemetry-related localStorage items
+  const telemetryKeys = Object.keys(localStorage).filter(key => key.startsWith('telemetry_'));
+  telemetryKeys.forEach(key => localStorage.removeItem(key));
+  
+  // Reset state variables
+  lastLapCompleted = -1;
+  fuelAtLapStart = null;
+  fuelUsageHistory = [];
+  lapTimeHistory = [];
+  lastLapStartTime = null;
+  currentLap = 0;
+  lastTeamLap = null;
+  bufferedData = null;
+  lapEntryPoint = null;
+  bufferFrozen = true;
+  driverWasOnTrack = false;
+  lastTelemetryTime = null;
+  stintStartTime = null;
+  lastPitStopTimeValue = null;
+  previousValues = {
+    fuelPerLap: null,
+    fuelAvg: null,
+    fuelAvg5: null,
+    lastLapTime: null,
+    lapAvg3: null,
+    lapAvg5: null
+  };
+  stintIncidentCount = 0;
+  
+  // Keep session tracking
+  lastSessionId = localStorage.getItem('telemetry_lastSessionId');
+  lastSessionDate = new Date().toDateString();
+  saveToStorage('lastSessionDate', lastSessionDate);
+  
+  // Reset display elements if they exist
+  if (elements.fuelPerLap) elements.fuelPerLap.textContent = '--';
+  if (elements.fuelAvg) elements.fuelAvg.textContent = '--';
+  if (elements.fuelAvg5) elements.fuelAvg5.textContent = '--';
+  if (elements.lastLapTime) elements.lastLapTime.textContent = '--:--';
+  if (elements.lapAvg3) elements.lapAvg3.textContent = '--';
+  if (elements.lapAvg5) elements.lapAvg5.textContent = '--';
+  if (elements.fuelProjectedLaps) elements.fuelProjectedLaps.textContent = '--';
+  if (elements.fuelProjectedTime) elements.fuelProjectedTime.textContent = '--';
+  if (elements.stintLapCount) elements.stintLapCount.textContent = '--';
+  if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = '--';
+  if (elements.stintTotalTime) elements.stintTotalTime.textContent = '--:--:--';
+  if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = '--:--';
+  if (elements.lastPitStopTime) elements.lastPitStopTime.textContent = '--:--';
+  if (elements.stintIncidents) elements.stintIncidents.textContent = '--';
+  
+  // Notify user
+  alert('Telemetry data has been reset for a new session.');
+}
 
 // Export public methods and data for other files to use
 window.telemetryDashboard = {
