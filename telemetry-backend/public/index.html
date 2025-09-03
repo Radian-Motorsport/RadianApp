@@ -15,6 +15,7 @@
     <button onclick="location.href='inputs.html'">Inputs</button>
     <button onclick="location.href='planner.html'">Endurance</button>
     <button onclick="location.href='staticplanner.html'">Static Planner</button>
+    <button onclick="location.href='connections.html'">Connections</button>
     <button onclick="resetTelemetryData()" class="reset-button">Reset Data</button>
     <div id="refreshRate">Refresh Rate: --</div>
     <div id="streamingStatus">Live: —</div>
@@ -500,15 +501,17 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
       }
     });
     
-    // Function to reset all telemetry data in localStorage
+    // Function to reset all telemetry data for all clients
     function resetTelemetryData() {
-      if (confirm("Are you sure you want to reset all telemetry data? This will clear all saved race data for a new session.")) {
-        // Clear all telemetry-related localStorage items
-        const telemetryKeys = Object.keys(localStorage).filter(key => key.startsWith('telemetry_'));
-        telemetryKeys.forEach(key => localStorage.removeItem(key));
-        
-        // Reload the page to start fresh
-        location.reload();
+      if (confirm("Are you sure you want to reset all telemetry data? This will clear data for ALL team members.")) {
+        // Use the resetTelemetryData function from telemetry.js
+        if (window.telemetryDashboard && typeof telemetryDashboard.resetTelemetryData === 'function') {
+          telemetryDashboard.resetTelemetryData();
+        } else {
+          // Fallback if the function isn't available
+          socket.emit('resetTelemetryState');
+          location.reload();
+        }
       }
     }
   </script>

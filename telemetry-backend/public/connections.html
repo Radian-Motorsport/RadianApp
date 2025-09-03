@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connection Status - Radian</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .connection-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .connection-block {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .connection-list {
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      padding: 10px;
+    }
+    
+    .client-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .client-item:last-child {
+      border-bottom: none;
+    }
+    
+    .system-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+    
+    .info-value {
+      font-weight: bold;
+    }
+    
+    .status-good {
+      color: #4caf50;
+    }
+    
+    .status-warning {
+      color: #ff9800;
+    }
+    
+    .status-error {
+      color: #f44336;
+    }
+    
+    .connection-stats {
+      text-align: center;
+      font-size: 1.2em;
+      margin: 20px 0;
+    }
+    
+    .big-number {
+      font-size: 2.5em;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+    
+    .broadcast-info {
+      display: flex;
+      justify-content: space-between;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .admin-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .admin-button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      background-color: #1e88e5;
+      color: white;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    .admin-button.danger {
+      background-color: #e53935;
+    }
+    
+    .admin-button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button onclick="location.href='index.html'">Strategy</button>
+    <button onclick="location.href='inputs.html'">Inputs</button>
+    <button onclick="location.href='planner.html'">Endurance</button>
+    <button onclick="location.href='staticplanner.html'">Static Planner</button>
+    <div id="refreshRate">Refresh Rate: --</div>
+    <div id="streamingStatus">Live: —</div>
+  </div>
+  
+  <!-- Main Dashboard Header -->
+  <div class="telemetry-block">
+    <h2>Connection Status Dashboard</h2>
+    
+    <!-- Summary Stats -->
+    <div class="connection-stats">
+      <div>Active Connections</div>
+      <div class="big-number" id="connectionCount">0</div>
+      <div>Server Uptime: <span id="serverUptime">--:--:--</span></div>
+    </div>
+    
+    <!-- Broadcaster Info -->
+    <div class="broadcast-info">
+      <div>
+        <label>Current Driver:</label>
+        <span id="currentDriver">--</span>
+      </div>
+      <div>
+        <label>Session ID:</label>
+        <span id="sessionId">--</span>
+      </div>
+      <div>
+        <label>Connected Since:</label>
+        <span id="connectedSince">--:--:--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Connection Info -->
+  <div class="telemetry-block">
+    <h2>System Status <span class="info-badge" title="Detailed system information">ℹ️</span></h2>
+    <div class="connection-grid">
+      <!-- Connection List -->
+      <div class="connection-block">
+        <h3>Connected Clients</h3>
+        <div class="connection-list" id="clientList">
+          <div class="client-item">
+            <span>No clients connected</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- System Info -->
+      <div class="connection-block">
+        <h3>Server Information</h3>
+        <div class="system-info">
+          <div class="info-item">
+            <span>Socket.io Status:</span>
+            <span class="info-value status-good" id="socketStatus">Connected</span>
+          </div>
+          <div class="info-item">
+            <span>Last Data Received:</span>
+            <span class="info-value" id="lastDataTime">--:--:--</span>
+          </div>
+          <div class="info-item">
+            <span>Telemetry Rate:</span>
+            <span class="info-value" id="telemetryRate">-- Hz</span>
+          </div>
+          <div class="info-item">
+            <span>Data Storage:</span>
+            <span class="info-value" id="storageStatus">Active</span>
+          </div>
+          <div class="info-item">
+            <span>Server Location:</span>
+            <span class="info-value" id="serverLocation">Render.com</span>
+          </div>
+          <div class="info-item">
+            <span>API Status:</span>
+            <span class="info-value status-good" id="apiStatus">Operational</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Admin Actions -->
+    <div class="admin-actions">
+      <button class="admin-button" id="refreshButton">Refresh Status</button>
+      <button class="admin-button" id="pingButton">Ping All Clients</button>
+      <button class="admin-button danger" id="resetButton">Reset All Data</button>
+    </div>
+  </div>
+
+  <!-- Connection History -->
+  <div class="telemetry-block">
+    <h2>Connection History <span class="info-badge" title="Recent connection events">ℹ️</span></h2>
+    <div class="connection-list" id="connectionHistory">
+      <div class="client-item">
+        <span>No connection history available</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="telemetry.js"></script>
+  <script>
+    // Socket.io connection
+    const socket = io('https://radianapp.onrender.com');
+    
+    // Connection tracking
+    let connectionStartTime = Date.now();
+    let connectedClients = [];
+    let connectionHistory = [];
+    
+    // DOM elements
+    const connectionCountEl = document.getElementById('connectionCount');
+    const serverUptimeEl = document.getElementById('serverUptime');
+    const currentDriverEl = document.getElementById('currentDriver');
+    const sessionIdEl = document.getElementById('sessionId');
+    const connectedSinceEl = document.getElementById('connectedSince');
+    const clientListEl = document.getElementById('clientList');
+    const socketStatusEl = document.getElementById('socketStatus');
+    const lastDataTimeEl = document.getElementById('lastDataTime');
+    const telemetryRateEl = document.getElementById('telemetryRate');
+    const storageStatusEl = document.getElementById('storageStatus');
+    const apiStatusEl = document.getElementById('apiStatus');
+    const connectionHistoryEl = document.getElementById('connectionHistory');
+    
+    // Buttons
+    const refreshButton = document.getElementById('refreshButton');
+    const pingButton = document.getElementById('pingButton');
+    const resetButton = document.getElementById('resetButton');
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      updateConnectionTime();
+      setInterval(updateConnectionTime, 1000);
+      
+      // Request initial data
+      socket.emit('requestConnectionInfo');
+      
+      // Set up button handlers
+      refreshButton.addEventListener('click', () => {
+        socket.emit('requestConnectionInfo');
+        addConnectionEvent('Manual refresh requested');
+      });
+      
+      pingButton.addEventListener('click', () => {
+        socket.emit('pingAllClients');
+        addConnectionEvent('Ping sent to all clients');
+      });
+      
+      resetButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset all telemetry data for all connected clients?')) {
+          if (window.telemetryDashboard && typeof telemetryDashboard.resetTelemetryData === 'function') {
+            telemetryDashboard.resetTelemetryData();
+            addConnectionEvent('Telemetry data reset initiated');
+          } else {
+            socket.emit('resetTelemetryState');
+            addConnectionEvent('Telemetry data reset initiated (fallback)');
+          }
+        }
+      });
+    });
+    
+    // Socket event handlers
+    socket.on('connect', () => {
+      socketStatusEl.textContent = 'Connected';
+      socketStatusEl.className = 'info-value status-good';
+      addConnectionEvent('Connected to server');
+    });
+    
+    socket.on('disconnect', () => {
+      socketStatusEl.textContent = 'Disconnected';
+      socketStatusEl.className = 'info-value status-error';
+      addConnectionEvent('Disconnected from server');
+    });
+    
+    socket.on('telemetry', (data) => {
+      const now = new Date();
+      lastDataTimeEl.textContent = `${now.toLocaleTimeString()}`;
+    });
+    
+    socket.on('connectionInfo', (info) => {
+      // Update connection count
+      connectionCountEl.textContent = info.clientCount || '0';
+      
+      // Update client list
+      updateClientList(info.clients || []);
+      
+      // Update server info
+      serverUptimeEl.textContent = formatTime(info.uptime || 0);
+      storageStatusEl.textContent = info.storageActive ? 'Active' : 'Inactive';
+      apiStatusEl.textContent = info.apiStatus || 'Unknown';
+      apiStatusEl.className = info.apiStatus === 'Operational' 
+        ? 'info-value status-good' 
+        : 'info-value status-warning';
+      
+      addConnectionEvent('Received connection info update');
+    });
+    
+    socket.on('currentBroadcaster', (info) => {
+      currentDriverEl.textContent = info.driver || '--';
+      sessionIdEl.textContent = info.sessionId || '--';
+      addConnectionEvent(`Broadcaster updated: ${info.driver}`);
+    });
+    
+    socket.on('clientConnect', (clientInfo) => {
+      addConnectionEvent(`New client connected: ${clientInfo.id.substring(0, 6)}`);
+      socket.emit('requestConnectionInfo');
+    });
+    
+    socket.on('clientDisconnect', (clientInfo) => {
+      addConnectionEvent(`Client disconnected: ${clientInfo.id.substring(0, 6)}`);
+      socket.emit('requestConnectionInfo');
+    });
+    
+    socket.on('telemetryStateReset', () => {
+      addConnectionEvent('Telemetry data has been reset by another user');
+    });
+    
+    // Helper functions
+    function updateConnectionTime() {
+      const elapsedSeconds = Math.floor((Date.now() - connectionStartTime) / 1000);
+      connectedSinceEl.textContent = formatTime(elapsedSeconds);
+    }
+    
+    function updateClientList(clients) {
+      if (!clientListEl) return;
+      
+      clientListEl.innerHTML = '';
+      if (clients.length === 0) {
+        clientListEl.innerHTML = '<div class="client-item"><span>No clients connected</span></div>';
+        return;
+      }
+      
+      clients.forEach(client => {
+        const clientEl = document.createElement('div');
+        clientEl.className = 'client-item';
+        
+        const idSpan = document.createElement('span');
+        idSpan.textContent = `ID: ${client.id.substring(0, 6)}...`;
+        
+        const connectedSpan = document.createElement('span');
+        connectedSpan.textContent = formatTime(client.connectedFor);
+        
+        clientEl.appendChild(idSpan);
+        clientEl.appendChild(connectedSpan);
+        clientListEl.appendChild(clientEl);
+      });
+    }
+    
+    function addConnectionEvent(message) {
+      if (!connectionHistoryEl) return;
+      
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      
+      connectionHistory.unshift({
+        time: timeString,
+        message: message
+      });
+      
+      // Keep history limited to most recent 20 events
+      if (connectionHistory.length > 20) {
+        connectionHistory.pop();
+      }
+      
+      // Update display
+      connectionHistoryEl.innerHTML = '';
+      connectionHistory.forEach(event => {
+        const eventEl = document.createElement('div');
+        eventEl.className = 'client-item';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = event.time;
+        
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = event.message;
+        
+        eventEl.appendChild(timeSpan);
+        eventEl.appendChild(messageSpan);
+        connectionHistoryEl.appendChild(eventEl);
+      });
+    }
+    
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      return [
+        hours.toString().padStart(2, '0'),
+        minutes.toString().padStart(2, '0'),
+        secs.toString().padStart(2, '0')
+      ].join(':');
+    }
+  </script>
+</body>
+</html>
