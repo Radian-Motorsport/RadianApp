@@ -1,4 +1,28 @@
 /* Main styles for Telemetry Dashboard */
+
+/* ========================================
+   COLOR SCHEME DEFINITIONS
+   ========================================
+   These 6 colors define the entire theme and can be easily changed.
+   They are applied left-to-right for page navigation buttons and 
+   can be used throughout the interface for headers and accents.
+   
+   Usage: Change these hex values to instantly update the entire color scheme
+   ======================================== */
+:root {
+  --color-1: #ff6b6b; /* Red-Orange - Strategy page */
+  --color-2: #4ecdc4; /* Teal - Inputs page */
+  --color-3: #45b7d1; /* Blue - Endurance page */
+  --color-4: #96ceb4; /* Mint Green - Static Planner page */
+  --color-5: #feca57; /* Yellow - Connections page */
+  --color-6: #ff9ff3; /* Pink - Reserved for future use */
+  
+  /* Legacy colors maintained for compatibility */
+  --legacy-green: #0f0;
+  --legacy-orange: orange;
+  --legacy-turquoise: turquoise;
+}
+
 body {
   background-color: #121212;
   color: #fff;
@@ -51,6 +75,11 @@ body.dashboard-layout {
   margin-bottom: 10px;
 }
 
+/* ========================================
+   DRIVER STATUS INDICATORS
+   ========================================
+   Coasting and Overlap indicators with legacy color support
+   ======================================== */
 #coastingStatus {
   color: grey;
   transition: color 0.2s ease;
@@ -61,17 +90,23 @@ body.dashboard-layout {
   transition: color 0.2s ease;
 }
 
+/* Active states using legacy colors (can be updated to use color scheme if needed) */
 .coasting-active {
-  color: orange;
+  color: var(--legacy-orange);
 }
 
 .overlap-active {
-  color: turquoise;
+  color: var(--legacy-turquoise);
 }
 
 /* Ensure in-grid spans reflect active colors */
-.inputs-grid span.coasting-active { color: orange; }
-.inputs-grid span.overlap-active { color: turquoise; }
+.inputs-grid span.coasting-active { 
+  color: var(--legacy-orange); 
+}
+
+.inputs-grid span.overlap-active { 
+  color: var(--legacy-turquoise); 
+}
 
 #teamLapDisplay {
   margin-top: 20px;
@@ -108,6 +143,11 @@ body.dashboard-layout {
 }
 
 /* Inputs page styles */
+/* ========================================
+   TOP BAR NAVIGATION STYLES
+   ========================================
+   Controls the main navigation bar appearance and button states
+   ======================================== */
 .top-bar {
   display: flex;
   justify-content: flex-start;
@@ -118,9 +158,10 @@ body.dashboard-layout {
   border-bottom: 1px solid #333;
 }
 
+/* Default button state - inactive navigation buttons */
 .top-bar button {
   background-color: #333;
-  color: #0f0;
+  color: var(--legacy-green);
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
@@ -129,13 +170,67 @@ body.dashboard-layout {
   transition: all 0.2s ease;
 }
 
+/* Hover state for all navigation buttons */
 .top-bar button:hover {
   background-color: #444;
   color: #fff;
 }
 
+/* ========================================
+   ACTIVE PAGE HIGHLIGHTING SYSTEM
+   ========================================
+   Each page gets its own color from the 6-color scheme.
+   Colors are applied left-to-right based on navigation order.
+   
+   To change colors: modify the --color-X variables in :root above
+   To add new pages: create new .active-page-X classes
+   ======================================== */
+
+/* Strategy page (leftmost) - Red-Orange */
+.top-bar button.active.active-page-1 {
+  background-color: var(--color-1);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Inputs page - Teal */
+.top-bar button.active.active-page-2 {
+  background-color: var(--color-2);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Endurance page - Blue */
+.top-bar button.active.active-page-3 {
+  background-color: var(--color-3);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Static Planner page - Mint Green */
+.top-bar button.active.active-page-4 {
+  background-color: var(--color-4);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Connections page (rightmost) - Yellow */
+.top-bar button.active.active-page-5 {
+  background-color: var(--color-5);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Reserved for future page - Pink */
+.top-bar button.active.active-page-6 {
+  background-color: var(--color-6);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Fallback active state (maintains old green for compatibility) */
 .top-bar button.active {
-  background-color: #0f0;
+  background-color: var(--legacy-green);
   color: #000;
   font-weight: 600;
 }

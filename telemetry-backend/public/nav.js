@@ -3,11 +3,11 @@
 
 (function () {
   const pages = [
-    { key: 'index', label: 'Strategy', href: 'index.html' },
-    { key: 'inputs', label: 'Inputs', href: 'inputs.html' },
-    { key: 'planner', label: 'Endurance', href: 'planner.html' },
-    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html' },
-    { key: 'connections', label: 'Connections', href: 'connections.html' }
+    { key: 'index', label: 'Strategy', href: 'index.html', colorClass: 'active-page-1' },
+    { key: 'inputs', label: 'Inputs', href: 'inputs.html', colorClass: 'active-page-2' },
+    { key: 'planner', label: 'Endurance', href: 'planner.html', colorClass: 'active-page-3' },
+    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html', colorClass: 'active-page-4' },
+    { key: 'connections', label: 'Connections', href: 'connections.html', colorClass: 'active-page-5' }
   ];
 
   function detectActiveKey() {
@@ -37,7 +37,10 @@
         const here = location.pathname.toLowerCase().endsWith('/' + p.href.toLowerCase());
         if (!here) location.href = p.href;
       };
-      if (p.key === activeKey) btn.classList.add('active');
+      if (p.key === activeKey) {
+        btn.classList.add('active');
+        btn.classList.add(p.colorClass); // Apply the specific color class
+      }
       left.appendChild(btn);
     });
 
