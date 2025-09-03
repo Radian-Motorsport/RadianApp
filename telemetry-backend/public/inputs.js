@@ -195,7 +195,7 @@ function updateEnvironmentElements(values) {
   safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
   safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
   safeUpdateElement('AirDensity', `${values.AirDensity?.toFixed(3)} kg/m³`);
-  safeUpdateElement('AirPressure', `${values.AirPressure?.toFixed(0)} Pa`);
+  safeUpdateElement('AirPressure', `${(values.AirPressure * 0.01)?.toFixed(1)} mbar`);
   
   // Weather
   safeUpdateElement('WindVel', `${values.WindVel?.toFixed(1)} km/h`);

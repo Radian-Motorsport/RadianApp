@@ -20,6 +20,7 @@ class EnviroTrace {
       airTempColor: options.airTempColor || 'cyan',
       humidityColor: options.humidityColor || 'purple',
       skiesColor: options.skiesColor || 'blue',
+      airPressureColor: options.airPressureColor || 'hotpink',
       tempScale: options.tempScale || 2, // Scale factor for temperature values
       sampleRate: options.sampleRate || 60, // Take 1 sample every 60 telemetry updates (~1 second)
       ...options
@@ -52,9 +53,9 @@ class EnviroTrace {
       // Environment data buffer
       this.buffer.push({
         trackTemp: values.TrackTemp,
-        airTemp: values.AirTemp,
         humidity: values.RelativeHumidity,
-        skies: values.Skies // Store raw 0-3 value, scaling handled in drawing
+        skies: values.Skies, // Store raw 0-3 value, scaling handled in drawing
+        airPressure: values.AirPressure // Store in Pa, will convert to mbar for display
       });
       
       if (this.buffer.length > this.options.maxPoints) {
@@ -97,37 +98,39 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
-    // Air Temperature (scale from typical range 0-50°C to full canvas height)
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = this.options.airTempColor;
-    this.ctx.lineWidth = 1.5;
-    this.buffer.forEach((point, i) => {
-      const x = i * xScale;
-      // Scale temperature: map 0-50°C to 0-canvas height
-      const y = canvasHeight - ((point.airTemp / 50) * canvasHeight);
-      i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
-    });
-    this.ctx.stroke();
-    
     // Humidity (0-100% maps to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
+      // Humidity: map 0-100% to full canvas height
       const y = canvasHeight - ((point.humidity / 100) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
     
-    // Skies (0-3 scaled to 0-100% of canvas height)
+    // Skies (0-3 scaled to 0-100% of canvas height) 
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.skiesColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      // Skies: map 0-3 to 0-canvas height (each step = 25% of height)
-      const y = canvasHeight - ((point.skies / 75) * canvasHeight);
+      // Skies: map 0-3 to full canvas height (0=0%, 1=33%, 2=67%, 3=100%)
+      const y = canvasHeight - ((point.skies / 3) * canvasHeight);
+      i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
+    });
+    this.ctx.stroke();
+    
+    // Air Pressure (950-1050 mbar range maps to full canvas height)
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.options.airPressureColor;
+    this.ctx.lineWidth = 1.5;
+    this.buffer.forEach((point, i) => {
+      const x = i * xScale;
+      // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
+      const pressureMbar = point.airPressure * 0.01;
+      const y = canvasHeight - (((pressureMbar - 950) / 100) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
@@ -142,43 +145,44 @@ class EnviroTrace {
    * Draw a legend for the graph
    */
   drawLegend() {
-    const legendX = 10;
+    const legendX = -80; // Move legend outside canvas to the left
     const legendY = 20;
-    const lineLength = 20;
-    const spacing = 20;
+    const lineLength = 15;
+    const spacing = 18;
     
     // Track Temp
     this.ctx.strokeStyle = this.options.trackTempColor;
+    this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.moveTo(legendX, legendY);
     this.ctx.lineTo(legendX + lineLength, legendY);
     this.ctx.stroke();
     this.ctx.fillStyle = 'white';
-    this.ctx.font = '12px Arial';
+    this.ctx.font = '11px Arial';
     this.ctx.fillText('Track Temp', legendX + lineLength + 5, legendY + 4);
-    
-    // Air Temp
-    this.ctx.strokeStyle = this.options.airTempColor;
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing);
-    this.ctx.stroke();
-    this.ctx.fillText('Air Temp', legendX + lineLength + 5, legendY + spacing + 4);
     
     // Humidity
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing * 2);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing * 2);
+    this.ctx.moveTo(legendX, legendY + spacing);
+    this.ctx.lineTo(legendX + lineLength, legendY + spacing);
     this.ctx.stroke();
-    this.ctx.fillText('Humidity', legendX + lineLength + 5, legendY + spacing * 2 + 4);
+    this.ctx.fillText('Humidity', legendX + lineLength + 5, legendY + spacing + 4);
     
     // Skies
     this.ctx.strokeStyle = this.options.skiesColor;
     this.ctx.beginPath();
+    this.ctx.moveTo(legendX, legendY + spacing * 2);
+    this.ctx.lineTo(legendX + lineLength, legendY + spacing * 2);
+    this.ctx.stroke();
+    this.ctx.fillText('Skies', legendX + lineLength + 5, legendY + spacing * 2 + 4);
+    
+    // Air Pressure
+    this.ctx.strokeStyle = this.options.airPressureColor;
+    this.ctx.beginPath();
     this.ctx.moveTo(legendX, legendY + spacing * 3);
     this.ctx.lineTo(legendX + lineLength, legendY + spacing * 3);
     this.ctx.stroke();
-    this.ctx.fillText('Skies', legendX + lineLength + 5, legendY + spacing * 3 + 4);
+    this.ctx.fillText('Air Pressure', legendX + lineLength + 5, legendY + spacing * 3 + 4);
   }
 }
