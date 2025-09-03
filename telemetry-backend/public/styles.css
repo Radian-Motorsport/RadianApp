@@ -69,6 +69,10 @@ body.dashboard-layout {
   color: turquoise;
 }
 
+/* Ensure in-grid spans reflect active colors */
+.inputs-grid span.coasting-active { color: orange; }
+.inputs-grid span.overlap-active { color: turquoise; }
+
 #teamLapDisplay {
   margin-top: 20px;
   font-size: 1rem;

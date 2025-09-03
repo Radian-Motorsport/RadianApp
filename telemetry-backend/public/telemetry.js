@@ -149,8 +149,7 @@ function initDashboard() {
   // Cache DOM elements for better performance
   elements = {
     refreshRate: document.getElementById('refreshRate'),
-    coastingStatus: document.getElementById('coastingStatus'),
-    overlapStatus: document.getElementById('overlapStatus'),
+  // Coasting/overlap moved to Inputs page
     streamingStatus: document.getElementById('streamingStatus'),
     fuelPerLap: document.getElementById('fuelPerLap'),
     fuelAvg: document.getElementById('fuelAvg'),
@@ -536,14 +535,7 @@ function setupSocketListeners() {
         }
       }
       
-      // Handle coasting and overlap indicators
-      if (elements.coastingStatus && elements.overlapStatus) {
-        const isCoasting = values.Brake < 0.02 && values.ThrottleRaw > 0.50;
-        const isPedalOverlap = values.ThrottleRaw > 0.99 && values.Brake > 0.0005;
-
-        elements.coastingStatus.classList.toggle('coasting-active', isCoasting);
-        elements.overlapStatus.classList.toggle('overlap-active', isPedalOverlap);
-      }
+  // Coasting/overlap indicators moved to Inputs page
       
       if (elements.teamLapDisplay) {
         elements.teamLapDisplay.textContent = `Team Car Lap: ${teamLap}`;

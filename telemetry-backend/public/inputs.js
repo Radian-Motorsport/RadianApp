@@ -86,6 +86,7 @@ function setupEventListeners() {
       updateDriverInputElements(values);
       updateDriverControlElements(values);
       updateEnvironmentElements(values);
+  updateDriverIndicators(values);
       
       // Track telemetry timestamp for refresh rate calculation
       function updateRefreshRate() {
@@ -134,6 +135,30 @@ function updateDriverInputElements(values) {
   safeUpdateElement('RPM', formatValue(values.RPM, 'rpm'));
   safeUpdateElement('Speed', formatValue(values.Speed, 'speed'));
   safeUpdateElement('Steering', formatValue(values.SteeringWheelAngle, 'angle'));
+}
+
+// Update coasting and overlap indicators
+function updateDriverIndicators(values) {
+  const coastEl = document.getElementById('coastingStatus');
+  const overlapEl = document.getElementById('overlapStatus');
+  if (!coastEl && !overlapEl) return;
+
+  // Definitions:
+  // Coasting: no brake and no throttle input
+  const isCoasting = (values.Brake ?? 0) < 0.02 && (values.Throttle ?? values.ThrottleRaw ?? 0) < 0.02;
+
+  // Overlap: brake pressed while throttle held down significantly
+  const throttleVal = (values.Throttle ?? values.ThrottleRaw ?? 0);
+  const isOverlap = throttleVal > 0.20 && (values.Brake ?? 0) > 0.05; // sensible thresholds
+
+  if (coastEl) {
+    coastEl.textContent = isCoasting ? 'Yes' : 'No';
+    coastEl.classList.toggle('coasting-active', isCoasting);
+  }
+  if (overlapEl) {
+    overlapEl.textContent = isOverlap ? 'Yes' : 'No';
+    overlapEl.classList.toggle('overlap-active', isOverlap);
+  }
 }
 
 // Update driver control elements

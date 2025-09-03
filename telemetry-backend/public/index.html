@@ -17,11 +17,7 @@
   <div class="telemetry-block">
     <h2>Strategy Dashboard</h2>
     
-    <!-- Driving Status Indicators -->
-    <div class="status-indicators">
-      <div id="coastingStatus">Coasting</div>
-      <div id="overlapStatus">Overlap</div>
-    </div>
+  <!-- Driving Status Indicators moved to Inputs page -->
     
     <!-- Fuel Gauge -->
     <div id="fuelGaugeContainer">
@@ -268,30 +264,16 @@
 
   socket.on('telemetry', (data) => {
     const values = data?.values;
-    const coastingEl = document.getElementById('coastingStatus');
-    const overlapEl = document.getElementById('overlapStatus');
     const carIdx = values?.PlayerCarIdx;
     const teamLap = values?.CarIdxLapCompleted?.[carIdx];
     const isOnTrack = values?.IsOnTrack;
     const panel = document.getElementById('fuelGaugeContainer');
 
-    console.log('Coasting element:', coastingEl);
-    console.log('Overlap element:', overlapEl);
 
     // === Live Values ===
     const liveFuelLevel = values?.FuelLevel ?? 0;
     updateFuelGauge(liveFuelLevel);
-        // === Coasting and Overlap Detection ===
-      const isCoasting = values.Brake < 0.02 && values.ThrottleRaw > 0.50;
-      const isPedalOverlap = values.ThrottleRaw > 0.99 && values.Brake > 0.0005;
-
-      if (coastingEl) {
-        coastingEl.classList.toggle('coasting-active', isCoasting);
-      }
-
-      if (overlapEl) {
-        overlapEl.classList.toggle('overlap-active', isPedalOverlap);
-      }
+  // Coasting/Overlap indicators handled on Inputs page
 
     document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
 
