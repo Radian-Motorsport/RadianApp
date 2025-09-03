@@ -15,16 +15,19 @@ class EnviroTrace {
     
     // Configuration with defaults
     this.options = {
-      maxPoints: options.maxPoints || 600,
+      maxPoints: options.maxPoints || 3600, // 1 hour at 1 point per second
       trackTempColor: options.trackTempColor || 'orange',
       airTempColor: options.airTempColor || 'cyan',
       humidityColor: options.humidityColor || 'purple',
+      skiesColor: options.skiesColor || 'blue',
       tempScale: options.tempScale || 2, // Scale factor for temperature values
+      sampleRate: options.sampleRate || 60, // Take 1 sample every 60 telemetry updates (~1 second)
       ...options
     };
     
     // Data buffer
     this.buffer = [];
+    this.sampleCounter = 0; // Counter for sampling rate
     
     // Set up telemetry listener
     this.setupListeners();
@@ -41,11 +44,17 @@ class EnviroTrace {
       const values = data?.values;
       if (!values) return;
       
+      // Only sample data at the specified rate (e.g., every 60 updates = ~1 second)
+      this.sampleCounter++;
+      if (this.sampleCounter < this.options.sampleRate) return;
+      this.sampleCounter = 0;
+      
       // Environment data buffer
       this.buffer.push({
         trackTemp: values.TrackTemp,
         airTemp: values.AirTemp,
-        humidity: values.RelativeHumidity
+        humidity: values.RelativeHumidity,
+        skies: values.Skies * 25 // Scale 0-3 to 0-75 for visibility (25% increments)
       });
       
       if (this.buffer.length > this.options.maxPoints) {
@@ -108,6 +117,17 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
+    // Skies
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.options.skiesColor;
+    this.ctx.lineWidth = 1.5;
+    this.buffer.forEach((point, i) => {
+      const x = i * xScale;
+      const y = this.canvas.height - point.skies;
+      i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
+    });
+    this.ctx.stroke();
+    
     // Optional: Add a legend
     this.drawLegend();
     
@@ -148,5 +168,13 @@ class EnviroTrace {
     this.ctx.lineTo(legendX + lineLength, legendY + spacing * 2);
     this.ctx.stroke();
     this.ctx.fillText('Humidity', legendX + lineLength + 5, legendY + spacing * 2 + 4);
+    
+    // Skies
+    this.ctx.strokeStyle = this.options.skiesColor;
+    this.ctx.beginPath();
+    this.ctx.moveTo(legendX, legendY + spacing * 3);
+    this.ctx.lineTo(legendX + lineLength, legendY + spacing * 3);
+    this.ctx.stroke();
+    this.ctx.fillText('Skies', legendX + lineLength + 5, legendY + spacing * 3 + 4);
   }
 }
