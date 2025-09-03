@@ -36,7 +36,9 @@ function cacheElements() {
 
   // Driver control elements
   ['dcPitSpeedLimiterToggle', 'dpFuelAutoFillEnabled', 'dpFuelAutoFillActive',
-   'dcBrakeBias', 'dcTractionControl', 'dcABS', 'FuelLevel'].forEach(id => {
+   'dcBrakeBias', 'dcTractionControl', 'dcABS', 'FuelLevel',
+   'dpFuelFill', 'dpFuelAddKg', 'dpLFTireChange', 'dpRFTireChange',
+   'dpLRTireChange', 'dpRRTireChange', 'dpFastRepair', 'dpWindshieldTearoff'].forEach(id => {
     elements[id] = document.getElementById(id);
   });
 
@@ -169,6 +171,20 @@ function updateDriverControlElements(values) {
   safeUpdateElement('dcTractionControl', values.dcTractionControl);
   safeUpdateElement('dcABS', values.dcABS);
   safeUpdateElement('FuelLevel', values.FuelLevel?.toFixed(2));
+  
+  // Pitstop fuel controls
+  safeUpdateElement('dpFuelFill', values.dpFuelFill);
+  safeUpdateElement('dpFuelAddKg', values.dpFuelAddKg?.toFixed(2));
+  
+  // Tire change requests
+  safeUpdateElement('dpLFTireChange', values.dpLFTireChange);
+  safeUpdateElement('dpRFTireChange', values.dpRFTireChange);
+  safeUpdateElement('dpLRTireChange', values.dpLRTireChange);
+  safeUpdateElement('dpRRTireChange', values.dpRRTireChange);
+  
+  // Pitstop services
+  safeUpdateElement('dpFastRepair', values.dpFastRepair);
+  safeUpdateElement('dpWindshieldTearoff', values.dpWindshieldTearoff);
 }
 
 // Update environment elements

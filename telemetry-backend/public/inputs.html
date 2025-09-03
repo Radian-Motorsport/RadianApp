@@ -83,15 +83,49 @@
   <!-- Driver Controls Section -->
   <div class="telemetry-block">
     <h2>Driver Controls</h2>
-    <ul class="data-list">
-      <li>Pit Speed Limiter: <span id="dcPitSpeedLimiterToggle">--</span></li>
-      <li>Fuel Auto Fill Enabled: <span id="dpFuelAutoFillEnabled">--</span></li>
-      <li>Fuel Auto Fill Active: <span id="dpFuelAutoFillActive">--</span></li>
-      <li>Brake Bias: <span id="dcBrakeBias">--</span></li>
-      <li>Traction Control: <span id="dcTractionControl">--</span></li>
-      <li>ABS: <span id="dcABS">--</span></li>
-      <li>Fuel Level: <span id="FuelLevel">--</span></li>
-    </ul>
+    
+    <!-- Car Controls Group -->
+    <div class="status-group">
+      <h3>Car Controls</h3>
+      <div class="status-grid">
+        <div><label>Pit Speed Limiter:</label><span id="dcPitSpeedLimiterToggle">--</span></div>
+        <div><label>Brake Bias:</label><span id="dcBrakeBias">--</span></div>
+        <div><label>Traction Control:</label><span id="dcTractionControl">--</span></div>
+        <div><label>ABS:</label><span id="dcABS">--</span></div>
+        <div><label>Fuel Level:</label><span id="FuelLevel">--</span></div>
+      </div>
+    </div>
+    
+    <!-- Fuel Controls Group -->
+    <div class="status-group">
+      <h3>Fuel Controls</h3>
+      <div class="status-grid">
+        <div><label>Auto Fill Enabled:</label><span id="dpFuelAutoFillEnabled">--</span></div>
+        <div><label>Auto Fill Active:</label><span id="dpFuelAutoFillActive">--</span></div>
+        <div><label>Fuel Fill Flag:</label><span id="dpFuelFill">--</span></div>
+        <div><label>Fuel Add (kg):</label><span id="dpFuelAddKg">--</span></div>
+      </div>
+    </div>
+    
+    <!-- Tire Change Requests Group -->
+    <div class="status-group">
+      <h3>Tire Change Requests</h3>
+      <div class="status-grid">
+        <div><label>Left Front:</label><span id="dpLFTireChange">--</span></div>
+        <div><label>Right Front:</label><span id="dpRFTireChange">--</span></div>
+        <div><label>Left Rear:</label><span id="dpLRTireChange">--</span></div>
+        <div><label>Right Rear:</label><span id="dpRRTireChange">--</span></div>
+      </div>
+    </div>
+    
+    <!-- Pitstop Services Group -->
+    <div class="status-group">
+      <h3>Pitstop Services</h3>
+      <div class="status-grid">
+        <div><label>Fast Repair:</label><span id="dpFastRepair">--</span></div>
+        <div><label>Windshield Tearoff:</label><span id="dpWindshieldTearoff">--</span></div>
+      </div>
+    </div>
   </div>
 
   <!-- Environment Section -->
