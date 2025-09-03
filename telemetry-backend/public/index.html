@@ -11,15 +11,7 @@
 </head>
 <body>
   <!-- Top Bar -->
-  <div class="top-bar">
-    <button onclick="location.href='inputs.html'">Inputs</button>
-    <button onclick="location.href='planner.html'">Endurance</button>
-    <button onclick="location.href='staticplanner.html'">Static Planner</button>
-    <button onclick="location.href='connections.html'">Connections</button>
-    <button onclick="resetTelemetryData()" class="reset-button">Reset Data</button>
-    <div id="refreshRate">Refresh Rate: --</div>
-    <div id="streamingStatus">Live: —</div>
-  </div>
+  <div id="topBar" class="top-bar"></div>
   
   <!-- Main Dashboard Header -->
   <div class="telemetry-block">
@@ -532,4 +524,5 @@ if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
     }
   </style>
 </body>
+<script src="nav.js"></script>
 </html>
