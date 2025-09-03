@@ -1,4 +1,14 @@
 /* ========================================
+   FONT DEFINITIONS - STATICPLANNER
+   ======================================== */
+@font-face {
+  font-family: 'RoadRage';
+  src: url('../../assets/RoadRage.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ========================================
    COLOR SCHEME DEFINITIONS - STATICPLANNER
    ========================================
    These 6 colors define the entire theme and can be easily changed.
@@ -154,4 +164,32 @@
 /* Space the sections properly */
 .telemetry-block {
   margin-bottom: 20px;
+}
+
+/* ========================================
+   HEADER STYLING - STATICPLANNER
+   ========================================
+   RoadRage font styling for headers with shadow effects.
+   Matches main styles.css for consistency.
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'RoadRage', 'Orbitron', sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 
+               0 0 10px rgba(255, 255, 255, 0.3);
+  font-weight: normal;
+  margin: 10px 0;
+}
+
+h1 {
+  font-size: 2.5em;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8), 
+               0 0 15px rgba(255, 255, 255, 0.4);
+}
+
+h2 {
+  font-size: 2em;
+}
+
+h3 {
+  font-size: 1.5em;
 }
