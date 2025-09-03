@@ -54,7 +54,7 @@ class EnviroTrace {
         trackTemp: values.TrackTemp,
         airTemp: values.AirTemp,
         humidity: values.RelativeHumidity,
-        skies: values.Skies * 25 // Scale 0-3 to 0-75 for visibility (25% increments)
+        skies: values.Skies // Store raw 0-3 value, scaling handled in drawing
       });
       
       if (this.buffer.length > this.options.maxPoints) {
@@ -83,47 +83,51 @@ class EnviroTrace {
     
     // Calculate x scaling based on number of points and canvas width
     const xScale = this.canvas.width / this.options.maxPoints;
+    const canvasHeight = this.canvas.height;
     
-    // Track Temperature
+    // Track Temperature (scale from typical range 10-60°C to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.trackTempColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      const y = this.canvas.height - point.trackTemp * this.options.tempScale;
+      // Scale temperature: map 0-60°C to 0-canvas height
+      const y = canvasHeight - ((point.trackTemp / 60) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
     
-    // Air Temperature
+    // Air Temperature (scale from typical range 0-50°C to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.airTempColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      const y = this.canvas.height - point.airTemp * this.options.tempScale;
+      // Scale temperature: map 0-50°C to 0-canvas height
+      const y = canvasHeight - ((point.airTemp / 50) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
     
-    // Humidity
+    // Humidity (0-100% maps to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      const y = this.canvas.height - point.humidity;
+      const y = canvasHeight - ((point.humidity / 100) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
     
-    // Skies
+    // Skies (0-3 scaled to 0-100% of canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.skiesColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      const y = this.canvas.height - point.skies;
+      // Skies: map 0-3 to 0-canvas height (each step = 25% of height)
+      const y = canvasHeight - ((point.skies / 75) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
