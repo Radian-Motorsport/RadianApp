@@ -115,52 +115,22 @@ class PedalTrace {
    */
   drawStatusIndicators() {
     const legendX = 10;
-    const legendY = this.canvas.height - 40;
-    const lineLength = 30;
-    const spacing = 22;
+    const legendY = 15;
+    const spacing = 15;
     
     // Get current status from the latest data point
     const latestData = this.buffer[this.buffer.length - 1];
     if (!latestData) return;
     
-    // Coasting indicator
-    this.ctx.lineWidth = 2;
-    if (latestData.coasting) {
-      this.ctx.strokeStyle = '#ffa500'; // Orange for coasting
-      this.ctx.globalAlpha = 1.0;
-    } else {
-      this.ctx.strokeStyle = '#333333'; // Dark gray when inactive
-      this.ctx.globalAlpha = 0.3;
-    }
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY);
-    this.ctx.lineTo(legendX + lineLength, legendY);
-    this.ctx.stroke();
+    // Set font for labels (matching environment graph style)
+    this.ctx.font = '12px Arial';
     
-    // Coasting text
-    this.ctx.fillStyle = latestData.coasting ? '#ffa500' : '#666666';
-    this.ctx.font = '12px Orbitron, Arial';
-    this.ctx.fillText('COASTING', legendX + lineLength + 8, legendY + 4);
+    // Coasting indicator (text only, no line)
+    this.ctx.fillStyle = latestData.coasting ? '#ffa500' : '#666666'; // Orange when active, gray when inactive
+    this.ctx.fillText('COASTING', legendX, legendY);
     
-    // Overlap indicator
-    if (latestData.overlap) {
-      this.ctx.strokeStyle = '#ff4444'; // Red for overlap
-      this.ctx.globalAlpha = 1.0;
-    } else {
-      this.ctx.strokeStyle = '#333333'; // Dark gray when inactive
-      this.ctx.globalAlpha = 0.3;
-    }
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing);
-    this.ctx.stroke();
-    
-    // Overlap text
-    this.ctx.fillStyle = latestData.overlap ? '#ff4444' : '#666666';
-    this.ctx.fillText('OVERLAP', legendX + lineLength + 8, legendY + spacing + 4);
-    
-    // Reset alpha and line width
-    this.ctx.globalAlpha = 1.0;
-    this.ctx.lineWidth = 1;
+    // Overlap indicator (text only, no line)
+    this.ctx.fillStyle = latestData.overlap ? '#4ecdc4' : '#666666'; // Teal when active, gray when inactive  
+    this.ctx.fillText('OVERLAP', legendX, legendY + spacing);
   }
 }
