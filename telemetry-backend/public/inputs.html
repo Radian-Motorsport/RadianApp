@@ -43,6 +43,17 @@
     </div>
   </div>
 
+  <!-- Car Settings -->
+  <div class="telemetry-block">
+    <h2>Car Settings</h2>
+    <div class="status-grid">
+      <div><label>Traction Control:</label><span id="dcTractionControl">--</span></div>
+      <div><label>Brake Bias:</label><span id="dcBrakeBias">--</span></div>
+      <div><label>ABS:</label><span id="dcABS">--</span></div>
+      <div><label>Pit Limiter:</label><span id="dcPitSpeedLimiterToggle">--</span></div>
+    </div>
+  </div>
+
   <!-- Status Section -->
   <div class="telemetry-block">
     <h2>Status</h2>
@@ -84,22 +95,11 @@
   <div class="telemetry-block">
     <h2>Driver Controls</h2>
     
-    <!-- Car Controls Group -->
-    <div class="status-group">
-      <h3>Car Controls</h3>
-      <div class="status-grid">
-        <div><label>Pit Speed Limiter:</label><span id="dcPitSpeedLimiterToggle">--</span></div>
-        <div><label>Brake Bias:</label><span id="dcBrakeBias">--</span></div>
-        <div><label>Traction Control:</label><span id="dcTractionControl">--</span></div>
-        <div><label>ABS:</label><span id="dcABS">--</span></div>
-        <div><label>Fuel Level:</label><span id="FuelLevel">--</span></div>
-      </div>
-    </div>
-    
     <!-- Fuel Controls Group -->
     <div class="status-group">
       <h3>Fuel Controls</h3>
       <div class="status-grid">
+        <div><label>Fuel Level:</label><span id="FuelLevel">--</span></div>
         <div><label>Auto Fill Enabled:</label><span id="dpFuelAutoFillEnabled">--</span></div>
         <div><label>Auto Fill Active:</label><span id="dpFuelAutoFillActive">--</span></div>
         <div><label>Fuel Fill Flag:</label><span id="dpFuelFill">--</span></div>
@@ -133,19 +133,39 @@
     <h2>Environment</h2>
     <canvas id="envCanvas" width="600" height="200"></canvas>
 
-    <ul class="data-list">
-      <li>Track Temp: <span id="TrackTemp">--</span></li>
-      <li>Air Temp: <span id="AirTemp">--</span></li>
-      <li>Track Wetness: <span id="TrackWetness">--</span></li>
-      <li>Skies: <span id="Skies">--</span></li>
-      <li>Air Density: <span id="AirDensity">--</span></li>
-      <li>Air Pressure: <span id="AirPressure">--</span></li>
-      <li>Wind Velocity: <span id="WindVel">--</span></li>
-      <li>Wind Direction: <span id="WindDir">--</span></li>
-      <li>Humidity: <span id="RelativeHumidity">--</span></li>
-      <li>Fog Level: <span id="FogLevel">--</span></li>
-      <li>Precipitation: <span id="Precipitation">--</span></li>
-    </ul>
+    <div class="environment-grid">
+      <!-- Temperature & Pressure Column -->
+      <div class="status-group">
+        <h3>Temperature & Pressure</h3>
+        <div class="status-grid">
+          <div><label>Track Temp:</label><span id="TrackTemp">--</span></div>
+          <div><label>Air Temp:</label><span id="AirTemp">--</span></div>
+          <div><label>Air Density:</label><span id="AirDensity">--</span></div>
+          <div><label>Air Pressure:</label><span id="AirPressure">--</span></div>
+        </div>
+      </div>
+
+      <!-- Weather Column -->
+      <div class="status-group">
+        <h3>Weather</h3>
+        <div class="status-grid">
+          <div><label>Wind Velocity:</label><span id="WindVel">--</span></div>
+          <div><label>Wind Direction:</label><span id="WindDir">--</span></div>
+          <div><label>Skies:</label><span id="Skies">--</span></div>
+        </div>
+      </div>
+
+      <!-- Track Conditions Column -->
+      <div class="status-group">
+        <h3>Track Conditions</h3>
+        <div class="status-grid">
+          <div><label>Humidity:</label><span id="RelativeHumidity">--</span></div>
+          <div><label>Precipitation:</label><span id="Precipitation">--</span></div>
+          <div><label>Track Wetness:</label><span id="TrackWetness">--</span></div>
+          <div><label>Fog Level:</label><span id="FogLevel">--</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- JavaScript Resources -->

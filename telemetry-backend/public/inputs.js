@@ -191,17 +191,31 @@ function updateDriverControlElements(values) {
 function updateEnvironmentElements(values) {
   if (!values) return;
   
+  // Temperature & Pressure
   safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
   safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
-  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percent'));
-  safeUpdateElement('Skies', values.Skies);
-  safeUpdateElement('AirDensity', formatValue(values.AirDensity, 'pressure'));
-  safeUpdateElement('AirPressure', formatValue(values.AirPressure, 'pressure'));
+  safeUpdateElement('AirDensity', `${values.AirDensity?.toFixed(3)} kg/m³`);
+  safeUpdateElement('AirPressure', `${values.AirPressure?.toFixed(0)} Pa`);
+  
+  // Weather
   safeUpdateElement('WindVel', `${values.WindVel?.toFixed(1)} km/h`);
   safeUpdateElement('WindDir', `${values.WindDir?.toFixed(1)}°`);
+  
+  // Convert Skies number to description
+  const skiesDescriptions = {
+    0: 'Clear',
+    1: 'Partly Cloudy', 
+    2: 'Mostly Cloudy',
+    3: 'Overcast'
+  };
+  const skiesText = skiesDescriptions[values.Skies] || `Unknown (${values.Skies})`;
+  safeUpdateElement('Skies', skiesText);
+  
+  // Track Conditions
   safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percent'));
-  safeUpdateElement('FogLevel', values.FogLevel);
   safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percent'));
+  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percent'));
+  safeUpdateElement('FogLevel', `${values.FogLevel?.toFixed(1)}%`);
 }
 
 // Safely update an element's text content

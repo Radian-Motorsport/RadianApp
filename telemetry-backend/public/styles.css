@@ -889,3 +889,13 @@ h2 {
   font-weight: bold;
   color: #ffffff;
 }
+
+/* ========================================
+   ENVIRONMENT GRID LAYOUT
+   ======================================== */
+.environment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
