@@ -17,7 +17,7 @@
   --color-6: #ff9ff3; /* Pink - Reserved for future use */
   
   /* Legacy colors maintained for compatibility */
-  --legacy-green: #0f0;
+  --legacy-green: #ffc800;
   --legacy-orange: orange;
   --legacy-turquoise: turquoise;
 }
