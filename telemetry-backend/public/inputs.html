@@ -46,19 +46,38 @@
   <!-- Status Section -->
   <div class="telemetry-block">
     <h2>Status</h2>
-    <ul class="data-list">
-      <li>IsOnTrack: <span id="IsOnTrack">--</span></li>
-      <li>IsInGarage: <span id="IsInGarage">--</span></li>
-      <li>PlayerCarPosition: <span id="PlayerCarPosition">--</span></li>
-      <li>PlayerCarClassPosition: <span id="PlayerCarClassPosition">--</span></li>
-      <li>PlayerTrackSurface: <span id="PlayerTrackSurface">--</span></li>
-      <li>Team Incidents: <span id="PlayerCarTeamIncidentCount">--</span></li>
-      <li>Driver Incidents: <span id="PlayerCarDriverIncidentCount">--</span></li>
-      <li>LapDistPct: <span id="LapDistPct">--</span></li>
-      <li>RaceLaps: <span id="RaceLaps">--</span></li>
-      <li>CarDistAhead: <span id="CarDistAhead">--</span></li>
-      <li>CarDistBehind: <span id="CarDistBehind">--</span></li>
-    </ul>
+    
+    <!-- Track Status Group -->
+    <div class="status-group">
+      <h3>Track Status</h3>
+      <div class="status-grid">
+        <div><label>IsOnTrack:</label><span id="IsOnTrack">--</span></div>
+        <div><label>IsInGarage:</label><span id="IsInGarage">--</span></div>
+        <div><label>Track Surface:</label><span id="PlayerTrackSurface">--</span></div>
+      </div>
+    </div>
+    
+    <!-- Race Position Group -->
+    <div class="status-group">
+      <h3>Race Position</h3>
+      <div class="status-grid">
+        <div><label>Race Laps:</label><span id="RaceLaps">--</span></div>
+        <div><label>Lap Distance %:</label><span id="LapDistPct">--</span></div>
+        <div><label>Car Position:</label><span id="PlayerCarPosition">--</span></div>
+        <div><label>Class Position:</label><span id="PlayerCarClassPosition">--</span></div>
+        <div><label>Distance Ahead:</label><span id="CarDistAhead">--</span></div>
+        <div><label>Distance Behind:</label><span id="CarDistBehind">--</span></div>
+      </div>
+    </div>
+    
+    <!-- Incidents Group -->
+    <div class="status-group">
+      <h3>Incidents</h3>
+      <div class="status-grid">
+        <div><label>Driver Incidents:</label><span id="PlayerCarDriverIncidentCount">--</span></div>
+        <div><label>Team Incidents:</label><span id="PlayerCarTeamIncidentCount">--</span></div>
+      </div>
+    </div>
   </div>
 
   <!-- Driver Controls Section -->
