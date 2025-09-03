@@ -899,3 +899,29 @@ h2 {
   gap: 20px;
   margin-top: 15px;
 }
+
+/* ========================================
+   ENVIRONMENT GRAPH LEGEND
+   ======================================== */
+.env-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 10px 0;
+  padding: 8px 0;
+  font-size: 12px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #ffffff;
+}
+
+.legend-color {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+}

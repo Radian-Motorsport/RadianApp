@@ -98,14 +98,15 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
-    // Humidity (0-100% maps to full canvas height)
+    // Humidity (0-1 or 0-100% maps to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
       const x = i * xScale;
-      // Humidity: map 0-100% to full canvas height
-      const y = canvasHeight - ((point.humidity / 100) * canvasHeight);
+      // Humidity: handle both 0-1 decimal and 0-100 percentage formats
+      const humidityPercent = point.humidity > 1 ? point.humidity : point.humidity * 100;
+      const y = canvasHeight - ((humidityPercent / 100) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
@@ -135,54 +136,6 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
-    // Optional: Add a legend
-    this.drawLegend();
-    
     requestAnimationFrame(this.draw.bind(this));
-  }
-  
-  /**
-   * Draw a legend for the graph
-   */
-  drawLegend() {
-    const legendX = this.canvas.width + 10; // Position legend to the right of canvas
-    const legendY = 20;
-    const lineLength = 15;
-    const spacing = 18;
-    
-    // Track Temp
-    this.ctx.strokeStyle = this.options.trackTempColor;
-    this.ctx.lineWidth = 2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY);
-    this.ctx.lineTo(legendX + lineLength, legendY);
-    this.ctx.stroke();
-    this.ctx.fillStyle = 'white';
-    this.ctx.font = '11px Arial';
-    this.ctx.fillText('Track Temp', legendX + lineLength + 5, legendY + 4);
-    
-    // Humidity
-    this.ctx.strokeStyle = this.options.humidityColor;
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing);
-    this.ctx.stroke();
-    this.ctx.fillText('Humidity', legendX + lineLength + 5, legendY + spacing + 4);
-    
-    // Skies
-    this.ctx.strokeStyle = this.options.skiesColor;
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing * 2);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing * 2);
-    this.ctx.stroke();
-    this.ctx.fillText('Skies', legendX + lineLength + 5, legendY + spacing * 2 + 4);
-    
-    // Air Pressure
-    this.ctx.strokeStyle = this.options.airPressureColor;
-    this.ctx.beginPath();
-    this.ctx.moveTo(legendX, legendY + spacing * 3);
-    this.ctx.lineTo(legendX + lineLength, legendY + spacing * 3);
-    this.ctx.stroke();
-    this.ctx.fillText('Air Pressure', legendX + lineLength + 5, legendY + spacing * 3 + 4);
   }
 }

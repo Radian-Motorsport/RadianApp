@@ -225,7 +225,7 @@ function updateEnvironmentElements(values) {
     5: 'Very Wet',
     6: 'Extremely Wet'
   };
-  const wetnessText = trackWetnessDescriptions[values.TrackWetness] || `Unknown (${values.TrackWetness})`;
+  const wetnessText = trackWetnessDescriptions[values.TrackWetness] || trackWetnessDescriptions[0];
   safeUpdateElement('TrackWetness', wetnessText);
   
   safeUpdateElement('FogLevel', `${values.FogLevel?.toFixed(1)}%`);
