@@ -228,6 +228,7 @@
     let connectionStartTime = Date.now();
     let connectedClients = [];
     let connectionHistory = [];
+    let lastConnectionInfo = null; // Store last connection info
     
     // DOM elements
     const connectionCountEl = document.getElementById('connectionCount');
@@ -299,6 +300,9 @@
     });
     
     socket.on('connectionInfo', (info) => {
+      // Store last connection info
+      lastConnectionInfo = info;
+      
       // Update connection count
       connectionCountEl.textContent = info.clientCount || '0';
       
@@ -323,7 +327,13 @@
     });
     
     socket.on('clientConnect', (clientInfo) => {
-      addConnectionEvent(`New client connected: ${clientInfo.id.substring(0, 6)}`);
+      // Check if this client is broadcasting (has driver name)
+      const clientData = lastConnectionInfo?.clients?.find(c => c.id === clientInfo.id);
+      const displayName = clientData?.driverName ? 
+        `${clientData.driverName} (${clientInfo.id.substring(0, 6)})` : 
+        `Client ${clientInfo.id.substring(0, 6)}`;
+      
+      addConnectionEvent(`New client connected: ${displayName}`);
       socket.emit('requestConnectionInfo');
     });
     
@@ -356,7 +366,14 @@
         clientEl.className = 'client-item';
         
         const idSpan = document.createElement('span');
-        idSpan.textContent = `ID: ${client.id.substring(0, 6)}...`;
+        // If driver name is available, use it for identification
+        if (client.driverName) {
+          idSpan.textContent = `${client.driverName} (${client.id.substring(0, 6)}...)`;
+          idSpan.style.fontWeight = 'bold';
+          idSpan.style.color = '#4caf50'; // Highlight the driver
+        } else {
+          idSpan.textContent = `ID: ${client.id.substring(0, 6)}...`;
+        }
         
         const connectedSpan = document.createElement('span');
         connectedSpan.textContent = formatTime(client.connectedFor);

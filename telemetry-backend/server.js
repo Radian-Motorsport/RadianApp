@@ -56,7 +56,8 @@ io.on('connection', (socket) => {
     id: socket.id,
     connectedAt: Date.now(),
     lastActive: Date.now(),
-    userAgent: socket.handshake.headers['user-agent'] || 'Unknown'
+    userAgent: socket.handshake.headers['user-agent'] || 'Unknown',
+    driverName: null // Will be updated if this client broadcasts telemetry
   });
   
   // Notify all clients about the new connection
@@ -75,7 +76,8 @@ io.on('connection', (socket) => {
       connectedAt: client.connectedAt,
       connectedFor: Math.floor((Date.now() - client.connectedAt) / 1000),
       lastActive: client.lastActive,
-      userAgent: client.userAgent
+      userAgent: client.userAgent,
+      driverName: client.driverName
     }));
     
     socket.emit('connectionInfo', {
@@ -192,9 +194,23 @@ app.post('/telemetry', (req, res) => {
 
 app.post('/sessionInfo', (req, res) => {
   const data = req.body;
+  const clientIp = req.ip || req.connection.remoteAddress;
 
   currentSessionId = data?.WeekendInfo?.SessionID;
   currentUserName = data?.DriverInfo?.Drivers?.[0]?.UserName;
+  
+  // Find the client that most likely sent this data and associate the driver name
+  if (currentUserName) {
+    for (const [socketId, clientInfo] of connectedClients.entries()) {
+      // Update the client that's likely broadcasting the data
+      // This is a best-effort approach since we don't have a direct socket connection for HTTP requests
+      if (clientInfo.lastActive > Date.now() - 10000) { // Active in the last 10 seconds
+        clientInfo.driverName = currentUserName;
+        connectedClients.set(socketId, clientInfo);
+        break;
+      }
+    }
+  }
 
   io.emit('sessionInfo', data); // Broadcast to planner
   console.log('📋 Session info received:', data);
