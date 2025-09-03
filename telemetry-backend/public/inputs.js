@@ -21,9 +21,9 @@ function initInputsPage() {
 // Cache all DOM elements we'll need to update
 function cacheElements() {
   // Status elements
-  ['IsOnTrack', 'IsOnTrackCar', 'IsInGarage', 'PlayerCarPosition', 
-   'PlayerCarClassPosition', 'PlayerTrackSurface', 'PlayerCarIdx',
-   'PlayerCarTeamIncidentCount', 'PlayerCarMyIncidentCount', 
+  ['IsOnTrack', 'IsInGarage', 'PlayerCarPosition', 
+   'PlayerCarClassPosition', 'PlayerTrackSurface',
+   'PlayerCarTeamIncidentCount', 
    'PlayerCarDriverIncidentCount', 'LapDistPct', 'RaceLaps',
    'CarDistAhead', 'CarDistBehind'].forEach(id => {
     elements[id] = document.getElementById(id);
@@ -109,14 +109,11 @@ function updateStatusElements(values) {
   if (!values) return;
   
   safeUpdateElement('IsOnTrack', values.IsOnTrack);
-  safeUpdateElement('IsOnTrackCar', values.IsOnTrackCar);
   safeUpdateElement('IsInGarage', values.IsInGarage);
   safeUpdateElement('PlayerCarPosition', values.PlayerCarPosition);
   safeUpdateElement('PlayerCarClassPosition', values.PlayerCarClassPosition);
   safeUpdateElement('PlayerTrackSurface', values.PlayerTrackSurface);
-  safeUpdateElement('PlayerCarIdx', values.PlayerCarIdx);
   safeUpdateElement('PlayerCarTeamIncidentCount', values.PlayerCarTeamIncidentCount);
-  safeUpdateElement('PlayerCarMyIncidentCount', values.PlayerCarMyIncidentCount);
   safeUpdateElement('PlayerCarDriverIncidentCount', values.PlayerCarDriverIncidentCount);
   safeUpdateElement('LapDistPct', values.LapDistPct?.toFixed(3));
   safeUpdateElement('RaceLaps', values.RaceLaps);
