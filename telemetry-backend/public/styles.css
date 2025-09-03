@@ -810,3 +810,41 @@ h2 {
   flex: 1;
   text-align: center;
 }
+
+/* ========================================
+   EXPANSION TOGGLE STYLES
+   ======================================== */
+.inputs-expansion {
+  margin-top: 15px;
+}
+
+.expansion-toggle {
+  background-color: #2d2d2d;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.expansion-toggle:hover {
+  background-color: #3d3d3d;
+  border-color: var(--color-2);
+}
+
+.inputs-details {
+  border: 1px solid #444;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  padding: 15px;
+  background-color: #1a1a1a;
+}
+
+.inputs-details .inputs-grid {
+  margin: 0;
+}

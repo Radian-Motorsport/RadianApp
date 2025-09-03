@@ -23,17 +23,23 @@
   <div class="telemetry-block">
     <h2>Pedal Trace & Driver Inputs</h2>
     <canvas id="pedalCanvas" width="600" height="200"></canvas>
-
-    <div class="inputs-grid">
-      <div><label>Throttle</label><span id="Throttle">--</span></div>
-      <div><label>Brake</label><span id="Brake">--</span></div>
-      <div><label>Clutch</label><span id="Clutch">--</span></div>
-      <div><label>Gear</label><span id="Gear">--</span></div>
-      <div><label>RPM</label><span id="RPM">--</span></div>
-      <div><label>Speed</label><span id="Speed">--</span></div>
-      <div><label>Steering</label><span id="Steering">--</span></div>
-      <div><label>Coasting</label><span id="coastingStatus">--</span></div>
-      <div><label>Overlap</label><span id="overlapStatus">--</span></div>
+    
+    <!-- Expandable Inputs Section -->
+    <div class="inputs-expansion">
+      <button id="toggleInputs" class="expansion-toggle">Show Inputs ▼</button>
+      <div id="inputsDetails" class="inputs-details" style="display: none;">
+        <div class="inputs-grid">
+          <div><label>Throttle</label><span id="Throttle">--</span></div>
+          <div><label>Brake</label><span id="Brake">--</span></div>
+          <div><label>Clutch</label><span id="Clutch">--</span></div>
+          <div><label>Gear</label><span id="Gear">--</span></div>
+          <div><label>RPM</label><span id="RPM">--</span></div>
+          <div><label>Speed</label><span id="Speed">--</span></div>
+          <div><label>Steering</label><span id="Steering">--</span></div>
+          <div><label>Coasting</label><span id="coastingStatus">--</span></div>
+          <div><label>Overlap</label><span id="overlapStatus">--</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -97,6 +103,24 @@
   <script src="pedaltrace.js"></script>
   <script src="envirotrace.js"></script>
   <script src="inputs.js"></script>
+  
+  <script>
+    // Expandable inputs toggle functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleButton = document.getElementById('toggleInputs');
+      const inputsDetails = document.getElementById('inputsDetails');
+      
+      toggleButton.addEventListener('click', function() {
+        if (inputsDetails.style.display === 'none') {
+          inputsDetails.style.display = 'block';
+          toggleButton.textContent = 'Hide Inputs ▲';
+        } else {
+          inputsDetails.style.display = 'none';
+          toggleButton.textContent = 'Show Inputs ▼';
+        }
+      });
+    });
+  </script>
 </body>
 <script src="nav.js"></script>
 </html>
