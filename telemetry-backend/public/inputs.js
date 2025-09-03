@@ -214,7 +214,20 @@ function updateEnvironmentElements(values) {
   // Track Conditions
   safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percent'));
   safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percent'));
-  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percent'));
+  
+  // Convert TrackWetness enum to description (similar to Skies)
+  const trackWetnessDescriptions = {
+    0: 'Dry',
+    1: 'Mostly Dry', 
+    2: 'Very Lightly Wet',
+    3: 'Lightly Wet',
+    4: 'Moderately Wet',
+    5: 'Very Wet',
+    6: 'Extremely Wet'
+  };
+  const wetnessText = trackWetnessDescriptions[values.TrackWetness] || `Unknown (${values.TrackWetness})`;
+  safeUpdateElement('TrackWetness', wetnessText);
+  
   safeUpdateElement('FogLevel', `${values.FogLevel?.toFixed(1)}%`);
 }
 

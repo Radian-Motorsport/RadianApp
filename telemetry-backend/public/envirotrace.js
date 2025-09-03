@@ -145,7 +145,7 @@ class EnviroTrace {
    * Draw a legend for the graph
    */
   drawLegend() {
-    const legendX = -80; // Move legend outside canvas to the left
+    const legendX = this.canvas.width + 10; // Position legend to the right of canvas
     const legendY = 20;
     const lineLength = 15;
     const spacing = 18;
