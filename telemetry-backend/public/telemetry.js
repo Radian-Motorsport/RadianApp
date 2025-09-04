@@ -16,8 +16,23 @@ let currentLap = 0;
 let lastTeamLap = null;
 let bufferedData = null;
 let lapEntryPoint = null;
-let bufferFrozen = true;
-let driverWasOnTrack = false;
+let bufferFrozen =      // 3-Lap Time Average
+    lapAvg3 = lapTimeHistory.length >= 3
+      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : null;
+
+    if (elements.lapAvg3) {
+      updateValueWithColor(elements.lapAvg3, lapAvg3 ? formatTimeMS(lapAvg3) : '--:--', lapAvg3, 'lapTime', 'lapAvg3');
+    }
+
+    // 5-Lap Time Average
+    const lapAvg5 = lapTimeHistory.length === 5
+      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+      : null;
+
+    if (elements.lapAvg5) {
+      updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
+    }riverWasOnTrack = false;
 let lastTelemetryTime = null;
 let stintStartTime = null;
 let lastPitStopTimeValue = null;
@@ -191,28 +206,28 @@ function applyServerState(serverState) {
 // Function to update UI elements from state
 function updateUIFromState() {
   // Update fuel stats
-  if (elements.fuelPerLap && previousValues.fuelPerLap) {
+  if (elements.fuelPerLap && previousValues.fuelPerLap !== null && previousValues.fuelPerLap !== undefined) {
     updateValueWithColor(elements.fuelPerLap, `${previousValues.fuelPerLap?.toFixed(2) ?? '--'} L`, previousValues.fuelPerLap, 'fuel', 'fuelPerLap');
   }
   
-  if (elements.fuelAvg && previousValues.fuelAvg) {
+  if (elements.fuelAvg && previousValues.fuelAvg !== null && previousValues.fuelAvg !== undefined) {
     updateValueWithColor(elements.fuelAvg, `${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg, 'fuel', 'fuelAvg');
   }
   
-  if (elements.fuelAvg5 && previousValues.fuelAvg5) {
+  if (elements.fuelAvg5 && previousValues.fuelAvg5 !== null && previousValues.fuelAvg5 !== undefined) {
     updateValueWithColor(elements.fuelAvg5, `${previousValues.fuelAvg5?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg5, 'fuel', 'fuelAvg5');
   }
   
   // Update lap times
-  if (elements.lastLapTime && previousValues.lastLapTime) {
+  if (elements.lastLapTime && previousValues.lastLapTime !== null && previousValues.lastLapTime !== undefined) {
     updateValueWithColor(elements.lastLapTime, formatTimeMS(previousValues.lastLapTime), previousValues.lastLapTime, 'lapTime', 'lastLapTime');
   }
   
-  if (elements.lapAvg3 && previousValues.lapAvg3) {
+  if (elements.lapAvg3 && previousValues.lapAvg3 !== null && previousValues.lapAvg3 !== undefined) {
     updateValueWithColor(elements.lapAvg3, formatTimeMS(previousValues.lapAvg3), previousValues.lapAvg3, 'lapTime', 'lapAvg3');
   }
   
-  if (elements.lapAvg5 && previousValues.lapAvg5) {
+  if (elements.lapAvg5 && previousValues.lapAvg5 !== null && previousValues.lapAvg5 !== undefined) {
     updateValueWithColor(elements.lapAvg5, formatTimeMS(previousValues.lapAvg5), previousValues.lapAvg5, 'lapTime', 'lapAvg5');
   }
   
@@ -483,7 +498,7 @@ function handleDriverExit(values, teamLap) {
     LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
   };
 
-  // Update UI
+  // Update UI with null checks
   if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
   if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
   if (elements.stintTotalTime) elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
@@ -493,12 +508,16 @@ function handleDriverExit(values, teamLap) {
   
   updateTireWear(lastStintTireWear);
 
-  updateValueWithColor(elements.fuelPerLap, `${lastFuelUsed?.toFixed(2) ?? '--'} L`, lastFuelUsed, 'fuel', 'fuelPerLap');
-  updateValueWithColor(elements.fuelAvg, `${avgFuelUsed?.toFixed(2) ?? '--'} L`, avgFuelUsed, 'fuel', 'fuelAvg');
+  if (elements.fuelPerLap) {
+    updateValueWithColor(elements.fuelPerLap, `${lastFuelUsed?.toFixed(2) ?? '--'} L`, lastFuelUsed, 'fuel', 'fuelPerLap');
+  }
+  if (elements.fuelAvg) {
+    updateValueWithColor(elements.fuelAvg, `${avgFuelUsed?.toFixed(2) ?? '--'} L`, avgFuelUsed, 'fuel', 'fuelAvg');
+  }
 
   driverWasOnTrack = false;
   if (elements.bufferStatus) elements.bufferStatus.textContent = 'Waiting for driver…';
-  elements.panel.classList.add('dimmed');
+  if (elements.panel) elements.panel.classList.add('dimmed');
   
   // Sync state to server after driver exit
   syncToServer();
@@ -526,8 +545,12 @@ function formatTimeHMS(timeInSeconds) {
 function handleDriverEntry(teamLap) {
   lapEntryPoint = teamLap;
   bufferFrozen = true;
-  if (elements.bufferStatus) elements.bufferStatus.textContent = 'Waiting for next lap…';
-  if (elements.panel) elements.panel.classList.add('dimmed');
+  if (elements.bufferStatus) {
+    elements.bufferStatus.textContent = 'Waiting for next lap…';
+  }
+  if (elements.panel) {
+    elements.panel.classList.add('dimmed');
+  }
   driverWasOnTrack = true;
   stintStartTime = Date.now();
   stintIncidentCount = 0;
@@ -576,17 +599,23 @@ function processLapCompletion(lapCompleted, fuel) {
         ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
         : null;
 
-      elements.fuelAvg.textContent = `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+      if (elements.fuelAvg) {
+        elements.fuelAvg.textContent = `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+      }
 
       // 5-Lap Fuel Average
       const avgFuelUsed5 = fuelUsageHistory.length === 5
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
         : null;
 
-      updateValueWithColor(elements.fuelAvg5, `${avgFuelUsed5?.toFixed(2) ?? '--'} L`, avgFuelUsed5, 'fuel', 'fuelAvg5');
+      if (elements.fuelAvg5) {
+        updateValueWithColor(elements.fuelAvg5, `${avgFuelUsed5?.toFixed(2) ?? '--'} L`, avgFuelUsed5, 'fuel', 'fuelAvg5');
+      }
 
       // Display last lap fuel
-      updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
+      if (elements.fuelPerLap) {
+        updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
+      }
     }
   }
 
@@ -599,11 +628,13 @@ function processLapCompletion(lapCompleted, fuel) {
     ? projectedLaps * lapAvg3
     : null;
 
-  updateValueWithColor(elements.fuelProjectedLaps, `${projectedLaps?.toFixed(2) ?? '--'}`, projectedLaps, 'projection');
+  if (elements.fuelProjectedLaps) {
+    updateValueWithColor(elements.fuelProjectedLaps, `${projectedLaps?.toFixed(2) ?? '--'}`, projectedLaps, 'projection');
+  }
 
-  if (projectedTimeSec) {
+  if (projectedTimeSec && elements.fuelProjectedTime) {
     updateValueWithColor(elements.fuelProjectedTime, formatTimeMS(projectedTimeSec), projectedTimeSec, 'projection');
-  } else {
+  } else if (elements.fuelProjectedTime) {
     elements.fuelProjectedTime.textContent = '--:--';
   }
 
@@ -657,7 +688,7 @@ function setupSocketListeners() {
       const isOnTrack = values?.IsOnTrack;
       
       // Update last lap time if available
-      if (values?.LapLastLapTime !== undefined && values.LapLastLapTime > 0) {
+      if (values?.LapLastLapTime !== undefined && values.LapLastLapTime > 0 && elements.lastLapTime) {
         updateValueWithColor(elements.lastLapTime, formatTimeMS(values.LapLastLapTime), values.LapLastLapTime, 'lapTime', 'lastLapTime');
       }
       
@@ -693,7 +724,9 @@ function setupSocketListeners() {
         bufferFrozen = false;
         lastTeamLap = teamLap;
         bufferedData = data;
-        elements.bufferStatus.textContent = 'Live telemetry';
+        if (elements.bufferStatus) {
+          elements.bufferStatus.textContent = 'Live telemetry';
+        }
       }
 
       // Buffer Update on New Lap
@@ -705,15 +738,21 @@ function setupSocketListeners() {
       // Update stint stats in real-time if we have a start time
       if (isOnTrack && stintStartTime && !bufferFrozen) {
         const currentStintTime = (Date.now() - stintStartTime) / 1000;
-        elements.stintTotalTime.textContent = formatTimeHMS(currentStintTime);
+        if (elements.stintTotalTime) {
+          elements.stintTotalTime.textContent = formatTimeHMS(currentStintTime);
+        }
         
         const currentStintLapCount = teamLap - lapEntryPoint;
         if (currentStintLapCount > 0) {
           const currentAvgLapTime = currentStintTime / currentStintLapCount;
-          elements.stintAvgLapTime.textContent = formatTimeMS(currentAvgLapTime);
+          if (elements.stintAvgLapTime) {
+            elements.stintAvgLapTime.textContent = formatTimeMS(currentAvgLapTime);
+          }
         }
         
-        elements.stintIncidents.textContent = stintIncidentCount.toString();
+        if (elements.stintIncidents) {
+          elements.stintIncidents.textContent = stintIncidentCount.toString();
+        }
       }
 
       // Update fuel gauge with live data
@@ -733,9 +772,9 @@ function setupSocketListeners() {
       currentLap = lapCompleted;
       const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
 
-      if (driverReady && isOnTrack) {
+      if (driverReady && isOnTrack && elements.panel) {
         elements.panel.classList.remove('dimmed');
-      } else {
+      } else if (elements.panel) {
         elements.panel.classList.add('dimmed');
       }
 
@@ -845,6 +884,13 @@ function resetTelemetryData() {
     if (window.storageManager) {
       window.storageManager.clearAll();
     }
+    
+    // Reset any UI elements that might not be covered by updateUIFromState
+    if (elements.refreshRate) elements.refreshRate.textContent = 'Refresh Rate: -- Hz (-- ms)';
+    if (elements.streamingStatus) elements.streamingStatus.textContent = 'Live: —';
+    if (elements.teamLapDisplay) elements.teamLapDisplay.textContent = 'Team Car Lap: 0';
+    if (elements.fuelValue) elements.fuelValue.textContent = '0.0%';
+    if (elements.fuelGauge) elements.fuelGauge.value = 0;
     
     // Notify local user
     alert('Telemetry data has been reset for all team members.');
