@@ -7,9 +7,10 @@
     { key: 'inputs', label: 'Inputs', href: 'inputs.html', colorClass: 'active-page-2' },
     { key: 'track', label: 'Track', href: 'track.html', colorClass: 'active-page-3' },
     { key: 'weather', label: 'Weather', href: 'weather.html', colorClass: 'active-page-4' },
-    { key: 'planner', label: 'Endurance', href: 'planner.html', colorClass: 'active-page-5' },
-    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html', colorClass: 'active-page-6' },
-    { key: 'connections', label: 'Connections', href: 'connections.html', colorClass: 'active-page-7' }
+    { key: 'suspension', label: 'Suspension', href: 'suspension.html', colorClass: 'active-page-5' },
+    { key: 'planner', label: 'Endurance', href: 'planner.html', colorClass: 'active-page-6' },
+    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html', colorClass: 'active-page-7' },
+    { key: 'connections', label: 'Connections', href: 'connections.html', colorClass: 'active-page-8' }
   ];
 
   function detectActiveKey() {

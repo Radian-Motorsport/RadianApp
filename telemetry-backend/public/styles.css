@@ -24,9 +24,10 @@
   --color-2: #4ecdc4; /* Teal - Inputs page */
   --color-3: #45b7d1; /* Blue - Track page */
   --color-4: #96ceb4; /* Mint Green - Weather page */
-  --color-5: #feca57; /* Yellow - Endurance page */
-  --color-6: #ff9ff3; /* Pink - Static Planner page */
-  --color-7: #a29bfe; /* Purple - Connections page */
+  --color-5: #feca57; /* Yellow - Suspension page */
+  --color-6: #ff9ff3; /* Pink - Endurance page */
+  --color-7: #a29bfe; /* Purple - Static Planner page */
+  --color-8: #fd79a8; /* Rose Pink - Connections page */
   
   /* Legacy colors maintained for compatibility */
   --legacy-green: #ffc800;
@@ -315,9 +316,16 @@ body.dashboard-layout {
   font-weight: 600;
 }
 
-/* Connections page - Purple */
+/* Static Planner page - Purple */
 .top-bar button.active.active-page-7 {
   background-color: var(--color-7);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Connections page - Rose Pink */
+.top-bar button.active.active-page-8 {
+  background-color: var(--color-8);
   color: #000;
   font-weight: 600;
 }
