@@ -444,12 +444,12 @@ function handleDriverExit(values, teamLap) {
   };
 
   // Update UI
-  elements.stintLapCount.textContent = stintLapCount ?? '--';
-  elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
-  elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
-  elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
-  elements.lastPitStopTime.textContent = lastPitStopTimeValue;
-  elements.stintIncidents.textContent = stintIncidentCount.toString();
+  if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
+  if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
+  if (elements.stintTotalTime) elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
+  if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
+  if (elements.lastPitStopTime) elements.lastPitStopTime.textContent = lastPitStopTimeValue;
+  if (elements.stintIncidents) elements.stintIncidents.textContent = stintIncidentCount.toString();
   
   updateTireWear(lastStintTireWear);
 
@@ -457,7 +457,7 @@ function handleDriverExit(values, teamLap) {
   updateValueWithColor(elements.fuelAvg, `${avgFuelUsed?.toFixed(2) ?? '--'} L`, avgFuelUsed, 'fuel', 'fuelAvg');
 
   driverWasOnTrack = false;
-  elements.bufferStatus.textContent = 'Waiting for driver…';
+  if (elements.bufferStatus) elements.bufferStatus.textContent = 'Waiting for driver…';
   elements.panel.classList.add('dimmed');
   
   // Sync state to server after driver exit
@@ -486,8 +486,8 @@ function formatTimeHMS(timeInSeconds) {
 function handleDriverEntry(teamLap) {
   lapEntryPoint = teamLap;
   bufferFrozen = true;
-  elements.bufferStatus.textContent = 'Waiting for next lap…';
-  elements.panel.classList.add('dimmed');
+  if (elements.bufferStatus) elements.bufferStatus.textContent = 'Waiting for next lap…';
+  if (elements.panel) elements.panel.classList.add('dimmed');
   driverWasOnTrack = true;
   stintStartTime = Date.now();
   stintIncidentCount = 0;
