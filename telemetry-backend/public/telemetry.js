@@ -3,6 +3,9 @@
 // Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
 
+// Make socket globally accessible
+window.socket = socket;
+
 // State Variables - Initialize with default values
 let lastLapCompleted = -1;
 let fuelAtLapStart = null;

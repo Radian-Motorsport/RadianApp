@@ -100,24 +100,27 @@
         <span id="stintTotalTime">--:--:--</span>
       </div>
       <div>
-        <label>Stint Avg Lap Time:</label>
+        <label>Avg Lap Time:</label>
         <span id="stintAvgLapTime">--:--</span>
       </div>
       <div>
-        <label>Last Pit Stop Time:</label>
-        <span id="lastPitStopTime">--:--</span>
+        <label>Last Pit Stop:</label>
+        <span id="lastPitStopTime">--:--:--</span>
       </div>
       <div>
-        <label>Incidents:</label>
+        <label>Stint Incidents:</label>
         <span id="stintIncidents">--</span>
       </div>
     </div>
-    
+  </div>
+
+  <!-- Tire Wear Section -->
+  <div class="telemetry-block">
     <h3>Tire Wear</h3>
     <div id="tireWearSummary" class="tire-grid">
       <div class="tire-row">
         <div class="tire-cell">
-          <label>Left Front:</label>
+          <label>LF</label>
           <div class="tire-visual">
             <div class="tire-band" id="tireLFL"></div>
             <div class="tire-band" id="tireLFM"></div>
@@ -130,7 +133,7 @@
           </span>
         </div>
         <div class="tire-cell">
-          <label>Right Front:</label>
+          <label>RF</label>
           <div class="tire-visual">
             <div class="tire-band" id="tireRFL"></div>
             <div class="tire-band" id="tireRFM"></div>
@@ -145,7 +148,7 @@
       </div>
       <div class="tire-row">
         <div class="tire-cell">
-          <label>Left Rear:</label>
+          <label>LR</label>
           <div class="tire-visual">
             <div class="tire-band" id="tireLRL"></div>
             <div class="tire-band" id="tireLRM"></div>
@@ -158,7 +161,7 @@
           </span>
         </div>
         <div class="tire-cell">
-          <label>Right Rear:</label>
+          <label>RR</label>
           <div class="tire-visual">
             <div class="tire-band" id="tireRRL"></div>
             <div class="tire-band" id="tireRRM"></div>
@@ -172,6 +175,14 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Status and Controls -->
+  <div class="telemetry-block">
+    <div class="status-section">
+      <div id="streamingStatus">Live: —</div>
+      <div id="refreshRate">Refresh Rate: — Hz</div>
+      <button class="reset-button" onclick="resetTelemetryData()">Reset Telemetry Data</button>
     </div>
   </div>
 
@@ -180,311 +191,18 @@
   <script src="telemetry.js"></script>
   
   <script>
-  document.addEventListener('DOMContentLoaded', () => {
-  const refreshRateDisplay = document.getElementById('refreshRate');
-  let lastTelemetryTime = null;
-
-  socket.on('telemetry', () => {
-    const now = Date.now();
-    if (lastTelemetryTime && refreshRateDisplay) {
-      const interval = now - lastTelemetryTime;
-      const hz = (1000 / interval).toFixed(1);
-      refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
-    }
-    lastTelemetryTime = now;
-  });
-});
-
-  // Socket connection is already available from telemetry.js
-  // const socket = io('https://radianapp.onrender.com'); // Removed duplicate declaration
-
-  // === Tire Wear Visualization ===
-  function getTireWearClass(wearPercentage) {
-    // Convert decimal wear to percentage and get appropriate CSS class
-    const wear = wearPercentage * 100;
-    if (wear >= 97.5) return 'wear-100';   // Purple (97.5-100%)
-    if (wear >= 95) return 'wear-97';      // Violet (95-97.5%)
-    if (wear >= 92.5) return 'wear-95';    // Blue (92.5-95%)
-    if (wear >= 90) return 'wear-92';      // Turquoise (90-92.5%)
-    if (wear >= 87.5) return 'wear-90';    // Green (87.5-90%)
-    if (wear >= 85) return 'wear-87';      // Lime (85-87.5%)
-    if (wear >= 82.5) return 'wear-85';    // Yellow (82.5-85%)
-    if (wear >= 80) return 'wear-82';      // Gold (80-82.5%)
-    if (wear >= 77.5) return 'wear-80';    // Orange (77.5-80%)
-    if (wear >= 75) return 'wear-77';      // Coral (75-77.5%)
-    if (wear >= 60) return 'wear-60';      // Red (60-75%)
-    return 'wear-50';                      // Pink (0-60%)
-  }
-  
-  function updateTireVisual(position, wearData) {
-    // Update the visual representation for each tire band (L, M, R)
-    const leftBand = document.getElementById(`tire${position}L`);
-    const middleBand = document.getElementById(`tire${position}M`);
-    const rightBand = document.getElementById(`tire${position}R`);
-    
-    // Remove all wear classes
-    const wearClasses = [
-      'wear-100', 'wear-97', 'wear-95', 'wear-92', 
-      'wear-90', 'wear-87', 'wear-85', 'wear-82', 
-      'wear-80', 'wear-77', 'wear-60', 'wear-50'
-    ];
-    
-    leftBand.classList.remove(...wearClasses);
-    middleBand.classList.remove(...wearClasses);
-    rightBand.classList.remove(...wearClasses);
-    
-    // Add appropriate wear class based on percentage
-    leftBand.classList.add(getTireWearClass(wearData.L));
-    middleBand.classList.add(getTireWearClass(wearData.M));
-    rightBand.classList.add(getTireWearClass(wearData.R));
-  }
-
-  // === Live Value Display ===
-  function updateFuelGauge(level) {
-    const gauge = document.getElementById('fuelGauge');
-    const valueDisplay = document.getElementById('fuelValue');
-    const fuel = Number(level).toFixed(1);
-    gauge.value = fuel;
-    valueDisplay.textContent = `${fuel}%`;
-  }
-
-  // === State Variables ===
-  let lastLapCompleted = -1;
-  let fuelAtLapStart = null;
-  let fuelUsageHistory = [];
-  let lapTimeHistory = [];
-  let lastLapStartTime = null;
-  let currentLap = 0;
-  let lastTeamLap = null;
-  let bufferedData = null;
-  let lapEntryPoint = null;
-  let bufferFrozen = true;
-  let driverWasOnTrack = false;
-
-  const MIN_LAPS_FOR_VALID_DATA = 2;
-
-  socket.on('telemetry', (data) => {
-    const values = data?.values;
-    const carIdx = values?.PlayerCarIdx;
-    const teamLap = values?.CarIdxLapCompleted?.[carIdx];
-    const isOnTrack = values?.IsOnTrack;
-    const panel = document.getElementById('fuelGaugeContainer');
-
-
-    // === Live Values ===
-    const liveFuelLevel = values?.FuelLevel ?? 0;
-    updateFuelGauge(liveFuelLevel);
-  // Coasting/Overlap indicators handled on Inputs page
-
-    document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
-
-    // === Driver Exit ===
-    if (!isOnTrack && driverWasOnTrack) {
-      bufferFrozen = true;
-
-      // === Post-Stint Values ===
-      const lastFuelUsed = fuelUsageHistory.at(-1);
-      const avgFuelUsed = fuelUsageHistory.length > 0
-        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
-        : null;
-
-      // Stint lap count (must be calculated before resetting lapEntryPoint)
-      const stintLapCount = teamLap - lapEntryPoint;
-      lapEntryPoint = null;
-      lastTeamLap = null;
-
-      // Tire wear snapshot
-      const lastStintTireWear = {
-        RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
-        LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
-        RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
-        LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
-      };
-
-      // Display stint lap count and fuel average
-      document.getElementById('stintLapCount').textContent =
-        `${stintLapCount ?? '--'}`;
-      document.getElementById('stintFuelAvg').textContent =
-        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
-
-      // Display tire wear as percentages
-      document.getElementById('tireRF').textContent =
-        `L${(lastStintTireWear.RF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RF.R * 100)?.toFixed(2)}%`;
-      document.getElementById('tireLF').textContent =
-        `L${(lastStintTireWear.LF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LF.R * 100)?.toFixed(2)}%`;
-      document.getElementById('tireRR').textContent =
-        `L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
-      document.getElementById('tireLR').textContent =
-        `L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
-        
-      // Update tire wear visualization
-      updateTireVisual('RF', lastStintTireWear.RF);
-      updateTireVisual('LF', lastStintTireWear.LF);
-      updateTireVisual('RR', lastStintTireWear.RR);
-      updateTireVisual('LR', lastStintTireWear.LR);
-
-      // Display fuel summary
-      document.getElementById('fuelPerLap').textContent =
-        `${lastFuelUsed?.toFixed(2) ?? '--'} L`;
-      document.getElementById('fuelAvg').textContent =
-        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
-
-      driverWasOnTrack = false;
-      document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
-      panel.classList.add('dimmed');
-      return;
-    }
-
-    // === Driver Entry ===
-    if (isOnTrack && !driverWasOnTrack) {
-      lapEntryPoint = teamLap;
-      bufferFrozen = true;
-      document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
-      panel.classList.add('dimmed');
-      driverWasOnTrack = true;
-      return;
-    }
-
-    // === Lap-Based Buffer Unlock ===
-    if (isOnTrack && bufferFrozen && lapEntryPoint !== null && teamLap >= lapEntryPoint + 2) {
-      bufferFrozen = false;
-      lastTeamLap = teamLap;
-      bufferedData = data;
-      document.getElementById('bufferStatus').textContent = 'Live telemetry';
-    }
-
-    // === Buffer Update on New Lap ===
-    if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
-      lastTeamLap = teamLap;
-      bufferedData = data;
-    }
-
-    // === Display Logic ===
-    const safeValues = bufferedData?.values;
-    if (!safeValues) return;
-
-    // === Calculated Values ===
-    const lapCompleted = safeValues.LapCompleted;
-    const fuel = safeValues.FuelLevel;
-    currentLap = lapCompleted;
-    const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
-
-    if (driverReady && isOnTrack) {
-      panel.classList.remove('dimmed');
-    } else {
-      panel.classList.add('dimmed');
-    }
-
-    // === Lap Completion Logic ===
-let avgFuelUsed3 = null;
-let lapAvg3 = null;
-
-if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-  const now = Date.now();
-
-  // === Lap Time Tracking ===
-  if (lastLapStartTime !== null) {
-    const lapTime = (now - lastLapStartTime) / 1000; // seconds
-    lapTimeHistory.push(lapTime);
-    if (lapTimeHistory.length > 5) lapTimeHistory.shift();
-
-    // === 3-Lap Time Average ===
-    lapAvg3 = lapTimeHistory.length >= 3
-      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-      : null;
-
-    document.getElementById('lapAvg3').textContent =
-      `${lapAvg3?.toFixed(2) ?? '--'}s`;
-
-    // === 5-Lap Time Average ===
-    const lapAvg5 = lapTimeHistory.length === 5
-      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
-      : null;
-
-    document.getElementById('lapAvg5').textContent =
-      `${lapAvg5?.toFixed(2) ?? '--'}s`;
-  }
-  lastLapStartTime = now;
-
-  // === Fuel Usage Tracking ===
-  if (fuelAtLapStart !== null) {
-    const fuelUsed = fuelAtLapStart - fuel;
-    if (fuelUsed >= 0 && isFinite(fuelUsed)) {
-      fuelUsageHistory.push(fuelUsed);
-      if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
-
-      // === 3-Lap Fuel Average ===
-      avgFuelUsed3 = fuelUsageHistory.length >= 3
-        ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-        : null;
-
-      document.getElementById('fuelAvg').textContent =
-        `${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
-
-      // === 5-Lap Fuel Average ===
-      const avgFuelUsed5 = fuelUsageHistory.length === 5
-        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
-        : null;
-
-      document.getElementById('fuelAvg5').textContent =
-        `${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
-
-      // Display last lap fuel
-      document.getElementById('fuelPerLap').textContent =
-        `${fuelUsed.toFixed(2)} L`;
-    }
-  }
-
-  // === Fuel Projection ===
-  const projectedLaps = avgFuelUsed3 > 0
-    ? fuel / avgFuelUsed3
-    : null;
-
-  const projectedTimeSec = projectedLaps && lapAvg3
-    ? projectedLaps * lapAvg3
-    : null;
-
-  document.getElementById('fuelProjectedLaps').textContent =
-    `${projectedLaps?.toFixed(2) ?? '--'}`;
-
-  if (projectedTimeSec) {
-    const minutes = Math.floor(projectedTimeSec / 60);
-    const seconds = Math.floor(projectedTimeSec % 60);
-    document.getElementById('fuelProjectedTime').textContent =
-      `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  } else {
-    document.getElementById('fuelProjectedTime').textContent = '--';
-  }
-
-  fuelAtLapStart = fuel;
-  lastLapCompleted = lapCompleted;
-}
-});
-  
-  
-
-    // === Driver Info Display ===
-    socket.on('currentBroadcaster', (info) => {
-      document.getElementById('streamingStatus').textContent =
-        `Live: ${info.driver} (Session ${info.sessionId})`;
-    });
-
-    socket.on('telemetry', (data) => {
-      const isOnTrack = data?.values?.IsOnTrack;
-      if (isOnTrack === false) {
-        document.getElementById('streamingStatus').textContent = 'Live: —';
-      }
-    });
+    // All telemetry processing is handled by telemetry.js
+    // This script only contains page-specific functionality
     
     // Function to reset all telemetry data for all clients
     function resetTelemetryData() {
       if (confirm("Are you sure you want to reset all telemetry data? This will clear data for ALL team members.")) {
         // Use the resetTelemetryData function from telemetry.js
-        if (window.telemetryDashboard && typeof telemetryDashboard.resetTelemetryData === 'function') {
-          telemetryDashboard.resetTelemetryData();
+        if (window.telemetryDashboard && typeof window.telemetryDashboard.resetTelemetryData === 'function') {
+          window.telemetryDashboard.resetTelemetryData();
         } else {
           // Fallback if the function isn't available
-          socket.emit('resetTelemetryState');
+          console.warn('telemetryDashboard.resetTelemetryData not available, using fallback');
           location.reload();
         }
       }

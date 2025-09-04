@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telemetry Dashboard - Strategy</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div id="topBar" class="top-bar"></div>
+  
+  <!-- Main Dashboard Header -->
+  <div class="telemetry-block">
+    <h2>Strategy Dashboard</h2>
+    
+  <!-- Driving Status Indicators moved to Inputs page -->
+    
+    <!-- Fuel Gauge -->
+    <div id="fuelGaugeContainer">
+      <label for="fuelGauge">Fuel Level</label>
+      <progress id="fuelGauge" value="0" max="100"></progress>
+      <div id="fuelValue">0%</div>
+    </div>
+    
+    <!-- Lap Information -->
+    <div class="lap-info">
+      <div id="teamLapDisplay">Team Car Lap: —</div>
+      <div id="bufferStatus">—</div>
+    </div>
+  </div>
+
+  <!-- Fuel Statistics -->
+  <div class="telemetry-block">
+    <h2>Fuel Statistics <span class="info-badge" title="Based on real-time telemetry data">ℹ️</span></h2>
+    <div class="fuel-stats-grid">
+      <!-- Column 1: Fuel Consumption -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Fuel Used Last Lap:</label>
+          <span id="fuelPerLap">--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Fuel:</label>
+          <span id="fuelAvg">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Fuel:</label>
+          <span id="fuelAvg5">--</span>
+        </div>
+      </div>
+      
+      <!-- Column 2: Lap Times -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Last Lap Time:</label>
+          <span id="lastLapTime">--:--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Time:</label>
+          <span id="lapAvg3">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Time:</label>
+          <span id="lapAvg5">--</span>
+        </div>
+      </div>
+      
+      <!-- Column 3: Projections -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Projected Laps:</label>
+          <span id="fuelProjectedLaps">--</span>
+        </div>
+        <div>
+          <label>Projected Time:</label>
+          <span id="fuelProjectedTime">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stint Summary -->
+  <div class="telemetry-block">
+    <h2>Last Stint Summary <span class="info-badge" title="Data from your most recent completed stint">ℹ️</span></h2>
+    <div class="race-info-grid">
+      <div>
+        <label>Stint Lap Count:</label>
+        <span id="stintLapCount">--</span>
+      </div>
+      <div>
+        <label>Stint Avg Fuel:</label>
+        <span id="stintFuelAvg">--</span>
+      </div>
+      <div>
+        <label>Total Stint Time:</label>
+        <span id="stintTotalTime">--:--:--</span>
+      </div>
+      <div>
+        <label>Stint Avg Lap Time:</label>
+        <span id="stintAvgLapTime">--:--</span>
+      </div>
+      <div>
+        <label>Last Pit Stop Time:</label>
+        <span id="lastPitStopTime">--:--</span>
+      </div>
+      <div>
+        <label>Incidents:</label>
+        <span id="stintIncidents">--</span>
+      </div>
+    </div>
+    
+    <h3>Tire Wear</h3>
+    <div id="tireWearSummary" class="tire-grid">
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>Left Front:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLFL"></div>
+            <div class="tire-band" id="tireLFM"></div>
+            <div class="tire-band" id="tireLFR"></div>
+          </div>
+          <span id="tireLF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>Right Front:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRFL"></div>
+            <div class="tire-band" id="tireRFM"></div>
+            <div class="tire-band" id="tireRFR"></div>
+          </div>
+          <span id="tireRF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+      </div>
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>Left Rear:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLRL"></div>
+            <div class="tire-band" id="tireLRM"></div>
+            <div class="tire-band" id="tireLRR"></div>
+          </div>
+          <span id="tireLR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>Right Rear:</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRRL"></div>
+            <div class="tire-band" id="tireRRM"></div>
+            <div class="tire-band" id="tireRRR"></div>
+          </div>
+          <span id="tireRR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="storage-manager.js"></script>
+  <script src="telemetry.js"></script>
+  
+  <script>
+  // Socket connection is already available from telemetry.js
+  // All telemetry processing is handled by telemetry.js
+
+  // === Live Value Display ===
+  function updateFuelGauge(level) {
+    const gauge = document.getElementById('fuelGauge');
+    const valueDisplay = document.getElementById('fuelValue');
+    const fuel = Number(level).toFixed(1);
+    gauge.value = fuel;
+    valueDisplay.textContent = `${fuel}%`;
+  }
+
+  // === State Variables ===
+  let lastLapCompleted = -1;
+  let fuelAtLapStart = null;
+  let fuelUsageHistory = [];
+  let lapTimeHistory = [];
+  let lastLapStartTime = null;
+  let currentLap = 0;
+  let lastTeamLap = null;
+  let bufferedData = null;
+  let lapEntryPoint = null;
+  let bufferFrozen = true;
+  let driverWasOnTrack = false;
+
+  const MIN_LAPS_FOR_VALID_DATA = 2;
+
+  socket.on('telemetry', (data) => {
+    const values = data?.values;
+    const carIdx = values?.PlayerCarIdx;
+    const teamLap = values?.CarIdxLapCompleted?.[carIdx];
+    const isOnTrack = values?.IsOnTrack;
+    const panel = document.getElementById('fuelGaugeContainer');
+
+
+    // === Live Values ===
+    const liveFuelLevel = values?.FuelLevel ?? 0;
+    updateFuelGauge(liveFuelLevel);
+  // Coasting/Overlap indicators handled on Inputs page
+
+    document.getElementById('teamLapDisplay').textContent = `Team Car Lap: ${teamLap}`;
+
+    // === Driver Exit ===
+    if (!isOnTrack && driverWasOnTrack) {
+      bufferFrozen = true;
+
+      // === Post-Stint Values ===
+      const lastFuelUsed = fuelUsageHistory.at(-1);
+      const avgFuelUsed = fuelUsageHistory.length > 0
+        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
+        : null;
+
+      // Stint lap count (must be calculated before resetting lapEntryPoint)
+      const stintLapCount = teamLap - lapEntryPoint;
+      lapEntryPoint = null;
+      lastTeamLap = null;
+
+      // Tire wear snapshot
+      const lastStintTireWear = {
+        RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
+        LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
+        RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
+        LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
+      };
+
+      // Display stint lap count and fuel average
+      document.getElementById('stintLapCount').textContent =
+        `${stintLapCount ?? '--'}`;
+      document.getElementById('stintFuelAvg').textContent =
+        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+
+      // Display tire wear as percentages
+      document.getElementById('tireRF').textContent =
+        `L${(lastStintTireWear.RF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RF.R * 100)?.toFixed(2)}%`;
+      document.getElementById('tireLF').textContent =
+        `L${(lastStintTireWear.LF.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LF.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LF.R * 100)?.toFixed(2)}%`;
+      document.getElementById('tireRR').textContent =
+        `L${(lastStintTireWear.RR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.RR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.RR.R * 100)?.toFixed(2)}%`;
+      document.getElementById('tireLR').textContent =
+        `L${(lastStintTireWear.LR.L * 100)?.toFixed(2)}% M${(lastStintTireWear.LR.M * 100)?.toFixed(2)}% R${(lastStintTireWear.LR.R * 100)?.toFixed(2)}%`;
+        
+      // Update tire wear visualization
+      updateTireVisual('RF', lastStintTireWear.RF);
+      updateTireVisual('LF', lastStintTireWear.LF);
+      updateTireVisual('RR', lastStintTireWear.RR);
+      updateTireVisual('LR', lastStintTireWear.LR);
+
+      // Display fuel summary
+      document.getElementById('fuelPerLap').textContent =
+        `${lastFuelUsed?.toFixed(2) ?? '--'} L`;
+      document.getElementById('fuelAvg').textContent =
+        `${avgFuelUsed?.toFixed(2) ?? '--'} L`;
+
+      driverWasOnTrack = false;
+      document.getElementById('bufferStatus').textContent = 'Waiting for driver…';
+      panel.classList.add('dimmed');
+      return;
+    }
+
+    // === Driver Entry ===
+    if (isOnTrack && !driverWasOnTrack) {
+      lapEntryPoint = teamLap;
+      bufferFrozen = true;
+      document.getElementById('bufferStatus').textContent = 'Waiting for next lap…';
+      panel.classList.add('dimmed');
+      driverWasOnTrack = true;
+      return;
+    }
+
+    // === Lap-Based Buffer Unlock ===
+    if (isOnTrack && bufferFrozen && lapEntryPoint !== null && teamLap >= lapEntryPoint + 2) {
+      bufferFrozen = false;
+      lastTeamLap = teamLap;
+      bufferedData = data;
+      document.getElementById('bufferStatus').textContent = 'Live telemetry';
+    }
+
+    // === Buffer Update on New Lap ===
+    if (isOnTrack && !bufferFrozen && teamLap > lastTeamLap) {
+      lastTeamLap = teamLap;
+      bufferedData = data;
+    }
+
+    // === Display Logic ===
+    const safeValues = bufferedData?.values;
+    if (!safeValues) return;
+
+    // === Calculated Values ===
+    const lapCompleted = safeValues.LapCompleted;
+    const fuel = safeValues.FuelLevel;
+    currentLap = lapCompleted;
+    const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
+
+    if (driverReady && isOnTrack) {
+      panel.classList.remove('dimmed');
+    } else {
+      panel.classList.add('dimmed');
+    }
+
+    // === Lap Completion Logic ===
+let avgFuelUsed3 = null;
+let lapAvg3 = null;
+
+if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+  const now = Date.now();
+
+  // === Lap Time Tracking ===
+  if (lastLapStartTime !== null) {
+    const lapTime = (now - lastLapStartTime) / 1000; // seconds
+    lapTimeHistory.push(lapTime);
+    if (lapTimeHistory.length > 5) lapTimeHistory.shift();
+
+    // === 3-Lap Time Average ===
+    lapAvg3 = lapTimeHistory.length >= 3
+      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : null;
+
+    document.getElementById('lapAvg3').textContent =
+      `${lapAvg3?.toFixed(2) ?? '--'}s`;
+
+    // === 5-Lap Time Average ===
+    const lapAvg5 = lapTimeHistory.length === 5
+      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+      : null;
+
+    document.getElementById('lapAvg5').textContent =
+      `${lapAvg5?.toFixed(2) ?? '--'}s`;
+  }
+  lastLapStartTime = now;
+
+  // === Fuel Usage Tracking ===
+  if (fuelAtLapStart !== null) {
+    const fuelUsed = fuelAtLapStart - fuel;
+    if (fuelUsed >= 0 && isFinite(fuelUsed)) {
+      fuelUsageHistory.push(fuelUsed);
+      if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
+
+      // === 3-Lap Fuel Average ===
+      avgFuelUsed3 = fuelUsageHistory.length >= 3
+        ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+        : null;
+
+      document.getElementById('fuelAvg').textContent =
+        `${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+
+      // === 5-Lap Fuel Average ===
+      const avgFuelUsed5 = fuelUsageHistory.length === 5
+        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
+        : null;
+
+      document.getElementById('fuelAvg5').textContent =
+        `${avgFuelUsed5?.toFixed(2) ?? '--'} L`;
+
+      // Display last lap fuel
+      document.getElementById('fuelPerLap').textContent =
+        `${fuelUsed.toFixed(2)} L`;
+    }
+  }
+
+  // === Fuel Projection ===
+  const projectedLaps = avgFuelUsed3 > 0
+    ? fuel / avgFuelUsed3
+    : null;
+
+  const projectedTimeSec = projectedLaps && lapAvg3
+    ? projectedLaps * lapAvg3
+    : null;
+
+  document.getElementById('fuelProjectedLaps').textContent =
+    `${projectedLaps?.toFixed(2) ?? '--'}`;
+
+  if (projectedTimeSec) {
+    const minutes = Math.floor(projectedTimeSec / 60);
+    const seconds = Math.floor(projectedTimeSec % 60);
+    document.getElementById('fuelProjectedTime').textContent =
+      `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    document.getElementById('fuelProjectedTime').textContent = '--';
+  }
+
+  fuelAtLapStart = fuel;
+  lastLapCompleted = lapCompleted;
+}
+});
+  
+  
+
+    // === Driver Info Display ===
+    socket.on('currentBroadcaster', (info) => {
+      document.getElementById('streamingStatus').textContent =
+        `Live: ${info.driver} (Session ${info.sessionId})`;
+    });
+
+    socket.on('telemetry', (data) => {
+      const isOnTrack = data?.values?.IsOnTrack;
+      if (isOnTrack === false) {
+        document.getElementById('streamingStatus').textContent = 'Live: —';
+      }
+    });
+    
+    // Function to reset all telemetry data for all clients
+    function resetTelemetryData() {
+      if (confirm("Are you sure you want to reset all telemetry data? This will clear data for ALL team members.")) {
+        // Use the resetTelemetryData function from telemetry.js
+        if (window.telemetryDashboard && typeof telemetryDashboard.resetTelemetryData === 'function') {
+          telemetryDashboard.resetTelemetryData();
+        } else {
+          // Fallback if the function isn't available
+          socket.emit('resetTelemetryState');
+          location.reload();
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    .reset-button {
+      background-color: #ff3333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .reset-button:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</body>
+<script src="nav.js"></script>
+</html>
