@@ -96,10 +96,12 @@ class SuspensionAnalyzer {
     setupEventListeners() {
         // Socket event for telemetry data
         this.socket.on('telemetry', (data) => {
-            this.updateSuspensionData(data);
-            this.updateDisplay();
-            this.updateStatistics();
-            this.updateOscilloscope();
+            if (data && data.values) {
+                this.updateSuspensionData(data.values);
+                this.updateDisplay();
+                this.updateStatistics();
+                this.updateOscilloscope();
+            }
         });
         
         // Oscilloscope controls
@@ -118,6 +120,16 @@ class SuspensionAnalyzer {
     }
     
     updateSuspensionData(data) {
+        // Debug: Log the first few data points to see what's available
+        if (Math.random() < 0.01) { // Only log 1% of the time to avoid spam
+            console.log('Suspension data received:', {
+                LFshockDefl: data.LFshockDefl,
+                RFshockDefl: data.RFshockDefl,
+                LRshockDefl: data.LRshockDefl,
+                RRshockDefl: data.RRshockDefl
+            });
+        }
+        
         // Update standard suspension data
         this.suspensionData.lf.deflection = data.LFshockDefl || 0;
         this.suspensionData.lf.velocity = data.LFshockVel || 0;
@@ -193,11 +205,15 @@ class SuspensionAnalyzer {
         
         if (deflectionEl) {
             deflectionEl.textContent = `${data.deflection.toFixed(3)}m`;
+        } else {
+            console.warn(`Missing deflection element for ${corner}`);
         }
         
         if (velocityEl) {
             const sign = data.velocity >= 0 ? '+' : '';
             velocityEl.textContent = `${sign}${data.velocity.toFixed(1)} m/s`;
+        } else {
+            console.warn(`Missing velocity element for ${corner}`);
         }
         
         if (fillEl) {
@@ -214,6 +230,8 @@ class SuspensionAnalyzer {
             } else {
                 fillEl.style.background = '#4CAF50'; // Green - low compression
             }
+        } else {
+            console.warn(`Missing fill element for ${corner}`);
         }
     }
     
