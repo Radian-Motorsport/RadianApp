@@ -87,6 +87,14 @@ io.on('connection', (socket) => {
       storageActive: true,
       apiStatus: 'Operational'
     });
+    
+    // Also send current broadcaster info if available
+    if (currentUserName || currentSessionId) {
+      socket.emit('currentBroadcaster', {
+        driver: currentUserName,
+        sessionId: currentSessionId
+      });
+    }
   });
   
   // Ping all clients

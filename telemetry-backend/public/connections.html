@@ -222,10 +222,12 @@
     let connectedClients = [];
     let connectionHistory = [];
     let lastConnectionInfo = null; // Store last connection info
+    let previousConnectionInfo = null; // Store previous state for comparison
     
     // Telemetry rate tracking (lastTelemetryTime already declared in telemetry.js)
     let telemetryPacketCount = 0;
     let telemetryStartTime = Date.now();
+    let connectionsPageLastTelemetryTime = null; // Local variable for connections page
     
     // DOM elements (will be cached after DOM loads)
     let connectionCountEl, serverUptimeEl, currentDriverEl, sessionIdEl, connectedSinceEl;
@@ -259,12 +261,12 @@
       telemetryRateEl.textContent = '-- Hz';
       lastDataTimeEl.textContent = '--:--:--';
       
-      // Periodically request connection info to stay updated
+      // Periodically request connection info to stay updated (less frequently)
       setInterval(() => {
         if (socket.connected) {
           socket.emit('requestConnectionInfo');
         }
-      }, 5000); // Every 5 seconds
+      }, 15000); // Every 15 seconds instead of 5
       
       // Set up button handlers
       refreshButton.addEventListener('click', () => {
@@ -311,7 +313,7 @@
     
     socket.on('telemetry', (data) => {
       const now = new Date();
-      lastTelemetryTime = now;
+      connectionsPageLastTelemetryTime = now; // Use local variable
       lastDataTimeEl.textContent = `${now.toLocaleTimeString()}`;
       
       // Track telemetry rate
@@ -331,6 +333,36 @@
     socket.on('connectionInfo', (info) => {
       console.log('Received connection info:', info);
       
+      // Check what changed and only log meaningful events
+      let changesDetected = [];
+      
+      if (previousConnectionInfo) {
+        // Check client count change
+        if (info.clientCount !== previousConnectionInfo.clientCount) {
+          changesDetected.push(`Client count: ${previousConnectionInfo.clientCount} → ${info.clientCount}`);
+        }
+        
+        // Check API status change
+        if (info.apiStatus !== previousConnectionInfo.apiStatus) {
+          changesDetected.push(`API status: ${previousConnectionInfo.apiStatus} → ${info.apiStatus}`);
+        }
+        
+        // Check storage status change
+        if (info.storageActive !== previousConnectionInfo.storageActive) {
+          changesDetected.push(`Storage: ${previousConnectionInfo.storageActive ? 'Active' : 'Inactive'} → ${info.storageActive ? 'Active' : 'Inactive'}`);
+        }
+      } else {
+        // First time receiving connection info
+        changesDetected.push('Initial connection info received');
+      }
+      
+      // Store previous state for next comparison
+      previousConnectionInfo = {
+        clientCount: info.clientCount,
+        apiStatus: info.apiStatus,
+        storageActive: info.storageActive
+      };
+      
       // Store last connection info
       lastConnectionInfo = info;
       
@@ -348,10 +380,14 @@
         ? 'info-value status-good' 
         : 'info-value status-warning';
       
-      addConnectionEvent('Received connection info update');
+      // Only log if there were meaningful changes
+      if (changesDetected.length > 0) {
+        changesDetected.forEach(change => addConnectionEvent(change));
+      }
     });
     
     socket.on('currentBroadcaster', (info) => {
+      console.log('Received currentBroadcaster:', info);
       currentDriverEl.textContent = info.driver || '--';
       sessionIdEl.textContent = info.sessionId || '--';
       addConnectionEvent(`Broadcaster updated: ${info.driver}`);
@@ -383,8 +419,8 @@
       connectedSinceEl.textContent = formatTime(elapsedSeconds);
       
       // Check if telemetry data is stale
-      if (lastTelemetryTime) {
-        const timeSinceLastData = Math.floor((Date.now() - lastTelemetryTime.getTime()) / 1000);
+      if (connectionsPageLastTelemetryTime) {
+        const timeSinceLastData = Math.floor((Date.now() - connectionsPageLastTelemetryTime.getTime()) / 1000);
         if (timeSinceLastData > 5) { // No data for 5+ seconds
           telemetryRateEl.textContent = '0 Hz';
           telemetryRateEl.style.color = '#f44336'; // Red color for no data
