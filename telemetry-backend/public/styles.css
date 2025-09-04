@@ -220,7 +220,7 @@ body.dashboard-layout {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 0 0 auto; /* Don't grow, don't shrink, auto width - allows natural wrapping */
   min-width: fit-content;
 }
 
@@ -235,6 +235,7 @@ body.dashboard-layout {
   .top-bar button {
     padding: 6px 12px;
     font-size: 0.9em;
+    flex: 0 0 auto; /* Prevent shrinking, allow wrapping */
   }
 }
 
@@ -248,7 +249,8 @@ body.dashboard-layout {
   .top-bar button {
     padding: 5px 8px;
     font-size: 0.8em;
-    min-width: 60px; /* Minimum button width for touch targets */
+    min-width: 70px; /* Larger minimum width to force wrapping */
+    flex: 0 0 auto; /* Prevent shrinking, allow wrapping */
   }
 }
 
