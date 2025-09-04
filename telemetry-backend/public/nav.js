@@ -29,6 +29,9 @@
     const left = document.createElement('div');
     left.style.display = 'flex';
     left.style.gap = '8px';
+    left.style.flexWrap = 'wrap'; // Allow buttons to wrap
+    left.style.justifyContent = 'center'; // Center wrapped buttons
+    left.style.width = '100%'; // Take full width to allow wrapping
 
     pages.forEach(p => {
       const btn = document.createElement('button');

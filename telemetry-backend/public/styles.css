@@ -230,31 +230,29 @@ body.dashboard-layout {
 @media (max-width: 768px) {
   .top-bar {
     padding: 8px 12px;
-    gap: 4px;
+    gap: 6px;
     justify-content: center; /* Center the wrapped buttons */
   }
   
   .top-bar button {
-    padding: 6px 10px;
-    font-size: 0.85em;
+    padding: 6px 12px;
+    font-size: 0.9em;
     flex: 0 0 auto; /* Prevent shrinking, allow wrapping */
-    max-width: 90px; /* Force wrapping by limiting button width */
   }
 }
 
 @media (max-width: 480px) {
   .top-bar {
     padding: 6px 8px;
-    gap: 3px;
+    gap: 4px;
     justify-content: center; /* Center the wrapped buttons */
   }
   
   .top-bar button {
-    padding: 4px 6px;
-    font-size: 0.75em;
-    min-width: 60px; /* Minimum for touch targets */
-    max-width: 75px; /* Force wrapping by limiting button width */
+    padding: 5px 10px;
+    font-size: 0.85em;
     flex: 0 0 auto; /* Prevent shrinking, allow wrapping */
+    min-width: fit-content; /* Allow natural button width */
   }
 }
 
