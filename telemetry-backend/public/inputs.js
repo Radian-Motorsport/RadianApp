@@ -3,8 +3,8 @@
 // Socket connection is already initialized in telemetry.js
 // const socket = io('https://radianapp.onrender.com'); // Removed to avoid duplicate declaration
 
-// DOM elements cache
-const elements = {};
+// DOM elements cache for inputs page
+const inputsElements = {};
 
 // Initialization function
 function initInputsPage() {
@@ -43,7 +43,7 @@ function cacheElements() {
   });
 
   // Other UI elements
-  elements.refreshRate = document.getElementById('refreshRate');
+  inputsElements.refreshRate = document.getElementById('refreshRate');
 }
 
 // Initialize visualization components
@@ -79,10 +79,10 @@ function setupEventListeners() {
       // Track telemetry timestamp for refresh rate calculation
       function updateRefreshRate() {
         const now = Date.now();
-        if (lastTelemetryTime && elements.refreshRate) {
+        if (lastTelemetryTime && inputsElements.refreshRate) {
           const interval = now - lastTelemetryTime;
           const hz = (1000 / interval).toFixed(1);
-          elements.refreshRate.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
+          inputsElements.refreshRate.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
         }
         lastTelemetryTime = now;
       }

@@ -1,7 +1,7 @@
 // planner.js - Endurance Race Planning with Telemetry Data
 
-// Initialize socket connection (same as other pages)
-const socket = io('https://radianapp.onrender.com');
+// Socket connection is already initialized in telemetry.js
+// const socket = io('https://radianapp.onrender.com'); // Removed to avoid duplicate declaration
 
 // State variables for stint calculations
 let stintData = [];

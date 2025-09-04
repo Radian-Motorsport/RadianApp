@@ -60,7 +60,8 @@ function updateWeatherData(values) {
 }
 
 // Socket connection for receiving telemetry data
-const socket = io();
+// Socket is already declared in telemetry.js, use the global socket variable
+// const socket = io(); // Removed to avoid duplicate declaration
 
 socket.on('telemetry', (data) => {
   updateWeatherData(data);

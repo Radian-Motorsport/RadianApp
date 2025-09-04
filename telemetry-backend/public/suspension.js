@@ -373,6 +373,7 @@ class SuspensionAnalyzer {
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+    // Socket is already declared in telemetry.js, use the global socket variable
+    // const socket = io(); // Removed to avoid duplicate declaration
     window.suspensionAnalyzer = new SuspensionAnalyzer(socket);
 });
