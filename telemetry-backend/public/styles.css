@@ -206,8 +206,7 @@ body.dashboard-layout {
   background-color: #1a1a1a;
   padding: 10px 20px;
   border-bottom: 1px solid #333;
-  overflow-x: auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap; /* Allow buttons to wrap to next line */
 }
 
 /* Default button state - inactive navigation buttons */
@@ -229,7 +228,8 @@ body.dashboard-layout {
 @media (max-width: 768px) {
   .top-bar {
     padding: 8px 12px;
-    gap: 4px;
+    gap: 6px;
+    justify-content: center; /* Center the wrapped buttons */
   }
   
   .top-bar button {
@@ -241,12 +241,14 @@ body.dashboard-layout {
 @media (max-width: 480px) {
   .top-bar {
     padding: 6px 8px;
-    gap: 2px;
+    gap: 4px;
+    justify-content: center; /* Center the wrapped buttons */
   }
   
   .top-bar button {
     padding: 5px 8px;
     font-size: 0.8em;
+    min-width: 60px; /* Minimum button width for touch targets */
   }
 }
 
