@@ -1,7 +1,7 @@
 // inputs.js - Handles the inputs visualization and data display
 
-// Initialize socket connection
-const socket = io('https://radianapp.onrender.com');
+// Socket connection is already initialized in telemetry.js
+// const socket = io('https://radianapp.onrender.com'); // Removed to avoid duplicate declaration
 
 // DOM elements cache
 const elements = {};
