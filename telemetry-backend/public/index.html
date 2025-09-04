@@ -195,8 +195,8 @@
   });
 });
 
-
-  const socket = io('https://radianapp.onrender.com');
+  // Socket connection is already available from telemetry.js
+  // const socket = io('https://radianapp.onrender.com'); // Removed duplicate declaration
 
   // === Tire Wear Visualization ===
   function getTireWearClass(wearPercentage) {

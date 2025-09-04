@@ -1,6 +1,6 @@
 // telemetry.js - Handles all telemetry data processing and display updates
 
-// Socket.io connection
+// Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
 
 // State Variables - Initialize with default values
