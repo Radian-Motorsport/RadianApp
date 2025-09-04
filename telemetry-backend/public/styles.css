@@ -189,6 +189,8 @@ body.dashboard-layout {
   background-color: #1a1a1a;
   padding: 10px 20px;
   border-bottom: 1px solid #333;
+  overflow-x: auto;
+  flex-wrap: nowrap;
 }
 
 /* Default button state - inactive navigation buttons */
@@ -201,6 +203,34 @@ body.dashboard-layout {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Mobile responsive navigation */
+@media (max-width: 768px) {
+  .top-bar {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  
+  .top-bar button {
+    padding: 6px 12px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+  
+  .top-bar button {
+    padding: 5px 8px;
+    font-size: 0.8em;
+  }
 }
 
 /* Hover state for all navigation buttons */
@@ -288,6 +318,31 @@ body.dashboard-layout {
   border: 1px solid #333;
 }
 
+/* Mobile responsive inputs grid */
+@media (max-width: 768px) {
+  .inputs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+  }
+  
+  .inputs-grid div {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .inputs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  
+  .inputs-grid div {
+    padding: 6px;
+    font-size: 0.75rem;
+  }
+}
+
 .inputs-grid label {
   display: block;
   font-weight: bold;
@@ -305,6 +360,25 @@ canvas {
   background: #111;
   border: 1px solid #333;
   border-radius: 5px;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mobile responsive canvas sizing */
+@media (max-width: 768px) {
+  canvas {
+    width: 100%;
+    max-width: calc(100vw - 40px);
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  canvas {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    margin: 0 auto;
+  }
 }
 
 h2 {
@@ -415,6 +489,28 @@ h2 {
   margin: 15px 0;
 }
 
+/* Mobile responsive table wrapper */
+@media (max-width: 768px) {
+  .stint-table {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stint-table {
+    font-size: 0.8rem;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .stint-table th,
+  .stint-table td {
+    padding: 6px 8px;
+    min-width: 80px;
+  }
+}
+
 /* Calculation Variables Section Styles */
 .calculation-variables div {
   position: relative;
@@ -512,6 +608,7 @@ h2 {
   gap: 20px;
   margin-top: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .status-indicators div {
@@ -523,6 +620,33 @@ h2 {
   transition: all 0.3s ease;
   min-width: 100px;
   text-align: center;
+}
+
+/* Mobile responsive status indicators */
+@media (max-width: 768px) {
+  .status-indicators {
+    gap: 15px;
+    margin: 10px 0;
+  }
+  
+  .status-indicators div {
+    padding: 6px 12px;
+    min-width: 80px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-indicators {
+    gap: 10px;
+    margin: 8px 0;
+  }
+  
+  .status-indicators div {
+    padding: 5px 8px;
+    min-width: 60px;
+    font-size: 0.8rem;
+  }
 }
 
 /* Enhanced styling for coasting and overlap indicators */
@@ -880,6 +1004,39 @@ h2 {
   border-left: 3px solid var(--color-2);
 }
 
+/* Mobile responsive status grid */
+@media (max-width: 768px) {
+  .status-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  
+  .status-grid div {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .status-grid div {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .status-grid label,
+  .status-grid span {
+    font-size: 0.8rem;
+  }
+}
+
 .status-grid label {
   font-weight: 500;
   color: #cccccc;
@@ -898,6 +1055,21 @@ h2 {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-top: 15px;
+}
+
+/* Mobile responsive environment grid */
+@media (max-width: 768px) {
+  .environment-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .environment-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 /* ========================================
@@ -924,4 +1096,73 @@ h2 {
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS ENHANCEMENTS
+   ======================================== */
+
+/* General mobile improvements */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 1.6rem;
+  }
+  
+  h2 {
+    font-size: 1.2rem;
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+    padding: 5px;
+  }
+  
+  h1 {
+    font-size: 1.4rem;
+    margin: 10px 0;
+  }
+  
+  h2 {
+    font-size: 1.1rem;
+    margin: 8px 0;
+  }
+  
+  h3 {
+    font-size: 1rem;
+    margin: 6px 0;
+  }
+  
+  /* Ensure tables don't overflow on very small screens */
+  table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+  
+  /* Handle any remaining content overflow */
+  .data-section,
+  .telemetry-block {
+    margin: 10px 0;
+  }
+}
+
+/* Ensure all text inputs and selects are mobile-friendly */
+@media (max-width: 480px) {
+  input, select, textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
