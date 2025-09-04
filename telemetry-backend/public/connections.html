@@ -140,10 +140,6 @@
         <label>Session ID:</label>
         <span id="sessionId">--</span>
       </div>
-      <div>
-        <label>Connected Since:</label>
-        <span id="connectedSince">--:--:--</span>
-      </div>
     </div>
   </div>
 
@@ -176,14 +172,6 @@
           <div class="info-item">
             <span>Telemetry Rate:</span>
             <span class="info-value" id="telemetryRate">-- Hz</span>
-          </div>
-          <div class="info-item">
-            <span>Data Storage:</span>
-            <span class="info-value" id="storageStatus">Active</span>
-          </div>
-          <div class="info-item">
-            <span>Server Location:</span>
-            <span class="info-value" id="serverLocation">Render.com</span>
           </div>
           <div class="info-item">
             <span>API Status:</span>
@@ -229,8 +217,8 @@
     let connectionsPageLastTelemetryTime = null; // Local variable for connections page
     
     // DOM elements (will be cached after DOM loads)
-    let connectionCountEl, serverUptimeEl, currentDriverEl, sessionIdEl, connectedSinceEl;
-    let clientListEl, socketStatusEl, lastDataTimeEl, telemetryRateEl, storageStatusEl;
+    let connectionCountEl, serverUptimeEl, currentDriverEl, sessionIdEl;
+    let clientListEl, socketStatusEl, lastDataTimeEl, telemetryRateEl;
     let apiStatusEl, connectionHistoryEl, refreshButton, pingButton, resetButton;
     
     // Initialize page
@@ -240,12 +228,10 @@
       serverUptimeEl = document.getElementById('serverUptime');
       currentDriverEl = document.getElementById('currentDriver');
       sessionIdEl = document.getElementById('sessionId');
-      connectedSinceEl = document.getElementById('connectedSince');
       clientListEl = document.getElementById('clientList');
       socketStatusEl = document.getElementById('socketStatus');
       lastDataTimeEl = document.getElementById('lastDataTime');
       telemetryRateEl = document.getElementById('telemetryRate');
-      storageStatusEl = document.getElementById('storageStatus');
       apiStatusEl = document.getElementById('apiStatus');
       connectionHistoryEl = document.getElementById('connectionHistory');
       
@@ -373,7 +359,6 @@
       
       // Update server info
       serverUptimeEl.textContent = formatTime(info.uptime || 0);
-      storageStatusEl.textContent = info.storageActive ? 'Active' : 'Inactive';
       apiStatusEl.textContent = info.apiStatus || 'Unknown';
       apiStatusEl.className = info.apiStatus === 'Operational' 
         ? 'info-value status-good' 
@@ -422,7 +407,7 @@
     // Helper functions
     function updateConnectionTime() {
       const elapsedSeconds = Math.floor((Date.now() - connectionStartTime) / 1000);
-      connectedSinceEl.textContent = formatTime(elapsedSeconds);
+      serverUptimeEl.textContent = formatTime(elapsedSeconds);
       
       // Check if telemetry data is stale
       if (connectionsPageLastTelemetryTime && typeof connectionsPageLastTelemetryTime.getTime === 'function') {
@@ -452,6 +437,7 @@
       clients.forEach(client => {
         const clientEl = document.createElement('div');
         clientEl.className = 'client-item';
+        clientEl.style.justifyContent = 'center'; // Center the content since no time element
         
         const idSpan = document.createElement('span');
         // If driver name is available, use it for identification
@@ -459,23 +445,17 @@
           const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : ' 🔗 Connected';
           const statusColor = client.isActiveBroadcaster ? '#4caf50' : '#ff9800';
           
-          idSpan.innerHTML = `${client.driverName} (${client.id.substring(0, 6)}...)<br><small style="color: ${statusColor};">${status}</small>`;
+          idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.fontWeight = 'bold';
           idSpan.style.color = client.isActiveBroadcaster ? '#4caf50' : '#ffffff';
+          idSpan.style.textAlign = 'center';
         } else {
-          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : '';
-          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<small style="color: #ff9800;">${status}</small>`;
+          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<br><small style="color: #ff9800;">${status}</small>`;
+          idSpan.style.textAlign = 'center';
         }
-        
-        const connectedSpan = document.createElement('span');
-        let timeText = formatTime(client.connectedFor);
-        if (client.telemetryAge !== null && client.telemetryAge < 60) {
-          timeText += `<br><small style="color: #4caf50;">Data: ${client.telemetryAge}s ago</small>`;
-        }
-        connectedSpan.innerHTML = timeText;
         
         clientEl.appendChild(idSpan);
-        clientEl.appendChild(connectedSpan);
         clientListEl.appendChild(clientEl);
       });
     }
