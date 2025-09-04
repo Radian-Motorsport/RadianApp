@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suspension Analysis - Radian Telemetry</title>
+    <title>Suspension Analysis - Radian</title>
+    <!-- External Dependencies -->
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
         .suspension-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            padding: 20px;
-        }
-        
-        .suspension-grid {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 20px 0;
         }
         
         .four-corner-grid {
@@ -81,14 +77,6 @@
             margin-top: 5px;
         }
         
-        .oscilloscope-container {
-            grid-column: 1 / -1;
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
         .oscilloscope-canvas {
             width: 100%;
             height: 300px;
@@ -126,7 +114,6 @@
         @media (max-width: 768px) {
             .suspension-container {
                 grid-template-columns: 1fr;
-                padding: 10px;
             }
             
             .four-corner-grid {
@@ -141,16 +128,17 @@
     </style>
 </head>
 <body>
-    <!-- Navigation will be injected here -->
-    <div id="topBar"></div>
+    <!-- Top Bar -->
+    <div id="topBar" class="top-bar"></div>
     
-    <div class="main-content">
-        <h1>🔧 Suspension Analysis</h1>
+    <!-- Suspension Analysis -->
+    <div class="telemetry-block">
+        <h2>🔧 Suspension Analysis</h2>
         
         <div class="suspension-container">
             <!-- 4-Corner Suspension Display -->
-            <div class="suspension-grid">
-                <h2>Four Corner Display</h2>
+            <div class="telemetry-block">
+                <h3>Four Corner Display</h3>
                 <div class="four-corner-grid">
                     <div class="corner-display" id="lf-corner">
                         <div class="corner-label">LF</div>
@@ -199,8 +187,8 @@
             </div>
             
             <!-- Suspension Statistics -->
-            <div class="suspension-grid">
-                <h2>Suspension Stats</h2>
+            <div class="telemetry-block">
+                <h3>Suspension Stats</h3>
                 <div class="suspension-stats">
                     <div class="stat-card">
                         <div class="stat-label">Max Compression</div>
@@ -231,8 +219,8 @@
         </div>
         
         <!-- High-Frequency Oscilloscope -->
-        <div class="oscilloscope-container">
-            <h2>High-Frequency Suspension Trace (360 Hz)</h2>
+        <div class="telemetry-block">
+            <h3>High-Frequency Suspension Trace (360 Hz)</h3>
             <canvas id="suspension-oscilloscope" class="oscilloscope-canvas"></canvas>
             <div class="controls" style="margin-top: 10px;">
                 <label>
@@ -254,7 +242,6 @@
     </div>
 
     <!-- JavaScript Resources -->
-    <script src="/socket.io/socket.io.js"></script>
     <script src="nav.js"></script>
     <script src="storage-manager.js"></script>
     <script src="telemetry.js"></script>
