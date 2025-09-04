@@ -320,10 +320,10 @@ function updateWeatherData(values) {
   if (elements.trackTemp) elements.trackTemp.textContent = values.TrackTemp ? `${values.TrackTemp.toFixed(1)}°C` : '--';
   if (elements.airTemp) elements.airTemp.textContent = values.AirTemp ? `${values.AirTemp.toFixed(1)}°C` : '--';
   if (elements.airDensity) elements.airDensity.textContent = values.AirDensity ? `${values.AirDensity.toFixed(3)} kg/m³` : '--';
-  if (elements.airPressure) elements.airPressure.textContent = values.AirPressure ? `${values.AirPressure.toFixed(1)} Pa` : '--';
+  if (elements.airPressure) elements.airPressure.textContent = values.AirPressure ? `${(values.AirPressure / 1000).toFixed(1)} mbar` : '--';
 
   // Wind & Weather Conditions
-  if (elements.windVel) elements.windVel.textContent = values.WindVel ? `${values.WindVel.toFixed(1)} m/s` : '--';
+  if (elements.windVel) elements.windVel.textContent = values.WindVel ? `${(values.WindVel * 3.6).toFixed(1)} kph` : '--';
   if (elements.windDir) elements.windDir.textContent = values.WindDir ? `${values.WindDir.toFixed(0)}°` : '--';
   if (elements.skies) {
     const skiesMap = {0: 'Clear', 1: 'Partly Cloudy', 2: 'Mostly Cloudy', 3: 'Overcast'};

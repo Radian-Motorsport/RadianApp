@@ -15,6 +15,10 @@ function safeUpdateElement(id, value) {
   }
 }
 
+// Lookup tables for weather conditions
+const skiesMap = {0: 'Clear', 1: 'Partly Cloudy', 2: 'Mostly Cloudy', 3: 'Overcast'};
+const wetnessMap = {0: 'Dry', 1: 'Mostly Dry', 2: 'Very Lightly Wet', 3: 'Lightly Wet', 4: 'Moderately Wet', 5: 'Very Wet', 6: 'Extremely Wet'};
+
 // Format values for display
 function formatValue(value, type) {
   if (value === null || value === undefined) return '--';
@@ -23,15 +27,19 @@ function formatValue(value, type) {
     case 'temperature':
       return `${value.toFixed(1)}°C`;
     case 'pressure':
-      return `${value.toFixed(2)} kPa`;
+      return `${(value / 1000).toFixed(1)} mbar`; // Convert Pa to millibar
     case 'percentage':
       return `${(value * 100).toFixed(1)}%`;
     case 'velocity':
-      return `${value.toFixed(1)} m/s`;
+      return `${(value * 3.6).toFixed(1)} kph`; // Convert m/s to kph
     case 'direction':
       return `${value.toFixed(0)}°`;
     case 'density':
       return `${value.toFixed(3)} kg/m³`;
+    case 'skies':
+      return skiesMap[value] || '--';
+    case 'wetness':
+      return wetnessMap[value] || '--';
     default:
       return typeof value === 'number' ? value.toFixed(2) : value;
   }
@@ -50,12 +58,12 @@ function updateWeatherData(values) {
   // Weather
   safeUpdateElement('WindVel', formatValue(values.WindVel, 'velocity'));
   safeUpdateElement('WindDir', formatValue(values.WindDir, 'direction'));
-  safeUpdateElement('Skies', values.Skies);
+  safeUpdateElement('Skies', formatValue(values.Skies, 'skies'));
 
   // Track Conditions
   safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percentage'));
   safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percentage'));
-  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'percentage'));
+  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'wetness'));
   safeUpdateElement('FogLevel', formatValue(values.FogLevel, 'percentage'));
 }
 
