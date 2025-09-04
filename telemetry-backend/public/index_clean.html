@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telemetry Dashboard - Strategy</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div id="topBar" class="top-bar"></div>
+  
+  <!-- Main Dashboard Header -->
+  <div class="telemetry-block">
+    <h2>Strategy Dashboard</h2>
+    
+  <!-- Driving Status Indicators moved to Inputs page -->
+    
+    <!-- Fuel Gauge -->
+    <div id="fuelGaugeContainer">
+      <label for="fuelGauge">Fuel Level</label>
+      <progress id="fuelGauge" value="0" max="100"></progress>
+      <div id="fuelValue">0%</div>
+    </div>
+    
+    <!-- Lap Information -->
+    <div class="lap-info">
+      <div id="teamLapDisplay">Team Car Lap: —</div>
+      <div id="bufferStatus">—</div>
+    </div>
+  </div>
+
+  <!-- Fuel Statistics -->
+  <div class="telemetry-block">
+    <h2>Fuel Statistics <span class="info-badge" title="Based on real-time telemetry data">ℹ️</span></h2>
+    <div class="fuel-stats-grid">
+      <!-- Column 1: Fuel Consumption -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Fuel Used Last Lap:</label>
+          <span id="fuelPerLap">--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Fuel:</label>
+          <span id="fuelAvg">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Fuel:</label>
+          <span id="fuelAvg5">--</span>
+        </div>
+      </div>
+      
+      <!-- Column 2: Lap Times -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Last Lap Time:</label>
+          <span id="lastLapTime">--:--</span>
+        </div>
+        <div>
+          <label>3-Lap Avg Time:</label>
+          <span id="lapAvg3">--</span>
+        </div>
+        <div>
+          <label>5-Lap Avg Time:</label>
+          <span id="lapAvg5">--</span>
+        </div>
+      </div>
+      
+      <!-- Column 3: Projections -->
+      <div class="fuel-stats-column">
+        <div>
+          <label>Projected Laps:</label>
+          <span id="fuelProjectedLaps">--</span>
+        </div>
+        <div>
+          <label>Projected Time:</label>
+          <span id="fuelProjectedTime">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stint Summary -->
+  <div class="telemetry-block">
+    <h2>Last Stint Summary <span class="info-badge" title="Data from your most recent completed stint">ℹ️</span></h2>
+    <div class="race-info-grid">
+      <div>
+        <label>Stint Lap Count:</label>
+        <span id="stintLapCount">--</span>
+      </div>
+      <div>
+        <label>Stint Avg Fuel:</label>
+        <span id="stintFuelAvg">--</span>
+      </div>
+      <div>
+        <label>Total Stint Time:</label>
+        <span id="stintTotalTime">--:--:--</span>
+      </div>
+      <div>
+        <label>Avg Lap Time:</label>
+        <span id="stintAvgLapTime">--:--</span>
+      </div>
+      <div>
+        <label>Last Pit Stop:</label>
+        <span id="lastPitStopTime">--:--:--</span>
+      </div>
+      <div>
+        <label>Stint Incidents:</label>
+        <span id="stintIncidents">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tire Wear Section -->
+  <div class="telemetry-block">
+    <h3>Tire Wear</h3>
+    <div id="tireWearSummary" class="tire-grid">
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>LF</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLFL"></div>
+            <div class="tire-band" id="tireLFM"></div>
+            <div class="tire-band" id="tireLFR"></div>
+          </div>
+          <span id="tireLF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>RF</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRFL"></div>
+            <div class="tire-band" id="tireRFM"></div>
+            <div class="tire-band" id="tireRFR"></div>
+          </div>
+          <span id="tireRF">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+      </div>
+      <div class="tire-row">
+        <div class="tire-cell">
+          <label>LR</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireLRL"></div>
+            <div class="tire-band" id="tireLRM"></div>
+            <div class="tire-band" id="tireLRR"></div>
+          </div>
+          <span id="tireLR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+        <div class="tire-cell">
+          <label>RR</label>
+          <div class="tire-visual">
+            <div class="tire-band" id="tireRRL"></div>
+            <div class="tire-band" id="tireRRM"></div>
+            <div class="tire-band" id="tireRRR"></div>
+          </div>
+          <span id="tireRR">
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+            <span class="tire-value">--</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status and Controls -->
+  <div class="telemetry-block">
+    <div class="status-section">
+      <div id="streamingStatus">Live: —</div>
+      <div id="refreshRate">Refresh Rate: — Hz</div>
+      <button class="reset-button" onclick="resetTelemetryData()">Reset Telemetry Data</button>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="storage-manager.js"></script>
+  <script src="telemetry.js"></script>
+  
+  <script>
+    // All telemetry processing is handled by telemetry.js
+    // This script only contains page-specific functionality
+    
+    // Function to reset all telemetry data for all clients
+    function resetTelemetryData() {
+      if (confirm("Are you sure you want to reset all telemetry data? This will clear data for ALL team members.")) {
+        // Use the resetTelemetryData function from telemetry.js
+        if (window.telemetryDashboard && typeof window.telemetryDashboard.resetTelemetryData === 'function') {
+          window.telemetryDashboard.resetTelemetryData();
+        } else {
+          // Fallback if the function isn't available
+          console.warn('telemetryDashboard.resetTelemetryData not available, using fallback');
+          location.reload();
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    .reset-button {
+      background-color: #ff3333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .reset-button:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</body>
+<script src="nav.js"></script>
+</html>

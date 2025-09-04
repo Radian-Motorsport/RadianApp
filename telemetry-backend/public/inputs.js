@@ -48,8 +48,7 @@ function cacheElements() {
 
 // Initialize visualization components
 function initializeComponents() {
-  // Initialize track map
-  window.trackMap = new TrackMap(socket, 'trackCanvas');
+  // TrackMap is now on its own page (track.html)
   
   // Initialize pedal trace
   window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
