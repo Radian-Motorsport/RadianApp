@@ -13,12 +13,6 @@
   <!-- Top Bar -->
   <div id="topBar" class="top-bar"></div>
 
-  <!-- Track Map -->
-  <div class="telemetry-block">
-    <h2>Track Map</h2>
-    <canvas id="trackCanvas" width="600" height="600"></canvas>
-  </div>
-
   <!-- Pedal Trace & Driver Inputs -->
   <div class="telemetry-block">
     <h2>Pedal Trace & Driver Inputs</h2>
@@ -128,59 +122,10 @@
     </div>
   </div>
 
-  <!-- Environment Section -->
-  <div class="telemetry-block">
-    <h2>Environment</h2>
-    <canvas id="envCanvas" width="600" height="200"></canvas>
-    
-    <!-- Environment Graph Legend -->
-    <div class="env-legend">
-      <span class="legend-item"><span class="legend-color" style="color: orange;">—</span> Track Temp</span>
-      <span class="legend-item"><span class="legend-color" style="color: green;">—</span> Humidity</span>
-      <span class="legend-item"><span class="legend-color" style="color: blue;">—</span> Skies</span>
-      <span class="legend-item"><span class="legend-color" style="color: pink;">—</span> Air Pressure</span>
-    </div>
-
-    <div class="environment-grid">
-      <!-- Temperature & Pressure Column -->
-      <div class="status-group">
-        <h3>Temperature & Pressure</h3>
-        <div class="status-grid">
-          <div><label>Track Temp:</label><span id="TrackTemp">--</span></div>
-          <div><label>Air Temp:</label><span id="AirTemp">--</span></div>
-          <div><label>Air Density:</label><span id="AirDensity">--</span></div>
-          <div><label>Air Pressure:</label><span id="AirPressure">--</span></div>
-        </div>
-      </div>
-
-      <!-- Weather Column -->
-      <div class="status-group">
-        <h3>Weather</h3>
-        <div class="status-grid">
-          <div><label>Wind Velocity:</label><span id="WindVel">--</span></div>
-          <div><label>Wind Direction:</label><span id="WindDir">--</span></div>
-          <div><label>Skies:</label><span id="Skies">--</span></div>
-        </div>
-      </div>
-
-      <!-- Track Conditions Column -->
-      <div class="status-group">
-        <h3>Track Conditions</h3>
-        <div class="status-grid">
-          <div><label>Humidity:</label><span id="RelativeHumidity">--</span></div>
-          <div><label>Precipitation:</label><span id="Precipitation">--</span></div>
-          <div><label>Track Wetness:</label><span id="TrackWetness">--</span></div>
-          <div><label>Fog Level:</label><span id="FogLevel">--</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- JavaScript Resources -->
   <script src="storage-manager.js"></script>
-  <script src="trackmap.js"></script>
+  <script src="telemetry.js"></script>
   <script src="pedaltrace.js"></script>
-  <script src="envirotrace.js"></script>
   <script src="inputs.js"></script>
   
   <script>

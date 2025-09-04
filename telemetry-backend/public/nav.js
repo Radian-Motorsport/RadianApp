@@ -5,9 +5,11 @@
   const pages = [
     { key: 'index', label: 'Strategy', href: 'index.html', colorClass: 'active-page-1' },
     { key: 'inputs', label: 'Inputs', href: 'inputs.html', colorClass: 'active-page-2' },
-    { key: 'planner', label: 'Endurance', href: 'planner.html', colorClass: 'active-page-3' },
-    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html', colorClass: 'active-page-4' },
-    { key: 'connections', label: 'Connections', href: 'connections.html', colorClass: 'active-page-5' }
+    { key: 'track', label: 'Track', href: 'track.html', colorClass: 'active-page-3' },
+    { key: 'weather', label: 'Weather', href: 'weather.html', colorClass: 'active-page-4' },
+    { key: 'planner', label: 'Endurance', href: 'planner.html', colorClass: 'active-page-5' },
+    { key: 'staticplanner', label: 'Static Planner', href: 'staticplanner.html', colorClass: 'active-page-6' },
+    { key: 'connections', label: 'Connections', href: 'connections.html', colorClass: 'active-page-7' }
   ];
 
   function detectActiveKey() {

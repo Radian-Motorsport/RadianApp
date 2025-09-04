@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather & Environment - Radian</title>
+  <!-- External Dependencies -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <div id="topBar" class="top-bar"></div>
+
+  <!-- Environment Section -->
+  <div class="telemetry-block">
+    <h2>Environment & Weather</h2>
+    <canvas id="envCanvas" width="600" height="200"></canvas>
+    
+    <!-- Environment Graph Legend -->
+    <div class="env-legend">
+      <span class="legend-item"><span class="legend-color" style="color: orange;">—</span> Track Temp</span>
+      <span class="legend-item"><span class="legend-color" style="color: green;">—</span> Humidity</span>
+      <span class="legend-item"><span class="legend-color" style="color: blue;">—</span> Skies</span>
+      <span class="legend-item"><span class="legend-color" style="color: pink;">—</span> Air Pressure</span>
+    </div>
+
+    <div class="environment-grid">
+      <!-- Temperature & Pressure Column -->
+      <div class="status-group">
+        <h3>Temperature & Pressure</h3>
+        <div class="status-grid">
+          <div><label>Track Temp:</label><span id="TrackTemp">--</span></div>
+          <div><label>Air Temp:</label><span id="AirTemp">--</span></div>
+          <div><label>Air Density:</label><span id="AirDensity">--</span></div>
+          <div><label>Air Pressure:</label><span id="AirPressure">--</span></div>
+        </div>
+      </div>
+
+      <!-- Weather Column -->
+      <div class="status-group">
+        <h3>Weather</h3>
+        <div class="status-grid">
+          <div><label>Wind Velocity:</label><span id="WindVel">--</span></div>
+          <div><label>Wind Direction:</label><span id="WindDir">--</span></div>
+          <div><label>Skies:</label><span id="Skies">--</span></div>
+        </div>
+      </div>
+
+      <!-- Track Conditions Column -->
+      <div class="status-group">
+        <h3>Track Conditions</h3>
+        <div class="status-grid">
+          <div><label>Humidity:</label><span id="RelativeHumidity">--</span></div>
+          <div><label>Precipitation:</label><span id="Precipitation">--</span></div>
+          <div><label>Track Wetness:</label><span id="TrackWetness">--</span></div>
+          <div><label>Fog Level:</label><span id="FogLevel">--</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Resources -->
+  <script src="storage-manager.js"></script>
+  <script src="telemetry.js"></script>
+  <script src="envirotrace.js"></script>
+  <script src="weather.js"></script>
+  <script src="nav.js"></script>
+</body>
+</html>

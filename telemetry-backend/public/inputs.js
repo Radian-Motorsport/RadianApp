@@ -42,13 +42,6 @@ function cacheElements() {
     elements[id] = document.getElementById(id);
   });
 
-  // Environment elements
-  ['TrackTemp', 'AirTemp', 'TrackWetness', 'Skies', 'AirDensity',
-   'AirPressure', 'WindVel', 'WindDir', 'RelativeHumidity',
-   'FogLevel', 'Precipitation'].forEach(id => {
-    elements[id] = document.getElementById(id);
-  });
-
   // Other UI elements
   elements.refreshRate = document.getElementById('refreshRate');
 }
@@ -62,12 +55,6 @@ function initializeComponents() {
   window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
     maxPoints: 300,
     maxRpm: 10000
-  });
-  
-  // Initialize environment trace
-  window.enviroTrace = new EnviroTrace(socket, 'envCanvas', {
-    maxPoints: 600,
-    tempScale: 2
   });
 }
 
@@ -87,8 +74,7 @@ function setupEventListeners() {
       updateStatusElements(values);
       updateDriverInputElements(values);
       updateDriverControlElements(values);
-      updateEnvironmentElements(values);
-  updateDriverIndicators(values);
+      updateDriverIndicators(values);
       
       // Track telemetry timestamp for refresh rate calculation
       function updateRefreshRate() {
@@ -185,50 +171,6 @@ function updateDriverControlElements(values) {
   // Pitstop services
   safeUpdateElement('dpFastRepair', values.dpFastRepair);
   safeUpdateElement('dpWindshieldTearoff', values.dpWindshieldTearoff);
-}
-
-// Update environment elements
-function updateEnvironmentElements(values) {
-  if (!values) return;
-  
-  // Temperature & Pressure
-  safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
-  safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
-  safeUpdateElement('AirDensity', `${values.AirDensity?.toFixed(3)} kg/m³`);
-  safeUpdateElement('AirPressure', `${(values.AirPressure * 0.01)?.toFixed(1)} mbar`);
-  
-  // Weather
-  safeUpdateElement('WindVel', `${values.WindVel?.toFixed(1)} km/h`);
-  safeUpdateElement('WindDir', `${values.WindDir?.toFixed(1)}°`);
-  
-  // Convert Skies number to description
-  const skiesDescriptions = {
-    0: 'Clear',
-    1: 'Partly Cloudy', 
-    2: 'Mostly Cloudy',
-    3: 'Overcast'
-  };
-  const skiesText = skiesDescriptions[values.Skies] || `Unknown (${values.Skies})`;
-  safeUpdateElement('Skies', skiesText);
-  
-  // Track Conditions
-  safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percent'));
-  safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percent'));
-  
-  // Convert TrackWetness enum to description (similar to Skies)
-  const trackWetnessDescriptions = {
-    0: 'Dry',
-    1: 'Mostly Dry', 
-    2: 'Very Lightly Wet',
-    3: 'Lightly Wet',
-    4: 'Moderately Wet',
-    5: 'Very Wet',
-    6: 'Extremely Wet'
-  };
-  const wetnessText = trackWetnessDescriptions[values.TrackWetness] || trackWetnessDescriptions[0];
-  safeUpdateElement('TrackWetness', wetnessText);
-  
-  safeUpdateElement('FogLevel', `${values.FogLevel?.toFixed(1)}%`);
 }
 
 // Safely update an element's text content
