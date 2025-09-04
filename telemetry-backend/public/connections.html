@@ -214,8 +214,8 @@
   <!-- JavaScript Resources -->
   <script src="telemetry.js"></script>
   <script>
-    // Socket.io connection
-    const socket = io('https://radianapp.onrender.com');
+    // Use the socket connection from telemetry.js (already declared)
+    // const socket = io('https://radianapp.onrender.com'); // Removed - using existing socket
     
     // Connection tracking
     let connectionStartTime = Date.now();
