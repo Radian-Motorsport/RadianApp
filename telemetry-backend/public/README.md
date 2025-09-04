@@ -1,36 +1,85 @@
 # Telemetry Dashboard
 
-A real-time telemetry dashboard for sim racing that displays fuel consumption, lap times, tire wear, and other critical metrics.
+A comprehensive real-time telemetry dashboard for sim racing with multiple specialized views for data analysis, strategy planning, and system monitoring.
 
 ## Features
 
-- **Real-time Data**: Displays telemetry data with refresh rate indicator
-- **Fuel Management**: Shows fuel usage per lap, averages, and projections
-- **Lap Statistics**: Tracks lap times and calculates averages
-- **Tire Wear Monitoring**: Displays tire wear percentages
-- **Driver Status**: Indicates when a driver is coasting or overlapping pedals
-- **Stint Summary**: Provides a summary of the previous stint performance
-- **Endurance Planner**: Calculates optimal stint strategies for endurance races
+- **Real-time Data**: Displays telemetry data with refresh rate indicator across multiple specialized pages
+- **Multi-Page Architecture**: 8 dedicated pages for different aspects of telemetry analysis
+- **Data Analysis**: Comprehensive fuel, lap, tire, and performance monitoring
+- **Driver Monitoring**: Real-time driver input visualization and analysis
+- **Track Visualization**: Interactive track mapping with real-time position data
+- **Weather Integration**: Environmental data tracking and visualization
+- **Suspension Analysis**: Four-corner suspension monitoring with high-frequency data
+- **Strategy Planning**: Both live and static endurance race planning tools
+- **System Monitoring**: Real-time connection status and client management
+
+## Page Structure
+
+### 🔢 Data (`index.html`)
+Main dashboard with fuel management, lap statistics, tire wear monitoring, driver status, and stint summaries.
+
+### 🎮 Driver (`inputs.html`) 
+Driver input monitoring with pedal trace visualization, throttle/brake/clutch data, gear changes, and car settings.
+
+### 🗺️ Track (`track.html`)
+Interactive track mapping with real-time position visualization and track layout display.
+
+### 🌤️ Weather (`weather.html`)
+Environmental data including temperature, pressure, wind conditions, track wetness, and weather trace visualization.
+
+### 🔧 Suspension (`suspension.html`)
+Four-corner suspension analysis with real-time deflection/velocity data, high-frequency oscilloscope traces, and suspension statistics.
+
+### ⏱️ Endurance (`planner.html`)
+Live endurance race stint planning with real-time fuel calculations and pit stop strategy optimization.
+
+### 📋 Static (`staticplanner.html`)
+Manual strategy planning tool for pre-race analysis and scenario testing without live telemetry.
+
+### 🔗 Connections (`connections.html`)
+System monitoring showing connected racing applications, web viewers, and real-time connection status.
 
 ## File Structure
 
-- `index.html` - Main dashboard view
-- `inputs.html` - Input monitoring view
-- `planner.html` - Endurance race stint planning view
-- `staticplanner.html` - Static version of the endurance planner with input fields for testing
-- `styles.css` - CSS styles for the dashboard
-- `telemetry.js` - Core telemetry data processing
+### Core Pages
+- `index.html` - Data dashboard (main view with fuel, laps, tires)
+- `inputs.html` - Driver input monitoring with pedal trace
+- `track.html` - Track mapping and position visualization  
+- `weather.html` - Weather and environmental data
+- `suspension.html` - Suspension analysis with four-corner display
+- `planner.html` - Live endurance race stint planning
+- `staticplanner.html` - Manual strategy planning tool
+- `connections.html` - System monitoring and connection status
+
+### JavaScript Modules
+- `telemetry.js` - Core telemetry data processing and shared data
+- `nav.js` - Shared navigation system across all pages
+- `storage-manager.js` - Data persistence and localStorage management
 - `pedaltrace.js` - Pedal input visualization
 - `trackmap.js` - Track mapping visualization
 - `envirotrace.js` - Environmental data visualization
+- `weather.js` - Weather data handling and updates
+- `suspension.js` - Suspension analysis and four-corner display
 - `planner.js` - Endurance race stint calculations
+
+### Styling
+- `styles.css` - Comprehensive CSS with 8-page color scheme and responsive design
 
 ## Setup
 
 1. Make sure you have a server running with Socket.io support
 2. The dashboard connects to a telemetry provider at `https://radianapp.onrender.com`
-3. Open `index.html` to view the main dashboard
-4. Navigate between pages using the buttons in the top bar
+3. Open any page to access the telemetry system
+4. Navigate between the 8 specialized pages using the top navigation bar
+5. Data persistence is maintained across page switches using localStorage
+
+## Navigation
+
+The dashboard features an 8-page navigation system:
+**Data | Driver | Track | Weather | Suspension | Endurance | Static | Connections**
+
+Each page has a unique color scheme and specialized focus area. The navigation is fully responsive and works across desktop and mobile devices.
 
 ## Usage
 
