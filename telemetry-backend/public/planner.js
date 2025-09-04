@@ -29,10 +29,96 @@ let currentFuelLevel = 0;  // From telemetry FuelLevel
 let raceDuration = 0;      // From SessionInfo.SessionTime
 let pitStopTime = 45;      // Default, will be updated based on actual pit times
 
+// Planner state persistence functions
+function savePlannerState() {
+  if (!window.storageManager) {
+    console.warn('Planner: StorageManager not available');
+    return;
+  }
+  
+  const stateToSave = {
+    stintData,
+    currentStintNumber,
+    raceTimeRemaining,
+    nextPitStop,
+    stintDuration,
+    lapsPerStint,
+    totalLapsCompleted,
+    isPitting,
+    isRaceRunning,
+    pitStartTime,
+    pitDurations,
+    lastPitTimeChecked,
+    lastSessionTimeRemain,
+    sessionTimeRemainHistory,
+    fuelPerLap,
+    avgLapTime,
+    tankCapacity,
+    currentFuelLevel,
+    raceDuration,
+    pitStopTime
+  };
+  
+  window.storageManager.savePlannerState(stateToSave);
+}
+
+function loadPlannerState() {
+  if (!window.storageManager) {
+    console.warn('Planner: StorageManager not available');
+    return;
+  }
+  
+  const savedState = window.storageManager.loadPlannerState();
+  if (savedState) {
+    // Restore state variables
+    stintData = savedState.stintData ?? [];
+    currentStintNumber = savedState.currentStintNumber ?? 1;
+    raceTimeRemaining = savedState.raceTimeRemaining ?? 0;
+    nextPitStop = savedState.nextPitStop ?? 0;
+    stintDuration = savedState.stintDuration ?? 0;
+    lapsPerStint = savedState.lapsPerStint ?? 0;
+    totalLapsCompleted = savedState.totalLapsCompleted ?? 0;
+    isPitting = savedState.isPitting ?? false;
+    isRaceRunning = savedState.isRaceRunning ?? false;
+    pitStartTime = savedState.pitStartTime ?? 0;
+    pitDurations = savedState.pitDurations ?? [];
+    lastPitTimeChecked = savedState.lastPitTimeChecked ?? Date.now();
+    lastSessionTimeRemain = savedState.lastSessionTimeRemain ?? null;
+    sessionTimeRemainHistory = savedState.sessionTimeRemainHistory ?? [];
+    fuelPerLap = savedState.fuelPerLap ?? 0;
+    avgLapTime = savedState.avgLapTime ?? 0;
+    tankCapacity = savedState.tankCapacity ?? 0;
+    currentFuelLevel = savedState.currentFuelLevel ?? 0;
+    raceDuration = savedState.raceDuration ?? 0;
+    pitStopTime = savedState.pitStopTime ?? 45;
+    
+    console.log('Planner: Restored state from storage');
+    
+    // Update UI with restored state
+    setTimeout(() => updateUI(), 100);
+  }
+}
+
+// Auto-save planner state periodically
+function setupPlannerAutoSave() {
+  // Save every 15 seconds
+  setInterval(savePlannerState, 15000);
+  
+  // Save when page is about to unload
+  window.addEventListener('beforeunload', savePlannerState);
+  window.addEventListener('pagehide', savePlannerState);
+}
+
 // Initialize the page when DOM is loaded
 document.addEventListener('DOMContentLoaded', initPlannerPage);
 
 function initPlannerPage() {
+  // Load saved planner state
+  loadPlannerState();
+  
+  // Set up auto-save
+  setupPlannerAutoSave();
+  
   setupEventListeners();
   setupDataSharing();
   
@@ -442,6 +528,9 @@ function calculateStintPlan() {
   } else {
     nextPitStop = 0;
   }
+  
+  // Save state after calculation
+  savePlannerState();
 }
 
 // Update the UI with current values
@@ -525,6 +614,9 @@ function updateUI() {
       tbody.appendChild(stintRow);
     });
   }
+  
+  // Save state after UI update
+  savePlannerState();
 }
 
 // Update the refresh rate display (copied from other pages for consistency)

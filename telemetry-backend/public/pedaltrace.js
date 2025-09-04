@@ -26,11 +26,17 @@ class PedalTrace {
     // Data buffer
     this.buffer = [];
     
+    // Load any existing data from localStorage
+    this.loadFromStorage();
+    
     // Set up telemetry listener
     this.setupListeners();
     
     // Start animation
     this.startAnimation();
+    
+    // Save data to localStorage periodically
+    this.setupAutoSave();
   }
   
   /**
@@ -52,7 +58,8 @@ class PedalTrace {
         brake: values.Brake * 100,
         gear: (values.Gear / this.options.maxGear) * 100,
         coasting: isCoasting,
-        overlap: isOverlap
+        overlap: isOverlap,
+        timestamp: Date.now() // Add timestamp for persistence filtering
       });
       
       if (this.buffer.length > this.options.maxPoints) {
@@ -132,5 +139,57 @@ class PedalTrace {
     // Overlap indicator (text only, no line)
     this.ctx.fillStyle = latestData.overlap ? '#4ecdc4' : '#666666'; // Teal when active, gray when inactive  
     this.ctx.fillText('OVERLAP', legendX, legendY + spacing);
+  }
+  
+  /**
+   * Load buffer data from localStorage
+   */
+  loadFromStorage() {
+    if (!window.storageManager) {
+      console.warn('PedalTrace: StorageManager not available');
+      return;
+    }
+    
+    try {
+      const savedData = window.storageManager.loadVisualizationData('pedalTrace');
+      if (savedData && Array.isArray(savedData)) {
+        this.buffer = savedData;
+        console.log(`PedalTrace: Loaded ${this.buffer.length} data points from storage`);
+      }
+    } catch (error) {
+      console.warn('PedalTrace: Failed to load data from storage:', error);
+      this.buffer = [];
+    }
+  }
+  
+  /**
+   * Save buffer data to localStorage
+   */
+  saveToStorage() {
+    if (!window.storageManager) {
+      console.warn('PedalTrace: StorageManager not available');
+      return;
+    }
+    
+    try {
+      window.storageManager.saveVisualizationData('pedalTrace', this.buffer);
+    } catch (error) {
+      console.warn('PedalTrace: Failed to save data to storage:', error);
+    }
+  }
+  
+  /**
+   * Set up automatic saving to localStorage
+   */
+  setupAutoSave() {
+    // Save every 30 seconds
+    setInterval(() => {
+      this.saveToStorage();
+    }, 30000);
+    
+    // Save when page is about to unload
+    window.addEventListener('beforeunload', () => {
+      this.saveToStorage();
+    });
   }
 }

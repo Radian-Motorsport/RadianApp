@@ -35,6 +35,89 @@ let stintIncidentCount = 0;
 // Server sync flag to prevent loops
 let isSyncingFromServer = false;
 
+// Telemetry state persistence functions
+function saveTelemetryState() {
+  if (!window.storageManager) {
+    console.warn('Telemetry: StorageManager not available');
+    return;
+  }
+  
+  const stateToSave = {
+    lastLapCompleted,
+    fuelAtLapStart,
+    fuelUsageHistory,
+    lapTimeHistory,
+    lastLapStartTime,
+    currentLap,
+    lastTeamLap,
+    bufferedData,
+    lapEntryPoint,
+    bufferFrozen,
+    driverWasOnTrack,
+    lastTelemetryTime,
+    stintStartTime,
+    lastPitStopTimeValue,
+    lastSessionId,
+    lastSessionDate,
+    previousValues,
+    stintIncidentCount
+  };
+  
+  window.storageManager.saveTelemetryState(stateToSave);
+}
+
+function loadTelemetryState() {
+  if (!window.storageManager) {
+    console.warn('Telemetry: StorageManager not available');
+    return;
+  }
+  
+  const savedState = window.storageManager.loadTelemetryState();
+  if (savedState) {
+    // Restore state variables
+    lastLapCompleted = savedState.lastLapCompleted ?? -1;
+    fuelAtLapStart = savedState.fuelAtLapStart ?? null;
+    fuelUsageHistory = savedState.fuelUsageHistory ?? [];
+    lapTimeHistory = savedState.lapTimeHistory ?? [];
+    lastLapStartTime = savedState.lastLapStartTime ?? null;
+    currentLap = savedState.currentLap ?? 0;
+    lastTeamLap = savedState.lastTeamLap ?? null;
+    bufferedData = savedState.bufferedData ?? null;
+    lapEntryPoint = savedState.lapEntryPoint ?? null;
+    bufferFrozen = savedState.bufferFrozen ?? true;
+    driverWasOnTrack = savedState.driverWasOnTrack ?? false;
+    lastTelemetryTime = savedState.lastTelemetryTime ?? null;
+    stintStartTime = savedState.stintStartTime ?? null;
+    lastPitStopTimeValue = savedState.lastPitStopTimeValue ?? null;
+    lastSessionId = savedState.lastSessionId ?? null;
+    lastSessionDate = savedState.lastSessionDate ?? new Date().toDateString();
+    previousValues = savedState.previousValues ?? {
+      fuelPerLap: null,
+      fuelAvg: null,
+      fuelAvg5: null,
+      lastLapTime: null,
+      lapAvg3: null,
+      lapAvg5: null
+    };
+    stintIncidentCount = savedState.stintIncidentCount ?? 0;
+    
+    console.log('Telemetry: Restored state from storage');
+    
+    // Update UI with restored state
+    setTimeout(() => updateUIFromState(), 100);
+  }
+}
+
+// Auto-save telemetry state periodically
+function setupTelemetryAutoSave() {
+  // Save every 10 seconds
+  setInterval(saveTelemetryState, 10000);
+  
+  // Save when page is about to unload
+  window.addEventListener('beforeunload', saveTelemetryState);
+  window.addEventListener('pagehide', saveTelemetryState);
+}
+
 // Functions to handle server state synchronization
 function syncToServer() {
   // Only sync if not currently receiving updates from server
@@ -64,6 +147,9 @@ function syncToServer() {
   
   // Send to server
   socket.emit('updateTelemetryState', stateToSync);
+  
+  // Also save to localStorage
+  saveTelemetryState();
 }
 
 function applyServerState(serverState) {
@@ -178,6 +264,12 @@ function initDashboard() {
 
   // Set up socket listeners
   setupSocketListeners();
+  
+  // Load saved telemetry state
+  loadTelemetryState();
+  
+  // Set up auto-save
+  setupTelemetryAutoSave();
 }
 
 // Update fuel gauge display
@@ -702,6 +794,11 @@ function resetTelemetryData() {
     
     // Reset display elements
     updateUIFromState();
+    
+    // Clear localStorage data
+    if (window.storageManager) {
+      window.storageManager.clearAll();
+    }
     
     // Notify local user
     alert('Telemetry data has been reset for all team members.');

@@ -24,11 +24,17 @@ class TrackMap {
     this.carImg = new Image();
     this.carImg.src = 'icon-active.png';
     
+    // Load any existing data from localStorage
+    this.loadFromStorage();
+    
     // Setup event listeners
     this.setupListeners();
     
     // Start animation
     this.startAnimation();
+    
+    // Save data to localStorage periodically
+    this.setupAutoSave();
   }
   
   setupListeners() {
@@ -254,5 +260,85 @@ class TrackMap {
     }
     
     requestAnimationFrame(this.drawTrack.bind(this));
+  }
+  
+  /**
+   * Load track data from localStorage
+   */
+  loadFromStorage() {
+    if (!window.storageManager) {
+      console.warn('TrackMap: StorageManager not available');
+      return;
+    }
+    
+    try {
+      const data = window.storageManager.loadVisualizationData('trackMap');
+      if (data) {
+        this.finalLap = data.finalLap || [];
+        this.finalLapYaw = data.finalLapYaw || [];
+        this.lapStarted = data.lapStarted || false;
+        this.lapCompleted = data.lapCompleted || false;
+        console.log(`TrackMap: Loaded track data from storage`);
+      }
+    } catch (error) {
+      console.warn('TrackMap: Failed to load data from storage:', error);
+    }
+  }
+  
+  /**
+   * Save track data to localStorage
+   */
+  saveToStorage() {
+    if (!window.storageManager) {
+      console.warn('TrackMap: StorageManager not available');
+      return;
+    }
+    
+    try {
+      const data = {
+        finalLap: this.finalLap,
+        finalLapYaw: this.finalLapYaw,
+        lapStarted: this.lapStarted,
+        lapCompleted: this.lapCompleted
+      };
+      window.storageManager.saveVisualizationData('trackMap', data);
+    } catch (error) {
+      console.warn('TrackMap: Failed to save data to storage:', error);
+    }
+  }
+  
+  /**
+   * Set up automatic saving to localStorage
+   */
+  setupAutoSave() {
+    // Save every minute
+    setInterval(() => {
+      this.saveToStorage();
+    }, 60000);
+    
+    // Save when page is about to unload
+    window.addEventListener('beforeunload', () => {
+      this.saveToStorage();
+    });
+    
+    // Save when lap is completed
+    const originalSetupListeners = this.setupListeners;
+    this.setupListeners = () => {
+      originalSetupListeners.call(this);
+      
+      // Override the telemetry handler to save on lap completion
+      const originalHandler = this.socket._callbacks?.$telemetry?.[this.socket._callbacks.$telemetry.length - 1];
+      if (originalHandler) {
+        this.socket.off('telemetry', originalHandler);
+        this.socket.on('telemetry', (data) => {
+          const wasCompleted = this.lapCompleted;
+          originalHandler(data);
+          // Save if lap just completed
+          if (!wasCompleted && this.lapCompleted) {
+            this.saveToStorage();
+          }
+        });
+      }
+    };
   }
 }

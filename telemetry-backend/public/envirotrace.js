@@ -30,11 +30,17 @@ class EnviroTrace {
     this.buffer = [];
     this.sampleCounter = 0; // Counter for sampling rate
     
+    // Load any existing data from localStorage
+    this.loadFromStorage();
+    
     // Set up telemetry listener
     this.setupListeners();
     
     // Start animation
     this.startAnimation();
+    
+    // Save data to localStorage periodically
+    this.setupAutoSave();
   }
   
   /**
@@ -55,7 +61,8 @@ class EnviroTrace {
         trackTemp: values.TrackTemp,
         humidity: values.RelativeHumidity,
         skies: values.Skies, // Store raw 0-3 value, scaling handled in drawing
-        airPressure: values.AirPressure // Store in Pa, will convert to mbar for display
+        airPressure: values.AirPressure, // Store in Pa, will convert to mbar for display
+        timestamp: Date.now() // Add timestamp for persistence filtering
       });
       
       if (this.buffer.length > this.options.maxPoints) {
@@ -137,5 +144,57 @@ class EnviroTrace {
     this.ctx.stroke();
     
     requestAnimationFrame(this.draw.bind(this));
+  }
+  
+  /**
+   * Load buffer data from localStorage
+   */
+  loadFromStorage() {
+    if (!window.storageManager) {
+      console.warn('EnviroTrace: StorageManager not available');
+      return;
+    }
+    
+    try {
+      const savedData = window.storageManager.loadVisualizationData('enviroTrace');
+      if (savedData && Array.isArray(savedData)) {
+        this.buffer = savedData;
+        console.log(`EnviroTrace: Loaded ${this.buffer.length} data points from storage`);
+      }
+    } catch (error) {
+      console.warn('EnviroTrace: Failed to load data from storage:', error);
+      this.buffer = [];
+    }
+  }
+  
+  /**
+   * Save buffer data to localStorage
+   */
+  saveToStorage() {
+    if (!window.storageManager) {
+      console.warn('EnviroTrace: StorageManager not available');
+      return;
+    }
+    
+    try {
+      window.storageManager.saveVisualizationData('enviroTrace', this.buffer);
+    } catch (error) {
+      console.warn('EnviroTrace: Failed to save data to storage:', error);
+    }
+  }
+  
+  /**
+   * Set up automatic saving to localStorage
+   */
+  setupAutoSave() {
+    // Save every 30 seconds
+    setInterval(() => {
+      this.saveToStorage();
+    }, 30000);
+    
+    // Save when page is about to unload
+    window.addEventListener('beforeunload', () => {
+      this.saveToStorage();
+    });
   }
 }
