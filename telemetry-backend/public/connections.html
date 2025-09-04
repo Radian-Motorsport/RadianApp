@@ -217,38 +217,41 @@
     // Use the socket connection from telemetry.js (already declared)
     // const socket = io('https://radianapp.onrender.com'); // Removed - using existing socket
     
-    // Connection tracking
+    // Connection tracking (using some variables from telemetry.js)
     let connectionStartTime = Date.now();
     let connectedClients = [];
     let connectionHistory = [];
     let lastConnectionInfo = null; // Store last connection info
     
-    // Telemetry rate tracking
+    // Telemetry rate tracking (lastTelemetryTime already declared in telemetry.js)
     let telemetryPacketCount = 0;
     let telemetryStartTime = Date.now();
-    let lastTelemetryTime = null;
     
-    // DOM elements
-    const connectionCountEl = document.getElementById('connectionCount');
-    const serverUptimeEl = document.getElementById('serverUptime');
-    const currentDriverEl = document.getElementById('currentDriver');
-    const sessionIdEl = document.getElementById('sessionId');
-    const connectedSinceEl = document.getElementById('connectedSince');
-    const clientListEl = document.getElementById('clientList');
-    const socketStatusEl = document.getElementById('socketStatus');
-    const lastDataTimeEl = document.getElementById('lastDataTime');
-    const telemetryRateEl = document.getElementById('telemetryRate');
-    const storageStatusEl = document.getElementById('storageStatus');
-    const apiStatusEl = document.getElementById('apiStatus');
-    const connectionHistoryEl = document.getElementById('connectionHistory');
-    
-    // Buttons
-    const refreshButton = document.getElementById('refreshButton');
-    const pingButton = document.getElementById('pingButton');
-    const resetButton = document.getElementById('resetButton');
+    // DOM elements (will be cached after DOM loads)
+    let connectionCountEl, serverUptimeEl, currentDriverEl, sessionIdEl, connectedSinceEl;
+    let clientListEl, socketStatusEl, lastDataTimeEl, telemetryRateEl, storageStatusEl;
+    let apiStatusEl, connectionHistoryEl, refreshButton, pingButton, resetButton;
     
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
+      // Cache DOM elements after DOM is loaded
+      connectionCountEl = document.getElementById('connectionCount');
+      serverUptimeEl = document.getElementById('serverUptime');
+      currentDriverEl = document.getElementById('currentDriver');
+      sessionIdEl = document.getElementById('sessionId');
+      connectedSinceEl = document.getElementById('connectedSince');
+      clientListEl = document.getElementById('clientList');
+      socketStatusEl = document.getElementById('socketStatus');
+      lastDataTimeEl = document.getElementById('lastDataTime');
+      telemetryRateEl = document.getElementById('telemetryRate');
+      storageStatusEl = document.getElementById('storageStatus');
+      apiStatusEl = document.getElementById('apiStatus');
+      connectionHistoryEl = document.getElementById('connectionHistory');
+      
+      // Cache buttons
+      refreshButton = document.getElementById('refreshButton');
+      pingButton = document.getElementById('pingButton');
+      resetButton = document.getElementById('resetButton');
       updateConnectionTime();
       setInterval(updateConnectionTime, 1000);
       
