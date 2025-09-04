@@ -33,8 +33,43 @@ let telemetryState = {
 };
 
 // Connection tracking
-const connectedClients = new Map();
+const connectedClients = new Map(); // Socket.io clients (web viewers)
+const httpClients = new Map(); // HTTP clients (racing apps)
 const serverStartTime = Date.now();
+
+// Helper function to detect racing app from User-Agent
+function isRacingApp(userAgent) {
+  if (!userAgent) return false;
+  const ua = userAgent.toLowerCase();
+  return ua.includes('radiantelemetryapp') || ua.includes('radianapp') || ua.includes('radian');
+}
+
+// Helper function to get or create HTTP client info
+function getOrCreateHttpClient(req) {
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  const clientKey = req.ip + '_' + userAgent; // Use IP + User-Agent as key
+  
+  if (!httpClients.has(clientKey)) {
+    httpClients.set(clientKey, {
+      id: clientKey,
+      connectedAt: Date.now(),
+      lastActive: Date.now(),
+      userAgent: userAgent,
+      isRacingApp: isRacingApp(userAgent),
+      driverName: null,
+      broadcastingEnabled: false, // Will be updated based on telemetry activity
+      isActiveBroadcaster: false,
+      lastTelemetryTime: null
+    });
+  }
+  
+  // Update last active time
+  const client = httpClients.get(clientKey);
+  client.lastActive = Date.now();
+  httpClients.set(clientKey, client);
+  
+  return client;
+}
 
 const express = require('express');
 const http = require('http');
@@ -87,24 +122,53 @@ io.on('connection', (socket) => {
   
   // Handle connection info requests
   socket.on('requestConnectionInfo', () => {
-    const clientsInfo = Array.from(connectedClients.values()).map(client => ({
+    // Get web viewers (Socket.io clients)
+    const webViewers = Array.from(connectedClients.values()).map(client => ({
       id: client.id,
       connectedAt: client.connectedAt,
       connectedFor: Math.floor((Date.now() - client.connectedAt) / 1000),
       lastActive: client.lastActive,
       userAgent: client.userAgent,
-      clientType: client.clientType, // 'app' or 'viewer'
-      isApp: client.isApp, // Boolean for easy checking
       driverName: client.driverName,
       isActiveBroadcaster: client.isActiveBroadcaster,
       lastTelemetryTime: client.lastTelemetryTime,
-      telemetryAge: client.lastTelemetryTime ? Math.floor((Date.now() - client.lastTelemetryTime) / 1000) : null
+      telemetryAge: client.lastTelemetryTime ? Math.floor((Date.now() - client.lastTelemetryTime) / 1000) : null,
+      clientType: 'viewer'
     }));
+    
+    // Get racing apps (HTTP clients) - clean up old inactive ones first
+    const now = Date.now();
+    for (const [clientId, client] of httpClients.entries()) {
+      if (now - client.lastActive > 300000) { // Remove clients inactive for 5+ minutes
+        httpClients.delete(clientId);
+      }
+    }
+    
+    const racingApps = Array.from(httpClients.values()).map(client => ({
+      id: client.id,
+      connectedAt: client.connectedAt,
+      connectedFor: Math.floor((Date.now() - client.connectedAt) / 1000),
+      lastActive: client.lastActive,
+      userAgent: client.userAgent,
+      driverName: client.driverName,
+      broadcastingEnabled: client.broadcastingEnabled,
+      isActiveBroadcaster: client.isActiveBroadcaster,
+      lastTelemetryTime: client.lastTelemetryTime,
+      telemetryAge: client.lastTelemetryTime ? Math.floor((Date.now() - client.lastTelemetryTime) / 1000) : null,
+      clientType: 'racing-app'
+    }));
+    
+    // Debug logging
+    console.log(`🔍 Connection info requested - Socket clients: ${connectedClients.size}, HTTP clients: ${httpClients.size}`);
+    console.log(`🔍 Racing apps:`, racingApps);
+    console.log(`🔍 Web viewers:`, webViewers);
     
     socket.emit('connectionInfo', {
       uptime: Math.floor((Date.now() - serverStartTime) / 1000),
-      clientCount: connectedClients.size,
-      clients: clientsInfo,
+      clientCount: connectedClients.size + httpClients.size,
+      webViewers: webViewers,
+      racingApps: racingApps,
+      clients: [...webViewers, ...racingApps], // Combined for backward compatibility
       storageActive: true,
       apiStatus: 'Operational'
     });
@@ -205,24 +269,38 @@ io.on('connection', (socket) => {
 app.post('/telemetry', (req, res) => {
   const data = req.body;
   const clientIp = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('User-Agent') || 'Unknown';
 
   const isOnTrack = data?.values?.IsOnTrack;
 
-  // Update the client that's sending telemetry data as active broadcaster
-  for (const [socketId, clientInfo] of connectedClients.entries()) {
-    if (clientInfo.lastActive > Date.now() - 10000) { // Active in the last 10 seconds
-      clientInfo.isActiveBroadcaster = true;
-      clientInfo.lastTelemetryTime = Date.now();
-      connectedClients.set(socketId, clientInfo);
-      break;
+  // Debug logging
+  console.log(`📡 Telemetry received from User-Agent: "${userAgent}"`);
+  console.log(`📡 Is racing app: ${isRacingApp(userAgent)}`);
+
+  // Get or create HTTP client info (for racing apps)
+  const httpClient = getOrCreateHttpClient(req);
+  
+  // Update racing app as active broadcaster
+  if (httpClient.isRacingApp) {
+    httpClient.isActiveBroadcaster = true;
+    httpClient.broadcastingEnabled = true; // App is sending telemetry, so broadcasting is enabled
+    httpClient.lastTelemetryTime = Date.now();
+    if (currentUserName) {
+      httpClient.driverName = currentUserName;
     }
+    httpClients.set(httpClient.id, httpClient);
+    
+    console.log(`📡 Racing app "${userAgent}" broadcasting telemetry from ${currentUserName || 'Unknown Driver'}`);
+    console.log(`📡 HTTP clients count: ${httpClients.size}`);
+  } else {
+    console.log(`⚠️ Non-racing app sending telemetry: "${userAgent}"`);
   }
 
   // Mark other clients as inactive broadcasters (in case switching between clients)
-  for (const [socketId, clientInfo] of connectedClients.entries()) {
+  for (const [clientId, clientInfo] of httpClients.entries()) {
     if (clientInfo.lastTelemetryTime && (Date.now() - clientInfo.lastTelemetryTime) > 5000) {
       clientInfo.isActiveBroadcaster = false;
-      connectedClients.set(socketId, clientInfo);
+      httpClients.set(clientId, clientInfo);
     }
   }
 
@@ -249,21 +327,25 @@ app.post('/telemetry', (req, res) => {
 app.post('/sessionInfo', (req, res) => {
   const data = req.body;
   const clientIp = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('User-Agent') || 'Unknown';
 
   currentSessionId = data?.WeekendInfo?.SessionID;
   currentUserName = data?.DriverInfo?.Drivers?.[0]?.UserName;
   
-  // Find the client that most likely sent this data and associate the driver name
-  if (currentUserName) {
-    for (const [socketId, clientInfo] of connectedClients.entries()) {
-      // Update the client that's likely broadcasting the data
-      // This is a best-effort approach since we don't have a direct socket connection for HTTP requests
-      if (clientInfo.lastActive > Date.now() - 10000) { // Active in the last 10 seconds
-        clientInfo.driverName = currentUserName;
-        connectedClients.set(socketId, clientInfo);
-        break;
-      }
-    }
+  // Debug logging
+  console.log(`📋 SessionInfo received from User-Agent: "${userAgent}"`);
+  console.log(`📋 Driver: ${currentUserName}, Session: ${currentSessionId}`);
+  console.log(`📋 Is racing app: ${isRacingApp(userAgent)}`);
+  
+  // Get or create HTTP client info (for racing apps)
+  const httpClient = getOrCreateHttpClient(req);
+  
+  // Update racing app info
+  if (httpClient.isRacingApp && currentUserName) {
+    httpClient.driverName = currentUserName;
+    httpClients.set(httpClient.id, httpClient);
+    console.log(`📋 Racing app "${userAgent}" updated session info for ${currentUserName}`);
+    console.log(`📋 HTTP clients count: ${httpClients.size}`);
   }
 
   io.emit('sessionInfo', data); // Broadcast to planner
@@ -271,6 +353,15 @@ app.post('/sessionInfo', (req, res) => {
   res.sendStatus(200);
 });
 
+
+// Debug endpoint to check HTTP clients
+app.get('/api/debug/clients', (req, res) => {
+  res.json({
+    socketClients: Array.from(connectedClients.values()),
+    httpClients: Array.from(httpClients.values()),
+    totalCount: connectedClients.size + httpClients.size
+  });
+});
 
 server.listen(PORT, () => {
   console.log(`✅ Backend running at http://localhost:${PORT}`);

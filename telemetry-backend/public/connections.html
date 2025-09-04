@@ -468,11 +468,13 @@
       
       // Calculate and update broadcasting count
       const clients = info.clients || [];
-      const broadcastingCount = clients.filter(client => client.broadcastingEnabled).length;
+      const racingApps = info.racingApps || [];
+      const webViewers = info.webViewers || [];
+      const broadcastingCount = racingApps.filter(client => client.broadcastingEnabled).length;
       broadcastingCountEl.textContent = broadcastingCount;
       
-      // Update client list
-      updateClientList(clients);
+      // Update client list with separate sections
+      updateClientList(racingApps, webViewers);
       
       // Update server info
       serverUptimeEl.textContent = formatTime(info.uptime || 0);
@@ -541,22 +543,93 @@
       }
     }
     
-    function updateClientList(clients) {
-      console.log('Updating client list with:', clients);
+    function updateClientList(racingApps, webViewers) {
+      console.log('Updating client list with racing apps:', racingApps, 'and web viewers:', webViewers);
+      if (!clientListEl) return;
       
-      // Separate clients into apps and viewers based on clientType
-      const appClients = clients.filter(client => client.isApp || client.clientType === 'app');
-      const viewerClients = clients.filter(client => !client.isApp && client.clientType !== 'app');
+      clientListEl.innerHTML = '';
       
-      // Update counts
-      if (appCountEl) appCountEl.textContent = `(${appClients.length})`;
-      if (viewerCountEl) viewerCountEl.textContent = `(${viewerClients.length})`;
+      // Display Racing Apps section
+      if (racingApps && racingApps.length > 0) {
+        const racingAppsHeader = document.createElement('div');
+        racingAppsHeader.className = 'client-section-header';
+        racingAppsHeader.innerHTML = '<h3>🎮 Racing Apps</h3>';
+        racingAppsHeader.style.color = '#4caf50';
+        racingAppsHeader.style.borderBottom = '2px solid #4caf50';
+        racingAppsHeader.style.marginBottom = '10px';
+        racingAppsHeader.style.paddingBottom = '5px';
+        clientListEl.appendChild(racingAppsHeader);
+        
+        racingApps.forEach(client => {
+          const clientEl = document.createElement('div');
+          clientEl.className = 'client-item racing-app';
+          clientEl.style.justifyContent = 'center';
+          clientEl.style.border = '1px solid #4caf50';
+          clientEl.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+          
+          const idSpan = document.createElement('span');
+          
+          if (client.driverName) {
+            let status = '';
+            let statusColor = '';
+            
+            if (client.isActiveBroadcaster) {
+              status = ' 📡 BROADCASTING';
+              statusColor = '#4caf50';
+            } else if (client.broadcastingEnabled) {
+              status = ' ⏸️ STANDBY';
+              statusColor = '#ff9800';
+            } else {
+              status = ' 🔗 Connected';
+              statusColor = '#2196f3';
+            }
+            
+            idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
+            idSpan.style.fontWeight = 'bold';
+            idSpan.style.color = '#ffffff';
+          } else {
+            idSpan.innerHTML = `Racing App<br><small style="color: #ff9800;">Connected</small>`;
+          }
+          
+          idSpan.style.textAlign = 'center';
+          clientEl.appendChild(idSpan);
+          clientListEl.appendChild(clientEl);
+        });
+      }
       
-      // Update App List
-      updateAppList(appClients);
+      // Display Web Viewers section
+      if (webViewers && webViewers.length > 0) {
+        const webViewersHeader = document.createElement('div');
+        webViewersHeader.className = 'client-section-header';
+        webViewersHeader.innerHTML = '<h3>👥 Viewers & Spectators</h3>';
+        webViewersHeader.style.color = '#2196f3';
+        webViewersHeader.style.borderBottom = '2px solid #2196f3';
+        webViewersHeader.style.marginBottom = '10px';
+        webViewersHeader.style.paddingBottom = '5px';
+        webViewersHeader.style.marginTop = '20px';
+        clientListEl.appendChild(webViewersHeader);
+        
+        webViewers.forEach(client => {
+          const clientEl = document.createElement('div');
+          clientEl.className = 'client-item web-viewer';
+          clientEl.style.justifyContent = 'center';
+          clientEl.style.border = '1px solid #2196f3';
+          clientEl.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+          
+          const idSpan = document.createElement('span');
+          idSpan.innerHTML = `Viewer<br><small style="color: #2196f3;">ID: ${client.id.substring(0, 6)}...</small>`;
+          idSpan.style.textAlign = 'center';
+          idSpan.style.color = '#ffffff';
+          
+          clientEl.appendChild(idSpan);
+          clientListEl.appendChild(clientEl);
+        });
+      }
       
-      // Update Viewer List  
-      updateViewerList(viewerClients);
+      // Show message if no clients
+      if ((!racingApps || racingApps.length === 0) && (!webViewers || webViewers.length === 0)) {
+        clientListEl.innerHTML = '<div class="client-item"><span>No clients connected</span></div>';
+      }
     }
     
     function updateAppList(appClients) {
