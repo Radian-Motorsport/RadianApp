@@ -223,6 +223,11 @@
     let connectionHistory = [];
     let lastConnectionInfo = null; // Store last connection info
     
+    // Telemetry rate tracking
+    let telemetryPacketCount = 0;
+    let telemetryStartTime = Date.now();
+    let lastTelemetryTime = null;
+    
     // DOM elements
     const connectionCountEl = document.getElementById('connectionCount');
     const serverUptimeEl = document.getElementById('serverUptime');
@@ -247,8 +252,16 @@
       updateConnectionTime();
       setInterval(updateConnectionTime, 1000);
       
-      // Request initial data
-      socket.emit('requestConnectionInfo');
+      // Initialize telemetry display
+      telemetryRateEl.textContent = '-- Hz';
+      lastDataTimeEl.textContent = '--:--:--';
+      
+      // Periodically request connection info to stay updated
+      setInterval(() => {
+        if (socket.connected) {
+          socket.emit('requestConnectionInfo');
+        }
+      }, 5000); // Every 5 seconds
       
       // Set up button handlers
       refreshButton.addEventListener('click', () => {
@@ -276,9 +289,15 @@
     
     // Socket event handlers
     socket.on('connect', () => {
+      console.log('Connected to server, requesting connection info...');
       socketStatusEl.textContent = 'Connected';
       socketStatusEl.className = 'info-value status-good';
       addConnectionEvent('Connected to server');
+      
+      // Request connection info after we're connected
+      setTimeout(() => {
+        socket.emit('requestConnectionInfo');
+      }, 100); // Small delay to ensure server has processed our connection
     });
     
     socket.on('disconnect', () => {
@@ -289,10 +308,26 @@
     
     socket.on('telemetry', (data) => {
       const now = new Date();
+      lastTelemetryTime = now;
       lastDataTimeEl.textContent = `${now.toLocaleTimeString()}`;
+      
+      // Track telemetry rate
+      telemetryPacketCount++;
+      const elapsedSeconds = (Date.now() - telemetryStartTime) / 1000;
+      
+      if (elapsedSeconds >= 1) { // Update rate every second
+        const rate = (telemetryPacketCount / elapsedSeconds).toFixed(1);
+        telemetryRateEl.textContent = `${rate} Hz`;
+        
+        // Reset counters for next calculation
+        telemetryPacketCount = 0;
+        telemetryStartTime = Date.now();
+      }
     });
     
     socket.on('connectionInfo', (info) => {
+      console.log('Received connection info:', info);
+      
       // Store last connection info
       lastConnectionInfo = info;
       
@@ -343,9 +378,24 @@
     function updateConnectionTime() {
       const elapsedSeconds = Math.floor((Date.now() - connectionStartTime) / 1000);
       connectedSinceEl.textContent = formatTime(elapsedSeconds);
+      
+      // Check if telemetry data is stale
+      if (lastTelemetryTime) {
+        const timeSinceLastData = Math.floor((Date.now() - lastTelemetryTime.getTime()) / 1000);
+        if (timeSinceLastData > 5) { // No data for 5+ seconds
+          telemetryRateEl.textContent = '0 Hz';
+          telemetryRateEl.style.color = '#f44336'; // Red color for no data
+        } else {
+          telemetryRateEl.style.color = '#4caf50'; // Green color for active data
+        }
+      } else {
+        telemetryRateEl.textContent = '-- Hz';
+        telemetryRateEl.style.color = '#ff9800'; // Orange for waiting
+      }
     }
     
     function updateClientList(clients) {
+      console.log('Updating client list with:', clients);
       if (!clientListEl) return;
       
       clientListEl.innerHTML = '';
