@@ -440,18 +440,29 @@
         clientEl.style.justifyContent = 'center'; // Center the content since no time element
         
         const idSpan = document.createElement('span');
+        // Determine broadcasting status based on broadcastingEnabled field (if available) or fallback to current logic
+        let isBroadcasting;
+        if (client.hasOwnProperty('broadcastingEnabled')) {
+          // Use the new broadcastingEnabled field when available
+          isBroadcasting = client.broadcastingEnabled;
+        } else {
+          // Fallback to current logic when broadcastingEnabled field is not available
+          isBroadcasting = client.isActiveBroadcaster;
+        }
+        
         // If driver name is available, use it for identification
         if (client.driverName) {
-          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : ' 🔗 Connected';
-          const statusColor = client.isActiveBroadcaster ? '#4caf50' : '#ff9800';
+          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
           
           idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.fontWeight = 'bold';
-          idSpan.style.color = client.isActiveBroadcaster ? '#4caf50' : '#ffffff';
+          idSpan.style.color = isBroadcasting ? '#4caf50' : '#ffffff';
           idSpan.style.textAlign = 'center';
         } else {
-          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : ' 🔗 Connected';
-          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<br><small style="color: #ff9800;">${status}</small>`;
+          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
+          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.textAlign = 'center';
         }
         
