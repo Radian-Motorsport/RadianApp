@@ -1,5 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+  ====================================================================
+  TODO FOR APP DEVELOPMENT TEAM - RACING APP USER AGENT IDENTIFICATION
+  ====================================================================
+  
+  When rebuilding the racing app, please implement the following:
+  
+  1. SET CUSTOM USER AGENT:
+     - App should send custom User-Agent header: "RadianTelemetryApp/1.0" or similar
+     - This distinguishes the app from web browser viewers
+     - Example implementations:
+       * Socket.io client option: { extraHeaders: { 'User-Agent': 'RadianTelemetryApp/1.0' } }
+       * HTTP client header: User-Agent: "RadianTelemetryApp/1.0 (Windows)"
+  
+  2. APP BEHAVIOR:
+     - Apps will appear in "🎮 Racing Apps" section regardless of broadcastingEnabled status
+     - broadcastingEnabled = true  → "📡 BROADCASTING" 
+     - broadcastingEnabled = false → "⏸️ STANDBY"
+     - Web viewers will always appear in "👥 Viewers & Spectators" section
+  
+  3. CURRENT DETECTION PATTERNS:
+     - Server checks for: "RadianTelemetryApp", "RadianApp", or "Radian" in User-Agent
+     - Fallback patterns can be adjusted as needed
+  
+  4. BENEFITS:
+     - Clear distinction between drivers and spectators
+     - Apps in standby mode don't appear as viewers
+     - Better admin overview of system usage
+  
+  ====================================================================
+-->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -227,36 +258,49 @@
   <div class="telemetry-block">
     <h2>System Status <span class="info-badge" title="Detailed system information">ℹ️</span></h2>
     <div class="connection-grid">
-      <!-- Connection List -->
+      <!-- App Connections (Racing Apps) -->
       <div class="connection-block">
-        <h3>Connected Clients</h3>
-        <div class="connection-list" id="clientList">
+        <h3>🎮 Racing Apps <span id="appCount" style="color: #4caf50;">(0)</span></h3>
+        <div class="connection-list" id="appList">
           <div class="client-item">
-            <span>No clients connected</span>
+            <span>No racing apps connected</span>
+          </div>
+        </div>
+        <!-- TODO FOR APP DEVELOPMENT: Apps should send custom User-Agent header -->
+        <!-- TODO FOR APP DEVELOPMENT: Example: "RadianTelemetryApp/1.0 (Windows)" -->
+        <!-- TODO FOR APP DEVELOPMENT: This will show apps here regardless of broadcastingEnabled status -->
+      </div>
+      
+      <!-- Viewer Connections (Web browsers, mobile, tablets) -->
+      <div class="connection-block">
+        <h3>👥 Viewers & Spectators <span id="viewerCount" style="color: #ff9800;">(0)</span></h3>
+        <div class="connection-list" id="viewerList">
+          <div class="client-item">
+            <span>No viewers connected</span>
           </div>
         </div>
       </div>
-      
-      <!-- System Info -->
-      <div class="connection-block">
-        <h3>Server Information</h3>
-        <div class="system-info">
-          <div class="info-item">
-            <span>Socket.io Status:</span>
-            <span class="info-value status-good" id="socketStatus">Connected</span>
-          </div>
-          <div class="info-item">
-            <span>Last Data Received:</span>
-            <span class="info-value" id="lastDataTime">--:--:--</span>
-          </div>
-          <div class="info-item">
-            <span>Telemetry Rate:</span>
-            <span class="info-value" id="telemetryRate">-- Hz</span>
-          </div>
-          <div class="info-item">
-            <span>API Status:</span>
-            <span class="info-value status-good" id="apiStatus">Operational</span>
-          </div>
+    </div>
+    
+    <!-- System Info (moved to full width below) -->
+    <div class="connection-block" style="margin-top: 20px;">
+      <h3>Server Information</h3>
+      <div class="system-info">
+        <div class="info-item">
+          <span>Socket.io Status:</span>
+          <span class="info-value status-good" id="socketStatus">Connected</span>
+        </div>
+        <div class="info-item">
+          <span>Last Data Received:</span>
+          <span class="info-value" id="lastDataTime">--:--:--</span>
+        </div>
+        <div class="info-item">
+          <span>Telemetry Rate:</span>
+          <span class="info-value" id="telemetryRate">-- Hz</span>
+        </div>
+        <div class="info-item">
+          <span>API Status:</span>
+          <span class="info-value status-good" id="apiStatus">Operational</span>
         </div>
       </div>
     </div>
@@ -297,7 +341,8 @@
     
     // DOM elements (will be cached after DOM loads)
     let connectionCountEl, broadcastingCountEl, serverUptimeEl, currentDriverEl, sessionIdEl;
-    let clientListEl, socketStatusEl, lastDataTimeEl, telemetryRateEl;
+    let appListEl, viewerListEl, appCountEl, viewerCountEl; // New separate lists for apps vs viewers
+    let socketStatusEl, lastDataTimeEl, telemetryRateEl;
     let apiStatusEl, connectionHistoryEl, resetButton;
     
     // Initialize page
@@ -308,7 +353,11 @@
       serverUptimeEl = document.getElementById('serverUptime');
       currentDriverEl = document.getElementById('currentDriver');
       sessionIdEl = document.getElementById('sessionId');
-      clientListEl = document.getElementById('clientList');
+      // New separate list elements
+      appListEl = document.getElementById('appList');
+      viewerListEl = document.getElementById('viewerList');
+      appCountEl = document.getElementById('appCount');
+      viewerCountEl = document.getElementById('viewerCount');
       socketStatusEl = document.getElementById('socketStatus');
       lastDataTimeEl = document.getElementById('lastDataTime');
       telemetryRateEl = document.getElementById('telemetryRate');
@@ -494,42 +543,98 @@
     
     function updateClientList(clients) {
       console.log('Updating client list with:', clients);
-      if (!clientListEl) return;
       
-      clientListEl.innerHTML = '';
-      if (clients.length === 0) {
-        clientListEl.innerHTML = '<div class="client-item"><span>No clients connected</span></div>';
+      // Separate clients into apps and viewers based on clientType
+      const appClients = clients.filter(client => client.isApp || client.clientType === 'app');
+      const viewerClients = clients.filter(client => !client.isApp && client.clientType !== 'app');
+      
+      // Update counts
+      if (appCountEl) appCountEl.textContent = `(${appClients.length})`;
+      if (viewerCountEl) viewerCountEl.textContent = `(${viewerClients.length})`;
+      
+      // Update App List
+      updateAppList(appClients);
+      
+      // Update Viewer List  
+      updateViewerList(viewerClients);
+    }
+    
+    function updateAppList(appClients) {
+      if (!appListEl) return;
+      
+      appListEl.innerHTML = '';
+      if (appClients.length === 0) {
+        appListEl.innerHTML = '<div class="client-item"><span>No racing apps connected</span></div>';
         return;
       }
       
-      clients.forEach(client => {
+      appClients.forEach(client => {
         const clientEl = document.createElement('div');
         clientEl.className = 'client-item';
-        clientEl.style.justifyContent = 'center'; // Center the content since no time element
+        clientEl.style.justifyContent = 'center';
         
         const idSpan = document.createElement('span');
-        // Determine broadcasting status based on broadcastingEnabled field
         const isBroadcasting = client.broadcastingEnabled;
         
-        // If driver name is available, use it for identification
+        // Apps show driver name if available, or indicate it's an app
         if (client.driverName) {
-          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' ⏸️ STANDBY';
           const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
           
-          idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
+          idSpan.innerHTML = `🎮 ${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.fontWeight = 'bold';
           idSpan.style.color = isBroadcasting ? '#4caf50' : '#ffffff';
-          idSpan.style.textAlign = 'center';
         } else {
-          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          const status = isBroadcasting ? ' 📡 BROADCASTING' : ' ⏸️ STANDBY';
           const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
-          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<br><small style="color: ${statusColor};">${status}</small>`;
-          idSpan.style.textAlign = 'center';
+          idSpan.innerHTML = `🎮 Racing App<br><small style="color: ${statusColor};">ID: ${client.id.substring(0, 6)}... ${status}</small>`;
         }
+        idSpan.style.textAlign = 'center';
         
         clientEl.appendChild(idSpan);
-        clientListEl.appendChild(clientEl);
+        appListEl.appendChild(clientEl);
       });
+    }
+    
+    function updateViewerList(viewerClients) {
+      if (!viewerListEl) return;
+      
+      viewerListEl.innerHTML = '';
+      if (viewerClients.length === 0) {
+        viewerListEl.innerHTML = '<div class="client-item"><span>No viewers connected</span></div>';
+        return;
+      }
+      
+      viewerClients.forEach(client => {
+        const clientEl = document.createElement('div');
+        clientEl.className = 'client-item';
+        clientEl.style.justifyContent = 'center';
+        
+        const idSpan = document.createElement('span');
+        
+        // Detect device type from user agent for viewers
+        const deviceType = getDeviceType(client.userAgent);
+        
+        idSpan.innerHTML = `${deviceType} Viewer<br><small style="color: #ff9800;">ID: ${client.id.substring(0, 6)}... 🔗 Connected</small>`;
+        idSpan.style.textAlign = 'center';
+        
+        clientEl.appendChild(idSpan);
+        viewerListEl.appendChild(clientEl);
+      });
+    }
+    
+    function getDeviceType(userAgent) {
+      if (!userAgent) return '💻';
+      
+      const ua = userAgent.toLowerCase();
+      if (ua.includes('iphone')) return '📱';
+      if (ua.includes('android') && ua.includes('mobile')) return '📱';
+      if (ua.includes('ipad')) return '📋';
+      if (ua.includes('android')) return '📋';
+      if (ua.includes('tablet')) return '📋';
+      if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) return '💻';
+      
+      return '💻'; // Default to desktop
     }
     
     function addConnectionEvent(message) {

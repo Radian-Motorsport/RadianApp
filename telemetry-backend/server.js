@@ -53,12 +53,24 @@ app.use(express.static('public')); // Serve planner frontend
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
   
+  // Get user agent for client type detection
+  const userAgent = socket.handshake.headers['user-agent'] || 'Unknown';
+  
+  // Detect client type based on user agent
+  // TODO FOR APP DEVELOPMENT: App should send custom user agent like "RadianTelemetryApp/1.0" 
+  // TODO FOR APP DEVELOPMENT: This will distinguish app connections from web browser viewers
+  const isApp = userAgent.includes('RadianTelemetryApp') || 
+                userAgent.includes('RadianApp') || 
+                userAgent.includes('Radian'); // Fallback detection patterns
+  
   // Track this client connection
   connectedClients.set(socket.id, {
     id: socket.id,
     connectedAt: Date.now(),
     lastActive: Date.now(),
-    userAgent: socket.handshake.headers['user-agent'] || 'Unknown',
+    userAgent: userAgent,
+    clientType: isApp ? 'app' : 'viewer', // New field to distinguish apps from viewers
+    isApp: isApp, // Boolean flag for easy checking
     driverName: null, // Will be updated if this client broadcasts telemetry
     isActiveBroadcaster: false, // New field to track if actively sending telemetry
     lastTelemetryTime: null // When they last sent telemetry data
@@ -81,6 +93,8 @@ io.on('connection', (socket) => {
       connectedFor: Math.floor((Date.now() - client.connectedAt) / 1000),
       lastActive: client.lastActive,
       userAgent: client.userAgent,
+      clientType: client.clientType, // 'app' or 'viewer'
+      isApp: client.isApp, // Boolean for easy checking
       driverName: client.driverName,
       isActiveBroadcaster: client.isActiveBroadcaster,
       lastTelemetryTime: client.lastTelemetryTime,
