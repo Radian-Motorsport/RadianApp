@@ -11,6 +11,13 @@ class EnviroTrace {
   constructor(socket, canvasId, options = {}) {
     this.socket = socket;
     this.canvas = document.getElementById(canvasId);
+    
+    // Check if canvas exists
+    if (!this.canvas) {
+      console.error(`EnviroTrace: Canvas element with ID '${canvasId}' not found`);
+      return;
+    }
+    
     this.ctx = this.canvas.getContext('2d');
     
     // Configuration with defaults
@@ -82,6 +89,11 @@ class EnviroTrace {
    * Draw the environment trends graph
    */
   draw() {
+    // Check if canvas and context exist
+    if (!this.canvas || !this.ctx) {
+      return;
+    }
+    
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     if (this.buffer.length === 0) {
@@ -98,6 +110,7 @@ class EnviroTrace {
     this.ctx.strokeStyle = this.options.trackTempColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
+      if (point.trackTemp === null || point.trackTemp === undefined) return;
       const x = i * xScale;
       // Scale temperature: map 0-60°C to 0-canvas height
       const y = canvasHeight - ((point.trackTemp / 60) * canvasHeight);
@@ -110,6 +123,7 @@ class EnviroTrace {
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
+      if (point.humidity === null || point.humidity === undefined) return;
       const x = i * xScale;
       // Humidity: handle both 0-1 decimal and 0-100 percentage formats
       const humidityPercent = point.humidity > 1 ? point.humidity : point.humidity * 100;
@@ -123,6 +137,7 @@ class EnviroTrace {
     this.ctx.strokeStyle = this.options.skiesColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
+      if (point.skies === null || point.skies === undefined) return;
       const x = i * xScale;
       // Skies: map 0-3 to full canvas height (0=0%, 1=33%, 2=67%, 3=100%)
       const y = canvasHeight - ((point.skies / 3) * canvasHeight);
@@ -135,6 +150,7 @@ class EnviroTrace {
     this.ctx.strokeStyle = this.options.airPressureColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
+      if (point.airPressure === null || point.airPressure === undefined) return;
       const x = i * xScale;
       // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
       const pressureMbar = point.airPressure * 0.01;

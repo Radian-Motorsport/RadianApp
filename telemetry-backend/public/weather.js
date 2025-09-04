@@ -63,23 +63,55 @@ function updateWeatherData(values) {
 // Socket is already declared in telemetry.js, use the global socket variable
 // const socket = io(); // Removed to avoid duplicate declaration
 
-socket.on('telemetry', (data) => {
-  updateWeatherData(data);
-});
+// Wait for socket to be available before setting up listeners
+function setupWeatherSocketListeners() {
+  if (typeof socket === 'undefined' || !socket) {
+    console.warn('Socket not available yet, retrying in 500ms...');
+    setTimeout(setupWeatherSocketListeners, 500);
+    return;
+  }
 
-socket.on('connect', () => {
-  console.log('Weather page connected to telemetry server');
-});
+  socket.on('telemetry', (data) => {
+    if (data && data.values) {
+      updateWeatherData(data.values);
+    }
+  });
 
-socket.on('disconnect', () => {
-  console.log('Weather page disconnected from telemetry server');
-});
+  socket.on('connect', () => {
+    console.log('Weather page connected to telemetry server');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Weather page disconnected from telemetry server');
+  });
+}
+
+// Start trying to set up listeners
+setupWeatherSocketListeners();
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Weather page initialized');
+  
   // Initialize all fields to show they're ready
   weatherFields.forEach(field => {
     safeUpdateElement(field, '--');
   });
+  
+  // Initialize the environment trace visualization
+  // Wait for socket to be available from telemetry.js
+  if (typeof socket !== 'undefined') {
+    window.enviroTrace = new EnviroTrace(socket, 'envCanvas');
+    console.log('EnviroTrace initialized');
+  } else {
+    // If socket not ready yet, wait a bit and try again
+    setTimeout(() => {
+      if (typeof socket !== 'undefined') {
+        window.enviroTrace = new EnviroTrace(socket, 'envCanvas');
+        console.log('EnviroTrace initialized (delayed)');
+      } else {
+        console.error('Socket not available for EnviroTrace initialization');
+      }
+    }, 1000);
+  }
 });
