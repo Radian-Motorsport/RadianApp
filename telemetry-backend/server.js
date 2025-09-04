@@ -1,5 +1,7 @@
 let currentSessionId = null;
 let currentUserName = null;
+let lastBroadcastedDriver = null;
+let lastBroadcastedSession = null;
 
 // Telemetry state storage
 let telemetryState = {
@@ -186,11 +188,17 @@ app.post('/telemetry', (req, res) => {
 
   const isOnTrack = data?.values?.IsOnTrack;
 
-  if (isOnTrack === true && currentUserName) {
+  // Only emit broadcaster info if driver is on track AND (driver or session changed)
+  if (isOnTrack === true && currentUserName && 
+      (currentUserName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession)) {
     io.emit('currentBroadcaster', {
       driver: currentUserName,
       sessionId: currentSessionId
     });
+    
+    // Update last broadcasted values
+    lastBroadcastedDriver = currentUserName;
+    lastBroadcastedSession = currentSessionId;
   }
 
   io.emit('telemetry', data); // Broadcast to planner

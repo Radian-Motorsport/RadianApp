@@ -388,9 +388,16 @@
     
     socket.on('currentBroadcaster', (info) => {
       console.log('Received currentBroadcaster:', info);
-      currentDriverEl.textContent = info.driver || '--';
-      sessionIdEl.textContent = info.sessionId || '--';
-      addConnectionEvent(`Broadcaster updated: ${info.driver}`);
+      
+      // Only update if the driver or sessionId actually changed
+      const currentDriver = currentDriverEl.textContent;
+      const currentSession = sessionIdEl.textContent;
+      
+      if (info.driver !== currentDriver || info.sessionId !== currentSession) {
+        currentDriverEl.textContent = info.driver || '--';
+        sessionIdEl.textContent = info.sessionId || '--';
+        addConnectionEvent(`Broadcaster updated: ${info.driver} (Session: ${info.sessionId})`);
+      }
     });
     
     socket.on('clientConnect', (clientInfo) => {
@@ -419,7 +426,7 @@
       connectedSinceEl.textContent = formatTime(elapsedSeconds);
       
       // Check if telemetry data is stale
-      if (connectionsPageLastTelemetryTime) {
+      if (connectionsPageLastTelemetryTime && typeof connectionsPageLastTelemetryTime.getTime === 'function') {
         const timeSinceLastData = Math.floor((Date.now() - connectionsPageLastTelemetryTime.getTime()) / 1000);
         if (timeSinceLastData > 5) { // No data for 5+ seconds
           telemetryRateEl.textContent = '0 Hz';
