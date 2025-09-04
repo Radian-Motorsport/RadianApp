@@ -212,10 +212,9 @@
   </div>
 
   <!-- JavaScript Resources -->
-  <script src="telemetry.js"></script>
   <script>
-    // Use the socket connection from telemetry.js (already declared)
-    // const socket = io('https://radianapp.onrender.com'); // Removed - using existing socket
+    // Socket.io connection (independent from telemetry.js)
+    const socket = io('https://radianapp.onrender.com');
     
     // Connection tracking (using some variables from telemetry.js)
     let connectionStartTime = Date.now();
@@ -224,7 +223,7 @@
     let lastConnectionInfo = null; // Store last connection info
     let previousConnectionInfo = null; // Store previous state for comparison
     
-    // Telemetry rate tracking (lastTelemetryTime already declared in telemetry.js)
+    // Telemetry rate tracking
     let telemetryPacketCount = 0;
     let telemetryStartTime = Date.now();
     let connectionsPageLastTelemetryTime = null; // Local variable for connections page
@@ -457,15 +456,23 @@
         const idSpan = document.createElement('span');
         // If driver name is available, use it for identification
         if (client.driverName) {
-          idSpan.textContent = `${client.driverName} (${client.id.substring(0, 6)}...)`;
+          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : ' 🔗 Connected';
+          const statusColor = client.isActiveBroadcaster ? '#4caf50' : '#ff9800';
+          
+          idSpan.innerHTML = `${client.driverName} (${client.id.substring(0, 6)}...)<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.fontWeight = 'bold';
-          idSpan.style.color = '#4caf50'; // Highlight the driver
+          idSpan.style.color = client.isActiveBroadcaster ? '#4caf50' : '#ffffff';
         } else {
-          idSpan.textContent = `ID: ${client.id.substring(0, 6)}...`;
+          const status = client.isActiveBroadcaster ? ' 📡 BROADCASTING' : '';
+          idSpan.innerHTML = `ID: ${client.id.substring(0, 6)}...<small style="color: #ff9800;">${status}</small>`;
         }
         
         const connectedSpan = document.createElement('span');
-        connectedSpan.textContent = formatTime(client.connectedFor);
+        let timeText = formatTime(client.connectedFor);
+        if (client.telemetryAge !== null && client.telemetryAge < 60) {
+          timeText += `<br><small style="color: #4caf50;">Data: ${client.telemetryAge}s ago</small>`;
+        }
+        connectedSpan.innerHTML = timeText;
         
         clientEl.appendChild(idSpan);
         clientEl.appendChild(connectedSpan);

@@ -59,7 +59,9 @@ io.on('connection', (socket) => {
     connectedAt: Date.now(),
     lastActive: Date.now(),
     userAgent: socket.handshake.headers['user-agent'] || 'Unknown',
-    driverName: null // Will be updated if this client broadcasts telemetry
+    driverName: null, // Will be updated if this client broadcasts telemetry
+    isActiveBroadcaster: false, // New field to track if actively sending telemetry
+    lastTelemetryTime: null // When they last sent telemetry data
   });
   
   // Notify all clients about the new connection
@@ -79,7 +81,10 @@ io.on('connection', (socket) => {
       connectedFor: Math.floor((Date.now() - client.connectedAt) / 1000),
       lastActive: client.lastActive,
       userAgent: client.userAgent,
-      driverName: client.driverName
+      driverName: client.driverName,
+      isActiveBroadcaster: client.isActiveBroadcaster,
+      lastTelemetryTime: client.lastTelemetryTime,
+      telemetryAge: client.lastTelemetryTime ? Math.floor((Date.now() - client.lastTelemetryTime) / 1000) : null
     }));
     
     socket.emit('connectionInfo', {
@@ -185,8 +190,27 @@ io.on('connection', (socket) => {
 
 app.post('/telemetry', (req, res) => {
   const data = req.body;
+  const clientIp = req.ip || req.connection.remoteAddress;
 
   const isOnTrack = data?.values?.IsOnTrack;
+
+  // Update the client that's sending telemetry data as active broadcaster
+  for (const [socketId, clientInfo] of connectedClients.entries()) {
+    if (clientInfo.lastActive > Date.now() - 10000) { // Active in the last 10 seconds
+      clientInfo.isActiveBroadcaster = true;
+      clientInfo.lastTelemetryTime = Date.now();
+      connectedClients.set(socketId, clientInfo);
+      break;
+    }
+  }
+
+  // Mark other clients as inactive broadcasters (in case switching between clients)
+  for (const [socketId, clientInfo] of connectedClients.entries()) {
+    if (clientInfo.lastTelemetryTime && (Date.now() - clientInfo.lastTelemetryTime) > 5000) {
+      clientInfo.isActiveBroadcaster = false;
+      connectedClients.set(socketId, clientInfo);
+    }
+  }
 
   // Only emit broadcaster info if driver is on track AND (driver or session changed)
   if (isOnTrack === true && currentUserName && 
