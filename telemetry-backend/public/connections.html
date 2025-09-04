@@ -125,8 +125,11 @@
     
     <!-- Summary Stats -->
     <div class="connection-stats">
-      <div>Active Connections</div>
+      <div>Connected Clients</div>
       <div class="big-number" id="connectionCount">0</div>
+      <div style="font-size: 0.9em; margin-top: -10px; color: #4caf50;">
+        <span id="broadcastingCount">0</span> actively broadcasting
+      </div>
       <div>Server Uptime: <span id="serverUptime">--:--:--</span></div>
     </div>
     
@@ -183,8 +186,6 @@
     
     <!-- Admin Actions -->
     <div class="admin-actions">
-      <button class="admin-button" id="refreshButton">Refresh Status</button>
-      <button class="admin-button" id="pingButton">Ping All Clients</button>
       <button class="admin-button danger" id="resetButton">Reset All Data</button>
     </div>
   </div>
@@ -217,14 +218,15 @@
     let connectionsPageLastTelemetryTime = null; // Local variable for connections page
     
     // DOM elements (will be cached after DOM loads)
-    let connectionCountEl, serverUptimeEl, currentDriverEl, sessionIdEl;
+    let connectionCountEl, broadcastingCountEl, serverUptimeEl, currentDriverEl, sessionIdEl;
     let clientListEl, socketStatusEl, lastDataTimeEl, telemetryRateEl;
-    let apiStatusEl, connectionHistoryEl, refreshButton, pingButton, resetButton;
+    let apiStatusEl, connectionHistoryEl, resetButton;
     
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
       // Cache DOM elements after DOM is loaded
       connectionCountEl = document.getElementById('connectionCount');
+      broadcastingCountEl = document.getElementById('broadcastingCount');
       serverUptimeEl = document.getElementById('serverUptime');
       currentDriverEl = document.getElementById('currentDriver');
       sessionIdEl = document.getElementById('sessionId');
@@ -236,8 +238,6 @@
       connectionHistoryEl = document.getElementById('connectionHistory');
       
       // Cache buttons
-      refreshButton = document.getElementById('refreshButton');
-      pingButton = document.getElementById('pingButton');
       resetButton = document.getElementById('resetButton');
       updateConnectionTime();
       setInterval(updateConnectionTime, 1000);
@@ -254,25 +254,10 @@
       }, 15000); // Every 15 seconds instead of 5
       
       // Set up button handlers
-      refreshButton.addEventListener('click', () => {
-        socket.emit('requestConnectionInfo');
-        addConnectionEvent('Manual refresh requested');
-      });
-      
-      pingButton.addEventListener('click', () => {
-        socket.emit('pingAllClients');
-        addConnectionEvent('Ping sent to all clients');
-      });
-      
       resetButton.addEventListener('click', () => {
         if (confirm('Are you sure you want to reset all telemetry data for all connected clients?')) {
-          if (window.telemetryDashboard && typeof telemetryDashboard.resetTelemetryData === 'function') {
-            telemetryDashboard.resetTelemetryData();
-            addConnectionEvent('Telemetry data reset initiated');
-          } else {
-            socket.emit('resetTelemetryState');
-            addConnectionEvent('Telemetry data reset initiated (fallback)');
-          }
+          socket.emit('resetTelemetryState');
+          addConnectionEvent('Telemetry data reset initiated');
         }
       });
     });
@@ -354,8 +339,13 @@
       // Update connection count
       connectionCountEl.textContent = info.clientCount || '0';
       
+      // Calculate and update broadcasting count
+      const clients = info.clients || [];
+      const broadcastingCount = clients.filter(client => client.broadcastingEnabled).length;
+      broadcastingCountEl.textContent = broadcastingCount;
+      
       // Update client list
-      updateClientList(info.clients || []);
+      updateClientList(clients);
       
       // Update server info
       serverUptimeEl.textContent = formatTime(info.uptime || 0);
@@ -440,15 +430,8 @@
         clientEl.style.justifyContent = 'center'; // Center the content since no time element
         
         const idSpan = document.createElement('span');
-        // Determine broadcasting status based on broadcastingEnabled field (if available) or fallback to current logic
-        let isBroadcasting;
-        if (client.hasOwnProperty('broadcastingEnabled')) {
-          // Use the new broadcastingEnabled field when available
-          isBroadcasting = client.broadcastingEnabled;
-        } else {
-          // Fallback to current logic when broadcastingEnabled field is not available
-          isBroadcasting = client.isActiveBroadcaster;
-        }
+        // Determine broadcasting status based on broadcastingEnabled field
+        const isBroadcasting = client.broadcastingEnabled;
         
         // If driver name is available, use it for identification
         if (client.driverName) {
