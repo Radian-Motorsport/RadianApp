@@ -262,7 +262,19 @@ function initDashboard() {
     tireLF: document.getElementById('tireLF'),
     tireRR: document.getElementById('tireRR'),
     tireLR: document.getElementById('tireLR'),
-    panel: document.getElementById('fuelGaugeContainer')
+    panel: document.getElementById('fuelGaugeContainer'),
+    // Weather elements
+    trackTemp: document.getElementById('TrackTemp'),
+    airTemp: document.getElementById('AirTemp'),
+    airDensity: document.getElementById('AirDensity'),
+    airPressure: document.getElementById('AirPressure'),
+    windVel: document.getElementById('WindVel'),
+    windDir: document.getElementById('WindDir'),
+    skies: document.getElementById('Skies'),
+    relativeHumidity: document.getElementById('RelativeHumidity'),
+    precipitation: document.getElementById('Precipitation'),
+    trackWetness: document.getElementById('TrackWetness'),
+    fogLevel: document.getElementById('FogLevel')
   };
 
   // Set up socket listeners
@@ -282,6 +294,34 @@ function updateFuelGauge(level) {
   const fuel = Number(level).toFixed(1);
   elements.fuelGauge.value = fuel;
   elements.fuelValue.textContent = `${fuel}%`;
+}
+
+// Update weather data display
+function updateWeatherData(values) {
+  if (!values) return;
+
+  // Temperature & Pressure
+  if (elements.trackTemp) elements.trackTemp.textContent = values.TrackTemp ? `${values.TrackTemp.toFixed(1)}°C` : '--';
+  if (elements.airTemp) elements.airTemp.textContent = values.AirTemp ? `${values.AirTemp.toFixed(1)}°C` : '--';
+  if (elements.airDensity) elements.airDensity.textContent = values.AirDensity ? `${values.AirDensity.toFixed(3)} kg/m³` : '--';
+  if (elements.airPressure) elements.airPressure.textContent = values.AirPressure ? `${values.AirPressure.toFixed(1)} Pa` : '--';
+
+  // Wind & Weather Conditions
+  if (elements.windVel) elements.windVel.textContent = values.WindVel ? `${values.WindVel.toFixed(1)} m/s` : '--';
+  if (elements.windDir) elements.windDir.textContent = values.WindDir ? `${values.WindDir.toFixed(0)}°` : '--';
+  if (elements.skies) {
+    const skiesMap = {0: 'Clear', 1: 'Partly Cloudy', 2: 'Mostly Cloudy', 3: 'Overcast'};
+    elements.skies.textContent = skiesMap[values.Skies] || '--';
+  }
+
+  // Humidity & Precipitation
+  if (elements.relativeHumidity) elements.relativeHumidity.textContent = values.RelativeHumidity ? `${(values.RelativeHumidity * 100).toFixed(1)}%` : '--';
+  if (elements.precipitation) elements.precipitation.textContent = values.Precipitation ? `${(values.Precipitation * 100).toFixed(1)}%` : '--';
+  if (elements.trackWetness) {
+    const wetnessMap = {0: 'Dry', 1: 'Mostly Dry', 2: 'Very Lightly Wet', 3: 'Lightly Wet', 4: 'Moderately Wet', 5: 'Very Wet', 6: 'Extremely Wet'};
+    elements.trackWetness.textContent = wetnessMap[values.TrackWetness] || '--';
+  }
+  if (elements.fogLevel) elements.fogLevel.textContent = values.FogLevel ? `${(values.FogLevel * 100).toFixed(1)}%` : '--';
 }
 
 // Calculate and display tire wear percentages
@@ -679,6 +719,9 @@ function setupSocketListeners() {
       // Update fuel gauge with live data
       const liveFuelLevel = values?.FuelLevel ?? 0;
       updateFuelGauge(liveFuelLevel);
+
+      // Update weather data
+      updateWeatherData(values);
 
       // Display Logic
       const safeValues = bufferedData?.values;
