@@ -46,6 +46,83 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
+
+    /* Mobile responsive styles for connections page */
+    @media (max-width: 768px) {
+      .connection-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      
+      .system-info {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      
+      .connection-block {
+        padding: 12px;
+      }
+      
+      .big-number {
+        font-size: 2em !important;
+      }
+      
+      .connection-stats {
+        font-size: 1.1em !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .connection-grid {
+        gap: 10px;
+      }
+      
+      .connection-block {
+        padding: 10px;
+      }
+      
+      .big-number {
+        font-size: 1.8em !important;
+      }
+      
+      .connection-stats {
+        font-size: 1em !important;
+      }
+      
+      .broadcast-info {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+      
+      .admin-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .client-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        padding: 6px;
+      }
+      
+      .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        font-size: 0.9rem;
+      }
+      
+      .info-value {
+        font-size: 0.85rem;
+      }
+      
+      .connection-list {
+        max-height: 250px;
+        padding: 8px;
+      }
+    }
     
     .info-item {
       display: flex;

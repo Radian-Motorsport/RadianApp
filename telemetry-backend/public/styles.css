@@ -38,6 +38,23 @@ body {
   color: #fff;
   font-family: 'Orbitron', sans-serif;
   margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Mobile base layout improvements */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+    padding: 0 5px;
+  }
 }
 
 /* Header styling with RoadRage font */
@@ -387,6 +404,29 @@ h2 {
   font-size: 1.3rem;
 }
 
+/* Mobile responsive headings and spacing */
+@media (max-width: 768px) {
+  h2 {
+    margin-top: 20px;
+    font-size: 1.2rem;
+  }
+  
+  .telemetry-block {
+    margin-top: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  h2 {
+    margin-top: 15px;
+    font-size: 1.1rem;
+  }
+  
+  .telemetry-block {
+    margin-top: 10px;
+  }
+}
+
 .data-section {
   margin: 20px 0;
 }
@@ -528,6 +568,15 @@ h2 {
   padding: 2px 6px;
   margin-left: 8px;
   cursor: help;
+}
+
+/* Mobile responsive info badge */
+@media (max-width: 480px) {
+  .info-badge {
+    font-size: 0.7em;
+    padding: 1px 4px;
+    margin-left: 4px;
+  }
 }
 
 .variable-trend {
