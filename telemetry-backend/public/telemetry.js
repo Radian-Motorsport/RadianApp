@@ -3,8 +3,12 @@
 // Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
 
-// Make socket globally accessible
+// Make socket globally accessible immediately
 window.socket = socket;
+
+// Make elements globally accessible and ensure it's always an object
+window.elements = window.elements || {};
+let elements = window.elements;
 
 // State Variables - Initialize with default values
 let lastLapCompleted = -1;
@@ -244,9 +248,6 @@ function updateUIFromState() {
 }
 
 const MIN_LAPS_FOR_VALID_DATA = 2;
-
-// Elements cache
-let elements = {};
 
 // Initialize dashboard elements
 function initDashboard() {

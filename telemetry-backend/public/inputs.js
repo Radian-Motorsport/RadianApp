@@ -11,11 +11,18 @@ function initInputsPage() {
   // Cache DOM elements for better performance
   cacheElements();
   
-  // Initialize components
-  initializeComponents();
-  
-  // Set up event listeners
-  setupEventListeners();
+  // Check if socket is available before initializing components
+  if (typeof socket !== 'undefined' && socket) {
+    // Initialize components
+    initializeComponents();
+    
+    // Set up event listeners
+    setupEventListeners();
+  } else {
+    // Retry initialization after a delay if socket not ready
+    console.warn('Socket not ready, retrying inputs initialization...');
+    setTimeout(initInputsPage, 500);
+  }
 }
 
 // Cache all DOM elements we'll need to update
@@ -26,12 +33,12 @@ function cacheElements() {
    'PlayerCarTeamIncidentCount', 
    'PlayerCarDriverIncidentCount', 'LapDistPct', 'RaceLaps',
    'CarDistAhead', 'CarDistBehind'].forEach(id => {
-    elements[id] = document.getElementById(id);
+    inputsElements[id] = document.getElementById(id);
   });
 
   // Driver input elements
   ['Throttle', 'Brake', 'Clutch', 'Gear', 'RPM', 'Speed', 'Steering'].forEach(id => {
-    elements[id] = document.getElementById(id);
+    inputsElements[id] = document.getElementById(id);
   });
 
   // Driver control elements
@@ -39,7 +46,7 @@ function cacheElements() {
    'dcBrakeBias', 'dcTractionControl', 'dcABS', 'FuelLevel',
    'dpFuelFill', 'dpFuelAddKg', 'dpLFTireChange', 'dpRFTireChange',
    'dpLRTireChange', 'dpRRTireChange', 'dpFastRepair', 'dpWindshieldTearoff'].forEach(id => {
-    elements[id] = document.getElementById(id);
+    inputsElements[id] = document.getElementById(id);
   });
 
   // Other UI elements
@@ -50,15 +57,30 @@ function cacheElements() {
 function initializeComponents() {
   // TrackMap is now on its own page (track.html)
   
-  // Initialize pedal trace
-  window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
-    maxPoints: 300,
-    maxRpm: 10000
-  });
+  // Check if socket is available and PedalTrace class exists
+  if (typeof socket !== 'undefined' && typeof PedalTrace !== 'undefined') {
+    try {
+      // Initialize pedal trace
+      window.pedalTrace = new PedalTrace(socket, 'pedalCanvas', {
+        maxPoints: 300,
+        maxRpm: 10000
+      });
+      console.log('PedalTrace initialized successfully');
+    } catch (error) {
+      console.error('Error initializing PedalTrace:', error);
+    }
+  } else {
+    console.warn('Socket or PedalTrace not available for inputs initialization');
+  }
 }
 
 // Set up socket event listeners
 function setupEventListeners() {
+  if (typeof socket === 'undefined' || !socket) {
+    console.error('Socket not available for inputs event listeners');
+    return;
+  }
+
   let lastTelemetryTime = null;
   
   socket.on('telemetry', (data) => {
@@ -174,7 +196,7 @@ function updateDriverControlElements(values) {
 
 // Safely update an element's text content
 function safeUpdateElement(id, value) {
-  const element = elements[id];
+  const element = inputsElements[id];
   if (element && value !== undefined) {
     element.textContent = value;
   }
@@ -203,7 +225,10 @@ function formatValue(value, type) {
 }
 
 // Initialize the page when DOM is loaded
-document.addEventListener('DOMContentLoaded', initInputsPage);
+document.addEventListener('DOMContentLoaded', () => {
+  // Small delay to ensure telemetry.js has initialized first
+  setTimeout(initInputsPage, 100);
+});
 
 // Export public interface
 window.inputsPage = {
