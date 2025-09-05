@@ -197,11 +197,7 @@ class SuspensionAnalyzer {
         this.suspensionData.rr.deflection = data.RRshockDefl || 0;
         this.suspensionData.rr.velocity = data.RRshockVel || 0;
         
-        // Update auto-scaling if enabled
-        [this.suspensionData.lf.deflection, this.suspensionData.rf.deflection,
-         this.suspensionData.lr.deflection, this.suspensionData.rr.deflection].forEach(deflection => {
-            this.updateAutoScale(deflection);
-        });
+        // Auto-scaling removed - using manual slider control only
         
         // Update high-frequency data (360 Hz samples - 6 samples per frame)
         this.highFreqData.lf.deflection_ST = data.LFshockDefl_ST || [];
