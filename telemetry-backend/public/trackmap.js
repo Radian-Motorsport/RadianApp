@@ -14,11 +14,7 @@ class TrackMap {
     this.finalLapYaw = [];     // yaw values for completed lap
     
     this.liveLapPct = 0;
-    this.prevLapPct = 0;
-    this.targetLapPct = 0;
-    this.lastPctUpdateTime = performance.now();
     this.lastLapPct = 0;
-    this.telemetryHz = 10;
     
     // Car positioning data
     this.carAheadDistance = 0;
@@ -103,19 +99,15 @@ class TrackMap {
       
       const dt = 1 / 60;
       
-      // Update lap percentage for visualization
-      this.prevLapPct = this.targetLapPct;
-      this.targetLapPct = values.LapDistPct;
-      this.lastPctUpdateTime = performance.now();
+      // Update lap percentage for visualization - use current value directly
       this.liveLapPct = values.LapDistPct;
       
       // Debug telemetry updates
-      if (Math.random() < 0.005) { // Log occasionally
+      if (Math.random() < 0.01) { // Log occasionally
         console.log('Telemetry update:', {
           LapDistPct: values.LapDistPct.toFixed(4),
           Speed: values.Speed.toFixed(1),
-          prevLapPct: this.prevLapPct.toFixed(4),
-          targetLapPct: this.targetLapPct.toFixed(4)
+          liveLapPct: this.liveLapPct.toFixed(4)
         });
       }
       
@@ -475,14 +467,16 @@ class TrackMap {
       
       // Live position marker (player car)
       if (this.liveLapPct > 0 && this.liveLapPct <= 1) {
-        const elapsed = (performance.now() - this.lastPctUpdateTime) / 1000;
-        const lerpFactor = Math.min(elapsed * this.telemetryHz, 1);
-        let pct = this.prevLapPct + (this.targetLapPct - this.prevLapPct) * lerpFactor;
+        // Use the current lap percentage directly - no complex interpolation needed
+        let pct = this.liveLapPct;
         
-        // Wrap-around handling
-        if (this.targetLapPct < this.prevLapPct && (this.prevLapPct - this.targetLapPct) > 0.5) {
-          pct = this.prevLapPct + ((this.targetLapPct + 1) - this.prevLapPct) * lerpFactor;
-          if (pct > 1) pct -= 1;
+        // Debug position calculation (occasionally)
+        if (Math.random() < 0.02) {
+          console.log('Player position:', {
+            liveLapPct: this.liveLapPct.toFixed(4),
+            finalPct: pct.toFixed(4),
+            smoothedLength: smoothed.length
+          });
         }
         
         const idx = Math.floor(pct * smoothed.length);
