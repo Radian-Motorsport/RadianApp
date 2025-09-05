@@ -14,20 +14,37 @@
        * Socket.io client option: { extraHeaders: { 'User-Agent': 'RadianTelemetryApp/1.0' } }
        * HTTP client header: User-Agent: "RadianTelemetryApp/1.0 (Windows)"
   
-  2. APP BEHAVIOR:
-     - Apps will appear in "🎮 Racing Apps" section regardless of broadcastingEnabled status
-     - broadcastingEnabled = true  → "📡 BROADCASTING" 
-     - broadcastingEnabled = false → "⏸️ STANDBY"
-     - Web viewers will always appear in "👥 Viewers & Spectators" section
+  2. BROADCASTING SWITCH STATUS COMMUNICATION:
+     - When user ENABLES broadcasting: Send telemetry data normally (existing behavior)
+     - When user DISABLES broadcasting: Send HTTP POST to /api/broadcasting-disabled
+       * Include same headers (User-Agent, etc.)
+       * Payload: { "broadcastingEnabled": false, "driverName": "DriverName" }
+       * This allows server to distinguish between:
+         - ⏸️ STANDBY (switch ON, not racing) vs 🔴 DISABLED (switch OFF)
   
-  3. CURRENT DETECTION PATTERNS:
+  3. APP BEHAVIOR STATES:
+     - broadcastingEnabled = true + isActiveBroadcaster = true  → "📡 BROADCASTING" 
+     - broadcastingEnabled = true + isActiveBroadcaster = false → "⏸️ STANDBY"
+     - broadcastingEnabled = false → "🔴 DISABLED"
+     - Apps will appear in "🎮 Telemetry Apps" section regardless of broadcastingEnabled status
+     - Web viewers will always appear in "👥 Viewers" section
+  
+  4. CURRENT DETECTION PATTERNS:
      - Server checks for: "RadianTelemetryApp", "RadianApp", or "Radian" in User-Agent
      - Fallback patterns can be adjusted as needed
   
-  4. BENEFITS:
+  5. NEW ENDPOINT NEEDED:
+     - POST /api/broadcasting-disabled
+     - Purpose: Explicitly signal when user turns OFF broadcasting switch
+     - Headers: Same as telemetry (User-Agent for client identification)
+     - Body: { "broadcastingEnabled": false, "driverName": "optional" }
+  
+  6. BENEFITS:
      - Clear distinction between drivers and spectators
      - Apps in standby mode don't appear as viewers
+     - Proper switch state tracking (ON/OFF vs ACTIVE/INACTIVE)
      - Better admin overview of system usage
+     - Accurate connection status reporting
   
   ====================================================================
 -->
@@ -233,10 +250,14 @@
     
     <!-- Summary Stats -->
     <div class="connection-stats">
-      <div>Connected Clients</div>
+      <div>Telemetry Apps</div>
       <div class="big-number" id="connectionCount">0</div>
-      <div style="font-size: 0.9em; margin-top: -10px; color: #4caf50;">
-        <span id="broadcastingCount">0</span> actively broadcasting
+      <div style="font-size: 0.9em; margin-top: -10px;">
+        <span id="broadcastingCount" style="color: #4caf50;">0</span> broadcasting
+        <span style="color: #666;"> | </span>
+        <span id="standbyCount" style="color: #ff9800;">0</span> standby
+        <span style="color: #666;"> | </span>
+        <span id="disabledCount" style="color: #f44336;">0</span> disabled
       </div>
       <div>Server Uptime: <span id="serverUptime">--:--:--</span></div>
     </div>
@@ -244,12 +265,8 @@
     <!-- Broadcaster Info -->
     <div class="broadcast-info">
       <div>
-        <label>Current Driver:</label>
+        <label>Current Broadcaster:</label>
         <span id="currentDriver">--</span>
-      </div>
-      <div>
-        <label>Session ID:</label>
-        <span id="sessionId">--</span>
       </div>
     </div>
   </div>
@@ -258,9 +275,9 @@
   <div class="telemetry-block">
     <h2>System Status <span class="info-badge" title="Detailed system information">ℹ️</span></h2>
     <div class="connection-grid">
-      <!-- App Connections (Racing Apps) -->
+      <!-- App Connections (Telemetry Apps) -->
       <div class="connection-block">
-        <h3>🎮 Racing Apps <span id="appCount" style="color: #4caf50;">(0)</span></h3>
+        <h3>🎮 Telemetry Apps <span id="appCount" style="color: #4caf50;">(0)</span></h3>
         <div class="connection-list" id="appList">
           <div class="client-item">
             <span>No racing apps connected</span>
@@ -273,7 +290,7 @@
       
       <!-- Viewer Connections (Web browsers, mobile, tablets) -->
       <div class="connection-block">
-        <h3>👥 Viewers & Spectators <span id="viewerCount" style="color: #ff9800;">(0)</span></h3>
+        <h3>👥 Viewers <span id="viewerCount" style="color: #ff9800;">(0)</span></h3>
         <div class="connection-list" id="viewerList">
           <div class="client-item">
             <span>No viewers connected</span>
@@ -340,7 +357,7 @@
     let connectionsPageLastTelemetryTime = null; // Local variable for connections page
     
     // DOM elements (will be cached after DOM loads)
-    let connectionCountEl, broadcastingCountEl, serverUptimeEl, currentDriverEl, sessionIdEl;
+    let connectionCountEl, broadcastingCountEl, serverUptimeEl, currentDriverEl;
     let appListEl, viewerListEl, appCountEl, viewerCountEl; // New separate lists for apps vs viewers
     let socketStatusEl, lastDataTimeEl, telemetryRateEl;
     let apiStatusEl, connectionHistoryEl, resetButton;
@@ -352,7 +369,6 @@
       broadcastingCountEl = document.getElementById('broadcastingCount');
       serverUptimeEl = document.getElementById('serverUptime');
       currentDriverEl = document.getElementById('currentDriver');
-      sessionIdEl = document.getElementById('sessionId');
       // New separate list elements
       appListEl = document.getElementById('appList');
       viewerListEl = document.getElementById('viewerList');
@@ -463,15 +479,32 @@
       // Store last connection info
       lastConnectionInfo = info;
       
-      // Update connection count
-      connectionCountEl.textContent = info.clientCount || '0';
-      
-      // Calculate and update broadcasting count
-      const clients = info.clients || [];
+      // Calculate separate counts
       const racingApps = info.racingApps || [];
       const webViewers = info.webViewers || [];
-      const broadcastingCount = racingApps.filter(client => client.broadcastingEnabled).length;
+      
+      // Update main connection count (only telemetry apps)
+      connectionCountEl.textContent = racingApps.length;
+      
+      // Update section counts
+      appCountEl.textContent = `(${racingApps.length})`;
+      viewerCountEl.textContent = `(${webViewers.length})`;
+      
+      // Calculate and update broadcasting counts
+      const broadcastingCount = racingApps.filter(client => 
+        client.broadcastingEnabled && client.isActiveBroadcaster).length;
+      const standbyCount = racingApps.filter(client => 
+        client.broadcastingEnabled && !client.isActiveBroadcaster).length;
+      const disabledCount = racingApps.filter(client => 
+        !client.broadcastingEnabled).length;
+      
       broadcastingCountEl.textContent = broadcastingCount;
+      
+      // Update new count elements if they exist
+      const standbyCountEl = document.getElementById('standbyCount');
+      const disabledCountEl = document.getElementById('disabledCount');
+      if (standbyCountEl) standbyCountEl.textContent = standbyCount;
+      if (disabledCountEl) disabledCountEl.textContent = disabledCount;
       
       // Update client list with separate sections
       updateClientList(racingApps, webViewers);
@@ -492,14 +525,18 @@
     socket.on('currentBroadcaster', (info) => {
       console.log('Received currentBroadcaster:', info);
       
-      // Only update if the driver or sessionId actually changed
+      // Handle both setting and clearing broadcaster
+      const newDriver = info.driver || '--';
       const currentDriver = currentDriverEl.textContent;
-      const currentSession = sessionIdEl.textContent;
       
-      if (info.driver !== currentDriver || info.sessionId !== currentSession) {
-        currentDriverEl.textContent = info.driver || '--';
-        sessionIdEl.textContent = info.sessionId || '--';
-        addConnectionEvent(`Broadcaster updated: ${info.driver} (Session: ${info.sessionId})`);
+      if (newDriver !== currentDriver) {
+        currentDriverEl.textContent = newDriver;
+        
+        if (info.driver) {
+          addConnectionEvent(`Broadcaster updated: ${info.driver}`);
+        } else {
+          addConnectionEvent(`Broadcaster cleared`);
+        }
       }
     });
     
@@ -562,23 +599,32 @@
           if (client.driverName) {
             let status = '';
             let statusColor = '';
+            let statusIcon = '';
             
-            if (client.isActiveBroadcaster) {
-              status = ' 📡 BROADCASTING';
+            if (client.broadcastingEnabled && client.isActiveBroadcaster) {
+              status = 'BROADCASTING';
               statusColor = '#4caf50';
-            } else if (client.broadcastingEnabled) {
-              status = ' ⏸️ STANDBY';
+              statusIcon = '📡';
+            } else if (client.broadcastingEnabled && !client.isActiveBroadcaster) {
+              status = 'STANDBY';
               statusColor = '#ff9800';
+              statusIcon = '⏸️';
+            } else if (!client.broadcastingEnabled) {
+              status = 'DISABLED';
+              statusColor = '#f44336';
+              statusIcon = '🔴';
             } else {
-              status = ' 🔗 Connected';
+              // Fallback for edge cases
+              status = 'CONNECTED';
               statusColor = '#2196f3';
+              statusIcon = '🔗';
             }
             
-            idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
+            idSpan.innerHTML = `${client.driverName}<br><small style="color: ${statusColor};">${statusIcon} ${status}</small>`;
             idSpan.style.fontWeight = 'bold';
             idSpan.style.color = '#ffffff';
           } else {
-            idSpan.innerHTML = `Racing App<br><small style="color: #ff9800;">Connected</small>`;
+            idSpan.innerHTML = `Racing App<br><small style="color: #ff9800;">🔗 CONNECTED</small>`;
           }
           
           idSpan.style.textAlign = 'center';

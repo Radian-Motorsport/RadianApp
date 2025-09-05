@@ -20,23 +20,8 @@ let currentLap = 0;
 let lastTeamLap = null;
 let bufferedData = null;
 let lapEntryPoint = null;
-let bufferFrozen =      // 3-Lap Time Average
-    lapAvg3 = lapTimeHistory.length >= 3
-      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-      : null;
-
-    if (elements.lapAvg3) {
-      updateValueWithColor(elements.lapAvg3, lapAvg3 ? formatTimeMS(lapAvg3) : '--:--', lapAvg3, 'lapTime', 'lapAvg3');
-    }
-
-    // 5-Lap Time Average
-    const lapAvg5 = lapTimeHistory.length === 5
-      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
-      : null;
-
-    if (elements.lapAvg5) {
-      updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
-    }riverWasOnTrack = false;
+let bufferFrozen = true;
+let driverWasOnTrack = false;
 let lastTelemetryTime = null;
 let stintStartTime = null;
 let lastPitStopTimeValue = null;

@@ -241,6 +241,18 @@ io.on('connection', (socket) => {
       lastSessionDate: new Date().toDateString()
     };
     
+    // Clear broadcaster information
+    lastBroadcastedDriver = null;
+    lastBroadcastedSession = null;
+    currentUserName = null;
+    currentSessionId = null;
+    
+    // Clear broadcaster on all clients
+    io.emit('currentBroadcaster', {
+      driver: null,
+      sessionId: null
+    });
+    
     // Broadcast reset to all clients
     io.emit('telemetryStateReset', telemetryState);
   });
@@ -365,6 +377,8 @@ app.get('/api/debug/clients', (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`✅ Backend running at http://localhost:${PORT}`);
+  console.log(`📡 New endpoint available: POST /api/broadcasting-disabled`);
+  console.log(`🎮 Racing apps should send User-Agent: "RadianTelemetryApp/1.0"`);
 });
 
 // API Endpoints for telemetry state
@@ -430,4 +444,32 @@ app.post('/api/reset-telemetry', (req, res) => {
   io.emit('telemetryStateReset', telemetryState);
   
   res.status(200).json({ success: true });
+});
+
+// Handle explicit broadcasting disabled signal from racing apps
+app.post('/api/broadcasting-disabled', (req, res) => {
+  console.log('Broadcasting disabled signal received from:', req.get('User-Agent'));
+  
+  // Update HTTP client with explicit disabled state
+  const client = getOrCreateHttpClient(req);
+  client.broadcastingEnabled = false;
+  client.isActiveBroadcaster = false;
+  client.lastActivity = Date.now();
+  
+  // Extract driver name if provided
+  if (req.body && req.body.driverName) {
+    client.driverName = req.body.driverName;
+  }
+  
+  console.log(`Client ${client.id} explicitly disabled broadcasting`);
+  
+  // Broadcast updated connection info
+  const connectionInfo = getConnectionInfo();
+  io.emit('connectionInfo', connectionInfo);
+  
+  res.status(200).json({ 
+    success: true, 
+    message: 'Broadcasting disabled status recorded',
+    clientId: client.id 
+  });
 });
