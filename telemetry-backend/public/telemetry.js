@@ -492,7 +492,7 @@ function handleDriverExit(values, teamLap) {
   if (elements.stintTotalTime) elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
   if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
   if (elements.lastPitStopTime) elements.lastPitStopTime.textContent = lastPitStopTimeValue;
-  if (elements.stintIncidents) elements.stintIncidents.textContent = stintIncidentCount.toString();
+  if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
   
   updateTireWear(lastStintTireWear);
 
@@ -549,8 +549,6 @@ function handleDriverEntry(teamLap) {
 
 // Process lap completion data
 function processLapCompletion(lapCompleted, fuel) {
-  let avgFuelUsed3 = null;
-  let lapAvg3 = null;
   const now = Date.now();
 
   // Lap Time Tracking
@@ -560,11 +558,11 @@ function processLapCompletion(lapCompleted, fuel) {
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
 
     // 3-Lap Time Average
-    lapAvg3 = lapTimeHistory.length >= 3
+    previousValues.lapAvg3 = lapTimeHistory.length >= 3
       ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
       : null;
 
-    updateValueWithColor(elements.lapAvg3, lapAvg3 ? formatTimeMS(lapAvg3) : '--:--', lapAvg3, 'lapTime', 'lapAvg3');
+    updateValueWithColor(elements.lapAvg3, previousValues.lapAvg3 ? formatTimeMS(previousValues.lapAvg3) : '--:--', previousValues.lapAvg3, 'lapTime', 'lapAvg3');
 
     // 5-Lap Time Average
     const lapAvg5 = lapTimeHistory.length === 5
@@ -582,18 +580,18 @@ function processLapCompletion(lapCompleted, fuel) {
       fuelUsageHistory.push(fuelUsed);
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
 
-      // 3-Lap Fuel Average
-      avgFuelUsed3 = fuelUsageHistory.length >= 3
+      // 3-Lap Fuel Average - store in global previousValues
+      previousValues.fuelAvg = fuelUsageHistory.length >= 3
         ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
         : null;
       
       // Update avgFuelPerLap for trackmap usage
-      avgFuelPerLap = avgFuelUsed3 || (fuelUsageHistory.length > 0 
+      avgFuelPerLap = previousValues.fuelAvg || (fuelUsageHistory.length > 0 
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length 
         : 0);
 
       if (elements.fuelAvg) {
-        elements.fuelAvg.textContent = `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
+        elements.fuelAvg.textContent = `3-Lap Avg: ${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`;
       }
 
       // 5-Lap Fuel Average
@@ -612,13 +610,13 @@ function processLapCompletion(lapCompleted, fuel) {
     }
   }
 
-  // Fuel Projection
-  const projectedLaps = avgFuelUsed3 > 0
-    ? fuel / avgFuelUsed3
+  // Fuel Projection - now using global variables
+  const projectedLaps = previousValues.fuelAvg > 0
+    ? fuel / previousValues.fuelAvg
     : null;
 
-  const projectedTimeSec = projectedLaps && lapAvg3
-    ? projectedLaps * lapAvg3
+  const projectedTimeSec = projectedLaps && previousValues.lapAvg3
+    ? projectedLaps * previousValues.lapAvg3
     : null;
 
   if (elements.fuelProjectedLaps) {
@@ -744,7 +742,7 @@ function setupSocketListeners() {
         }
         
         if (elements.stintIncidents) {
-          elements.stintIncidents.textContent = stintIncidentCount.toString();
+          elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
         }
       }
 
