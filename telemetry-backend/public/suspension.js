@@ -5,8 +5,13 @@ class SuspensionAnalyzer {
     constructor(socket) {
         this.socket = socket;
         this.elements = this.cacheElements();
-        this.setupOscilloscope();
-        this.setupEventListeners();
+        this.setupOscilloscope();        // Update display elements with converted values
+        this.elements.maxCompression.textContent = `${(this.stats.maxCompression * 1000).toFixed(1)}mm`;
+        this.elements.minCompression.textContent = `${(this.stats.minCompression * 1000).toFixed(1)}mm`;
+        this.elements.avgFront.textContent = `${(this.stats.frontAvg * 1000).toFixed(1)}mm`;
+        this.elements.avgRear.textContent = `${(this.stats.rearAvg * 1000).toFixed(1)}mm`;
+        this.elements.frontBalance.textContent = `${this.stats.frontBalance.toFixed(1)}%`;
+        this.elements.rearBalance.textContent = `${this.stats.rearBalance.toFixed(1)}%`;  this.setupEventListeners();
         
         // Data storage for analysis
         this.suspensionData = {
@@ -33,6 +38,9 @@ class SuspensionAnalyzer {
             frontBalance: 50,
             rearBalance: 50
         };
+        
+        // Simple travel configuration
+        this.maxTravel = 0.3; // Default 300mm in meters
     }
     
     cacheElements() {
@@ -110,6 +118,16 @@ class SuspensionAnalyzer {
             this.oscilloscope.maxPoints = this.oscilloscope.timeScale * 60; // 60fps
         });
         
+        // Travel slider control
+        const travelSlider = document.getElementById('travel-slider');
+        const travelValue = document.getElementById('travel-value');
+        
+        travelSlider.addEventListener('input', (e) => {
+            const mmValue = parseInt(e.target.value);
+            travelValue.textContent = `${mmValue}mm`;
+            this.maxTravel = mmValue / 1000; // Convert mm to meters
+        });
+        
         // Resize handler
         window.addEventListener('resize', () => {
             this.canvas.width = this.canvas.offsetWidth;
@@ -142,6 +160,12 @@ class SuspensionAnalyzer {
         
         this.suspensionData.rr.deflection = data.RRshockDefl || 0;
         this.suspensionData.rr.velocity = data.RRshockVel || 0;
+        
+        // Update auto-scaling if enabled
+        [this.suspensionData.lf.deflection, this.suspensionData.rf.deflection,
+         this.suspensionData.lr.deflection, this.suspensionData.rr.deflection].forEach(deflection => {
+            this.updateAutoScale(deflection);
+        });
         
         // Update high-frequency data (360 Hz samples - 6 samples per frame)
         this.highFreqData.lf.deflection_ST = data.LFshockDefl_ST || [];
@@ -204,7 +228,9 @@ class SuspensionAnalyzer {
         const fillEl = this.elements[`${corner}Fill`];
         
         if (deflectionEl) {
-            deflectionEl.textContent = `${data.deflection.toFixed(3)}m`;
+            // Convert meters to millimeters for display
+            const deflectionMm = data.deflection * 1000;
+            deflectionEl.textContent = `${deflectionMm.toFixed(1)}mm`;
         } else {
             console.warn(`Missing deflection element for ${corner}`);
         }
@@ -217,9 +243,8 @@ class SuspensionAnalyzer {
         }
         
         if (fillEl) {
-            // Convert deflection to percentage (assuming max travel of 0.3m)
-            const maxTravel = 0.3;
-            const percentage = Math.min(Math.abs(data.deflection) / maxTravel * 100, 100);
+            // Use slider-controlled max travel value
+            const percentage = Math.min(Math.abs(data.deflection) / this.maxTravel * 100, 100);
             fillEl.style.height = `${percentage}%`;
             
             // Color coding based on compression level
@@ -350,8 +375,8 @@ class SuspensionAnalyzer {
             // Scale value to canvas height
             let y;
             if (type === 'deflection') {
-                // Scale deflection (0 to 0.3m) to canvas height
-                y = height - (Math.abs(value) / 0.3) * height;
+                // Scale deflection using slider-controlled max travel
+                y = height - (Math.abs(value) / this.maxTravel) * height;
             } else {
                 // Scale velocity (-5 to +5 m/s) to canvas height
                 y = height / 2 - (value / 5) * (height / 2);

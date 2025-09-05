@@ -204,6 +204,19 @@
             outline-offset: 2px;
         }
         
+        .controls input[type="range"] {
+            width: 120px;
+            margin: 0 8px;
+            accent-color: var(--accent-color);
+        }
+        
+        .controls #travel-value {
+            font-weight: bold;
+            color: var(--accent-color);
+            min-width: 60px;
+            display: inline-block;
+        }
+        
         @media (max-width: 768px) {
             .four-corner-grid {
                 gap: 15px;
@@ -330,7 +343,7 @@
                     <div class="shock-fill" id="lf-fill"></div>
                 </div>
                 <div class="shock-data">
-                    <div class="deflection-value" id="lf-deflection">0.000m</div>
+                    <div class="deflection-value" id="lf-deflection">0.0mm</div>
                     <div class="velocity-value" id="lf-velocity">0.0 m/s</div>
                 </div>
             </div>
@@ -341,7 +354,7 @@
                     <div class="shock-fill" id="rf-fill"></div>
                 </div>
                 <div class="shock-data">
-                    <div class="deflection-value" id="rf-deflection">0.000m</div>
+                    <div class="deflection-value" id="rf-deflection">0.0mm</div>
                     <div class="velocity-value" id="rf-velocity">0.0 m/s</div>
                 </div>
             </div>
@@ -352,7 +365,7 @@
                     <div class="shock-fill" id="lr-fill"></div>
                 </div>
                 <div class="shock-data">
-                    <div class="deflection-value" id="lr-deflection">0.000m</div>
+                    <div class="deflection-value" id="lr-deflection">0.0mm</div>
                     <div class="velocity-value" id="lr-velocity">0.0 m/s</div>
                 </div>
             </div>
@@ -363,7 +376,7 @@
                     <div class="shock-fill" id="rr-fill"></div>
                 </div>
                 <div class="shock-data">
-                    <div class="deflection-value" id="rr-deflection">0.000m</div>
+                    <div class="deflection-value" id="rr-deflection">0.0mm</div>
                     <div class="velocity-value" id="rr-velocity">0.0 m/s</div>
                 </div>
             </div>
@@ -376,19 +389,19 @@
         <div class="suspension-stats">
             <div class="stat-card">
                 <div class="stat-label">Max Compression</div>
-                <div class="stat-value" id="max-compression">0.000m</div>
+                <div class="stat-value" id="max-compression">0.0mm</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Min Compression</div>
-                <div class="stat-value" id="min-compression">0.000m</div>
+                <div class="stat-value" id="min-compression">0.0mm</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Avg Front</div>
-                <div class="stat-value" id="avg-front">0.000m</div>
+                <div class="stat-value" id="avg-front">0.0mm</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Avg Rear</div>
-                <div class="stat-value" id="avg-rear">0.000m</div>
+                <div class="stat-value" id="avg-rear">0.0mm</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Front Balance</div>
@@ -419,6 +432,11 @@
                         <option value="10" selected>10 seconds</option>
                         <option value="30">30 seconds</option>
                     </select>
+                </label>
+                <label>
+                    Max Travel: 
+                    <input type="range" id="travel-slider" min="50" max="300" value="300" step="10">
+                    <span id="travel-value">300mm</span>
                 </label>
             </div>
         </div>
