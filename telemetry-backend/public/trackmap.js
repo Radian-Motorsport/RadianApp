@@ -109,6 +109,16 @@ class TrackMap {
       this.lastPctUpdateTime = performance.now();
       this.liveLapPct = values.LapDistPct;
       
+      // Debug telemetry updates
+      if (Math.random() < 0.005) { // Log occasionally
+        console.log('Telemetry update:', {
+          LapDistPct: values.LapDistPct.toFixed(4),
+          Speed: values.Speed.toFixed(1),
+          prevLapPct: this.prevLapPct.toFixed(4),
+          targetLapPct: this.targetLapPct.toFixed(4)
+        });
+      }
+      
       // Track position
       const last = this.lapBuffer.length > 0 ? this.lapBuffer[this.lapBuffer.length - 1] : { x: 300, y: 300 };
       const newX = last.x + Math.cos(YawNorth) * Speed * dt;
@@ -455,6 +465,18 @@ class TrackMap {
         if (this.targetLapPct < this.prevLapPct && (this.prevLapPct - this.targetLapPct) > 0.5) {
           pct = this.prevLapPct + ((this.targetLapPct + 1) - this.prevLapPct) * lerpFactor;
           if (pct > 1) pct -= 1;
+        }
+        
+        // Debug position calculation
+        if (Math.random() < 0.01) { // Log occasionally to avoid spam
+          console.log('Player position debug:', {
+            liveLapPct: this.liveLapPct.toFixed(4),
+            prevLapPct: this.prevLapPct.toFixed(4),
+            targetLapPct: this.targetLapPct.toFixed(4),
+            elapsed: elapsed.toFixed(3),
+            lerpFactor: lerpFactor.toFixed(3),
+            finalPct: pct.toFixed(4)
+          });
         }
         
         const idx = Math.floor(pct * smoothed.length);
