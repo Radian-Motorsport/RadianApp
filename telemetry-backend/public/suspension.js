@@ -3,39 +3,46 @@
 
 class SuspensionAnalyzer {
     constructor(socket) {
-        this.socket = socket;
-        this.elements = this.cacheElements();
-        this.setupOscilloscope();
-        this.setupEventListeners();
-        
-        // Data storage for analysis
-        this.suspensionData = {
-            lf: { deflection: 0, velocity: 0, history: [] },
-            rf: { deflection: 0, velocity: 0, history: [] },
-            lr: { deflection: 0, velocity: 0, history: [] },
-            rr: { deflection: 0, velocity: 0, history: [] }
-        };
-        
-        // High-frequency data storage (360 Hz samples)
-        this.highFreqData = {
-            lf: { deflection_ST: [], velocity_ST: [] },
-            rf: { deflection_ST: [], velocity_ST: [] },
-            lr: { deflection_ST: [], velocity_ST: [] },
-            rr: { deflection_ST: [], velocity_ST: [] }
-        };
-        
-        // Statistics tracking
-        this.stats = {
-            maxCompressionLF: 0,
-            maxCompressionRF: 0,
-            maxCompressionLR: 0,
-            maxCompressionRR: 0,
-            frontBalance: 50,
-            rearBalance: 50
-        };
-        
-        // Simple travel configuration
-        this.maxTravel = 0.3; // Default 300mm in meters
+        try {
+            this.socket = socket;
+            this.elements = this.cacheElements();
+            this.setupOscilloscope();
+            this.setupEventListeners();
+            
+            // Data storage for analysis
+            this.suspensionData = {
+                lf: { deflection: 0, velocity: 0, history: [] },
+                rf: { deflection: 0, velocity: 0, history: [] },
+                lr: { deflection: 0, velocity: 0, history: [] },
+                rr: { deflection: 0, velocity: 0, history: [] }
+            };
+            
+            // High-frequency data storage (360 Hz samples)
+            this.highFreqData = {
+                lf: { deflection_ST: [], velocity_ST: [] },
+                rf: { deflection_ST: [], velocity_ST: [] },
+                lr: { deflection_ST: [], velocity_ST: [] },
+                rr: { deflection_ST: [], velocity_ST: [] }
+            };
+            
+            // Statistics tracking
+            this.stats = {
+                maxCompressionLF: 0,
+                maxCompressionRF: 0,
+                maxCompressionLR: 0,
+                maxCompressionRR: 0,
+                frontBalance: 50,
+                rearBalance: 50
+            };
+            
+            // Simple travel configuration
+            this.maxTravel = 0.3; // Default 300mm in meters
+            
+            console.log('SuspensionAnalyzer constructor completed successfully');
+        } catch (error) {
+            console.error('SuspensionAnalyzer constructor failed:', error);
+            throw error;
+        }
     }
     
     cacheElements() {
@@ -74,26 +81,36 @@ class SuspensionAnalyzer {
     }
     
     setupOscilloscope() {
-        this.canvas = this.elements.oscilloscope;
-        this.ctx = this.canvas.getContext('2d');
-        
-        // Set canvas size
-        this.canvas.width = this.canvas.offsetWidth;
-        this.canvas.height = this.canvas.offsetHeight;
-        
-        // Oscilloscope settings
-        this.oscilloscope = {
-            width: this.canvas.width,
-            height: this.canvas.height,
-            timeScale: 10, // seconds
-            maxPoints: 600, // 10 seconds at 60fps
-            colors: {
-                lf: '#FF6B6B', // Red
-                rf: '#4ECDC4', // Teal
-                lr: '#45B7D1', // Blue
-                rr: '#96CEB4'  // Green
+        try {
+            this.canvas = this.elements.oscilloscope;
+            if (!this.canvas) {
+                console.warn('Oscilloscope canvas not found, skipping oscilloscope setup');
+                return;
             }
-        };
+            
+            this.ctx = this.canvas.getContext('2d');
+            
+            // Set canvas size
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+            
+            // Oscilloscope settings
+            this.oscilloscope = {
+                width: this.canvas.width,
+                height: this.canvas.height,
+                timeScale: 10, // seconds
+                maxPoints: 600, // 10 seconds at 60fps
+                colors: {
+                    lf: '#FF6B6B', // Red
+                    rf: '#4ECDC4', // Teal
+                    lr: '#45B7D1', // Blue
+                    rr: '#96CEB4'  // Green
+                }
+            };
+            console.log('Oscilloscope setup completed');
+        } catch (error) {
+            console.error('Oscilloscope setup failed:', error);
+        }
     }
     
     setupEventListeners() {
