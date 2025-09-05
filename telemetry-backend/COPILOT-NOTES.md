@@ -80,3 +80,63 @@ Test the 3 broadcasting states:
 
 ---
 **Note**: This system now properly distinguishes between 3 scenarios that were previously conflated into 2 states, solving the logical gap identified in the connection tracking system.
+
+## TRACK MAP ENHANCEMENTS - September 5, 2025
+
+### NEW FEATURES ADDED:
+1. ✅ **Car Ahead/Behind Position Markers**:
+   - Added visual markers on track map for cars ahead and behind
+   - Uses `CarDistAhead` and `CarDistBehind` telemetry fields
+   - Cars shown with different icons (`icon-idle.png` for ahead, `icon-standby.png` for behind)
+   - Labels: "A" for ahead car, "B" for behind car
+
+2. ✅ **Track Info Boxes**:
+   - Added 4 info boxes below the track map
+   - **Car Ahead**: Distance to car ahead (meters)
+   - **Car Behind**: Distance to car behind (meters) 
+   - **Fuel Level**: Current fuel as percentage
+   - **Estimated Laps**: Calculated remaining laps based on fuel consumption
+
+### FILES MODIFIED:
+- `public/track.html` - Added info boxes grid and initialization script
+- `public/trackmap.js` - Enhanced with car positioning and info display logic
+- `public/styles.css` - Added responsive CSS for track info boxes
+
+### TESTING REQUIRED ON MAIN PC:
+
+#### 1. TRACK MAP VISUAL TEST:
+- Navigate to: `http://localhost:3000/track.html`
+- ✅ Verify track map displays correctly
+- ✅ Check info boxes appear below the map in a 2x2 grid
+- ✅ Verify responsive design works on mobile (becomes single column)
+
+#### 2. TELEMETRY DATA TEST:
+With live telemetry connected:
+- ✅ Verify car ahead/behind distances show in meters when available
+- ✅ Check fuel level percentage displays correctly
+- ✅ Confirm estimated laps calculation works (fuel level ÷ average fuel per lap)
+- ✅ Verify "--" displays when data is unavailable
+
+#### 3. VISUAL MARKERS TEST:
+With cars nearby:
+- ✅ Verify "A" marker appears on track for car ahead
+- ✅ Verify "B" marker appears on track for car behind  
+- ✅ Check markers are positioned correctly relative to player car
+- ✅ Verify markers wrap around track correctly
+
+#### 4. INFO BOX UPDATES TEST:
+- ✅ Check that all info boxes update in real-time with telemetry
+- ✅ Verify fuel percentage matches actual tank level
+- ✅ Test estimated laps calculation accuracy
+- ✅ Ensure smooth updates without flickering
+
+### TECHNICAL IMPLEMENTATION:
+- Car positions calculated using track length estimation and distance conversion
+- Fuel data integrated from existing telemetry dashboard fuel calculations
+- Position markers use interpolation along smoothed track path
+- Responsive CSS grid for mobile compatibility
+
+### KNOWN LIMITATIONS:
+- Car positioning accuracy depends on track mapping quality
+- Distance calculations are estimates based on track geometry
+- Requires completed lap data for positioning (cars won't show until track is mapped)

@@ -17,6 +17,26 @@
   <div class="telemetry-block">
     <h2>Track Map</h2>
     <canvas id="trackCanvas" width="600" height="600"></canvas>
+    
+    <!-- Track Info Boxes -->
+    <div class="track-info-grid">
+      <div class="info-box">
+        <h3>Car Ahead</h3>
+        <div class="info-value" id="carAheadDistance">-- m</div>
+      </div>
+      <div class="info-box">
+        <h3>Car Behind</h3>
+        <div class="info-value" id="carBehindDistance">-- m</div>
+      </div>
+      <div class="info-box">
+        <h3>Fuel Level</h3>
+        <div class="info-value" id="fuelLevelPercent">--%</div>
+      </div>
+      <div class="info-box">
+        <h3>Estimated Laps</h3>
+        <div class="info-value" id="estimatedLaps">--</div>
+      </div>
+    </div>
   </div>
 
   <!-- JavaScript Resources -->
@@ -24,5 +44,24 @@
   <script src="telemetry.js"></script>
   <script src="trackmap.js"></script>
   <script src="nav.js"></script>
+  
+  <script>
+    // Initialize Track Map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait for socket to be available from telemetry.js
+      function initTrackMap() {
+        if (typeof socket !== 'undefined' && socket) {
+          window.trackMap = new TrackMap(socket, 'trackCanvas');
+          console.log('TrackMap initialized successfully');
+        } else {
+          console.warn('Socket not ready, retrying track map initialization...');
+          setTimeout(initTrackMap, 500);
+        }
+      }
+      
+      // Start initialization
+      initTrackMap();
+    });
+  </script>
 </body>
 </html>

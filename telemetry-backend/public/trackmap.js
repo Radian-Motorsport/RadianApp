@@ -20,9 +20,24 @@ class TrackMap {
     this.lastLapPct = 0;
     this.telemetryHz = 10;
     
-    // Load the car icon
+    // Car positioning data
+    this.carAheadDistance = 0;
+    this.carBehindDistance = 0;
+    this.fuelLevel = 0;
+    this.fuelLevelPct = 0;
+    this.tankCapacity = 104; // Default tank capacity
+    this.avgFuelPerLap = 0;
+    
+    // Load the car icons
     this.carImg = new Image();
     this.carImg.src = 'icon-active.png';
+    this.carAheadImg = new Image();
+    this.carAheadImg.src = 'icon-idle.png';  // Different icon for other cars
+    this.carBehindImg = new Image();
+    this.carBehindImg.src = 'icon-standby.png';  // Different icon for other cars
+    
+    // Cache info box elements
+    this.cacheInfoElements();
     
     // Load any existing data from localStorage
     this.loadFromStorage();
@@ -37,13 +52,42 @@ class TrackMap {
     this.setupAutoSave();
   }
   
+  cacheInfoElements() {
+    this.infoElements = {
+      carAheadDistance: document.getElementById('carAheadDistance'),
+      carBehindDistance: document.getElementById('carBehindDistance'),
+      fuelLevelPercent: document.getElementById('fuelLevelPercent'),
+      estimatedLaps: document.getElementById('estimatedLaps')
+    };
+  }
+  
   setupListeners() {
     // Track telemetry for lap tracking
     this.socket.on('telemetry', (data) => {
       const values = data?.values;
-      if (!values || this.lapCompleted) return;
+      if (!values) return;
       
-      const { Speed, YawNorth, LapDistPct } = values;
+      const { Speed, YawNorth, LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct } = values;
+      
+      // Update car distance and fuel data
+      this.carAheadDistance = CarDistAhead || 0;
+      this.carBehindDistance = CarDistBehind || 0;
+      this.fuelLevel = FuelLevel || 0;
+      this.fuelLevelPct = FuelLevelPct || 0;
+      
+      // Update info boxes
+      this.updateInfoBoxes();
+      
+      // Get fuel data from telemetry dashboard if available
+      if (window.telemetryDashboard && typeof window.telemetryDashboard.getFuelData === 'function') {
+        const fuelData = window.telemetryDashboard.getFuelData();
+        this.avgFuelPerLap = fuelData.avgFuelPerLap || 0;
+        this.tankCapacity = fuelData.maxFuel || 104;
+      }
+      
+      // Continue with existing lap tracking logic
+      if (this.lapCompleted) return;
+      
       const dt = 1 / 60;
       
       // Update lap percentage for visualization
@@ -76,6 +120,131 @@ class TrackMap {
       
       this.lastLapPct = LapDistPct;
     });
+  }
+  
+  updateInfoBoxes() {
+    // Update car distances
+    if (this.infoElements.carAheadDistance) {
+      this.infoElements.carAheadDistance.textContent = this.carAheadDistance > 0 
+        ? `${this.carAheadDistance.toFixed(1)} m` 
+        : '-- m';
+    }
+    
+    if (this.infoElements.carBehindDistance) {
+      this.infoElements.carBehindDistance.textContent = this.carBehindDistance > 0 
+        ? `${this.carBehindDistance.toFixed(1)} m` 
+        : '-- m';
+    }
+    
+    // Update fuel level percentage
+    if (this.infoElements.fuelLevelPercent) {
+      this.infoElements.fuelLevelPercent.textContent = this.fuelLevelPct > 0 
+        ? `${(this.fuelLevelPct * 100).toFixed(1)}%` 
+        : `${this.fuelLevel > 0 && this.tankCapacity > 0 ? ((this.fuelLevel / this.tankCapacity) * 100).toFixed(1) : '--'}%`;
+    }
+    
+    // Update estimated laps remaining
+    if (this.infoElements.estimatedLaps) {
+      const estimatedLaps = this.calculateEstimatedLaps();
+      this.infoElements.estimatedLaps.textContent = estimatedLaps > 0 
+        ? estimatedLaps.toFixed(1) 
+        : '--';
+    }
+  }
+  
+  calculateEstimatedLaps() {
+    if (this.fuelLevel <= 0 || this.avgFuelPerLap <= 0) {
+      return 0;
+    }
+    return this.fuelLevel / this.avgFuelPerLap;
+  }
+  
+  drawCarAheadBehind(smoothed, autoScale, offsetX, offsetY, playerPct, iconSize) {
+    if (smoothed.length === 0) return;
+    
+    // Estimate track length by summing distances between points
+    let trackLength = 0;
+    for (let i = 0; i < smoothed.length; i++) {
+      const curr = smoothed[i];
+      const next = smoothed[(i + 1) % smoothed.length];
+      trackLength += Math.hypot(next.x - curr.x, next.y - curr.y);
+    }
+    
+    // Draw car ahead
+    if (this.carAheadDistance > 0 && this.carAheadDistance < trackLength) {
+      const aheadPct = this.calculateCarPosition(playerPct, this.carAheadDistance, trackLength, true);
+      const aheadPos = this.getPositionFromPct(smoothed, aheadPct);
+      
+      if (aheadPos) {
+        const aheadX = aheadPos.x * autoScale + offsetX;
+        const aheadY = aheadPos.y * autoScale + offsetY;
+        
+        // Draw ahead car with different color/icon
+        this.trackCtx.save();
+        this.trackCtx.globalAlpha = 0.8;
+        this.trackCtx.drawImage(this.carAheadImg, aheadX - iconSize / 2, aheadY - iconSize / 2, iconSize, iconSize);
+        
+        // Add small label
+        this.trackCtx.fillStyle = '#4ecdc4';
+        this.trackCtx.font = '10px Orbitron';
+        this.trackCtx.textAlign = 'center';
+        this.trackCtx.fillText('A', aheadX, aheadY - iconSize);
+        this.trackCtx.restore();
+      }
+    }
+    
+    // Draw car behind
+    if (this.carBehindDistance > 0 && this.carBehindDistance < trackLength) {
+      const behindPct = this.calculateCarPosition(playerPct, this.carBehindDistance, trackLength, false);
+      const behindPos = this.getPositionFromPct(smoothed, behindPct);
+      
+      if (behindPos) {
+        const behindX = behindPos.x * autoScale + offsetX;
+        const behindY = behindPos.y * autoScale + offsetY;
+        
+        // Draw behind car with different color/icon
+        this.trackCtx.save();
+        this.trackCtx.globalAlpha = 0.8;
+        this.trackCtx.drawImage(this.carBehindImg, behindX - iconSize / 2, behindY - iconSize / 2, iconSize, iconSize);
+        
+        // Add small label
+        this.trackCtx.fillStyle = '#feca57';
+        this.trackCtx.font = '10px Orbitron';
+        this.trackCtx.textAlign = 'center';
+        this.trackCtx.fillText('B', behindX, behindY - iconSize);
+        this.trackCtx.restore();
+      }
+    }
+  }
+  
+  calculateCarPosition(playerPct, distance, trackLength, isAhead) {
+    // Convert distance to percentage of track
+    const distancePct = distance / trackLength;
+    
+    if (isAhead) {
+      // Car ahead is further along the track
+      let aheadPct = playerPct + distancePct;
+      if (aheadPct > 1) aheadPct -= 1; // Wrap around
+      return aheadPct;
+    } else {
+      // Car behind is further back on the track
+      let behindPct = playerPct - distancePct;
+      if (behindPct < 0) behindPct += 1; // Wrap around
+      return behindPct;
+    }
+  }
+  
+  getPositionFromPct(smoothed, pct) {
+    if (smoothed.length === 0 || pct < 0 || pct > 1) return null;
+    
+    const idx = Math.floor(pct * smoothed.length);
+    const nextIdx = (idx + 1) % smoothed.length;
+    const t = (pct * smoothed.length) - idx;
+    
+    const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
+    const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
+    
+    return { x: px, y: py };
   }
   
   startAnimation() {
@@ -233,7 +402,7 @@ class TrackMap {
       this.trackCtx.stroke();
       this.trackCtx.lineWidth = 1;
       
-      // Live position marker
+      // Live position marker (player car)
       if (this.liveLapPct > 0 && this.liveLapPct <= 1) {
         const elapsed = (performance.now() - this.lastPctUpdateTime) / 1000;
         const lerpFactor = Math.min(elapsed * this.telemetryHz, 1);
@@ -256,6 +425,9 @@ class TrackMap {
         
         const iconSize = 16;
         this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+        
+        // Draw car ahead and behind if distances are available and reasonable
+        this.drawCarAheadBehind(smoothed, autoScale, offsetX, offsetY, pct, iconSize);
       }
     }
     
