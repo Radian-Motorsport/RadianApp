@@ -39,6 +39,13 @@ class SuspensionAnalyzer {
             this.maxTravel = 0.3; // Default 300mm in meters
             
             console.log('SuspensionAnalyzer constructor completed successfully');
+            console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+            console.log('Method check:', {
+                updateSuspensionData: typeof this.updateSuspensionData,
+                updateDisplay: typeof this.updateDisplay,
+                updateStatistics: typeof this.updateStatistics,
+                updateOscilloscope: typeof this.updateOscilloscope
+            });
         } catch (error) {
             console.error('SuspensionAnalyzer constructor failed:', error);
             throw error;
@@ -114,17 +121,22 @@ class SuspensionAnalyzer {
     }
     
     setupEventListeners() {
-        // Socket event for telemetry data - bind context properly
-        this.socket.on('telemetry', (data) => {
+        // Create explicit reference to class instance to avoid 'this' context issues
+        const suspensionAnalyzer = this;
+        
+        // Socket event for telemetry data
+        this.socket.on('telemetry', function(data) {
             if (data && data.values) {
                 console.log('Suspension: Received telemetry data');
                 try {
-                    this.updateSuspensionData(data.values);
-                    this.updateDisplay();
-                    this.updateStatistics();
-                    this.updateOscilloscope();
+                    // Use explicit reference instead of 'this'
+                    suspensionAnalyzer.updateSuspensionData(data.values);
+                    suspensionAnalyzer.updateDisplay();
+                    suspensionAnalyzer.updateStatistics();
+                    suspensionAnalyzer.updateOscilloscope();
                 } catch (error) {
                     console.error('Suspension: Error processing telemetry:', error);
+                    console.log('Available methods on suspensionAnalyzer:', Object.getOwnPropertyNames(Object.getPrototypeOf(suspensionAnalyzer)));
                 }
             }
         });
