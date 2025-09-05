@@ -29,6 +29,7 @@ let lastSessionId = null;
 let lastSessionDate = new Date().toDateString();
 let tankCapacity = 104; // Default tank capacity in liters
 let avgFuelPerLap = 0; // Average fuel used per lap
+let wasPitstopActive = false; // Track previous pit stop state
 
 // Previous value tracking for color coding
 let previousValues = {
@@ -69,7 +70,8 @@ function saveTelemetryState() {
     lastSessionId,
     lastSessionDate,
     previousValues,
-    stintIncidentCount
+    stintIncidentCount,
+    wasPitstopActive
   };
   
   window.storageManager.saveTelemetryState(stateToSave);
@@ -109,6 +111,7 @@ function loadTelemetryState() {
       lapAvg5: null
     };
     stintIncidentCount = savedState.stintIncidentCount ?? 0;
+    wasPitstopActive = savedState.wasPitstopActive ?? false;
     
     console.log('Telemetry: Restored state from storage');
     
@@ -451,6 +454,65 @@ function updateTireBandColor(elementId, wearPercentage) {
   else element.classList.add('wear-50');
 }
 
+// Handle pit stop completion and update tire wear
+function handlePitStopCompletion(values) {
+  console.log('Pit stop completed - updating tire wear and stint summary data');
+  
+  // Calculate stint summary values
+  const currentTeamLap = values?.CarIdxLapCompleted?.[values?.PlayerCarIdx];
+  const stintLapCount = lapEntryPoint !== null ? currentTeamLap - lapEntryPoint : 0;
+  
+  // Calculate fuel averages from history
+  const lastFuelUsed = fuelUsageHistory.at(-1);
+  const avgFuelUsed = fuelUsageHistory.length > 0
+    ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
+    : null;
+  
+  // Calculate stint time and average lap time
+  const stintEndTime = Date.now();
+  const stintTotalTimeSeconds = stintStartTime ? (stintEndTime - stintStartTime) / 1000 : null;
+  const stintAvgLapTimeSeconds = (stintLapCount > 0 && stintTotalTimeSeconds) 
+    ? stintTotalTimeSeconds / stintLapCount 
+    : null;
+  
+  // Update stint summary UI
+  if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
+  if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
+  if (elements.stintTotalTime) elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
+  if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
+  if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
+  
+  // Take a fresh snapshot of tire wear after pit stop
+  const currentTireWear = {
+    RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
+    LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
+    RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
+    LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
+  };
+  
+  // Update tire wear display
+  updateTireWear(currentTireWear);
+  
+  // Update last pit stop time with actual completion timestamp
+  if (elements.lastPitStopTime) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+    elements.lastPitStopTime.textContent = timeStr;
+    lastPitStopTimeValue = timeStr;
+  }
+  
+  // Reset stint tracking for next stint
+  lapEntryPoint = currentTeamLap; // Next stint starts from current lap
+  stintStartTime = Date.now(); // Reset stint timer
+  
+  console.log(`Stint completed: ${stintLapCount} laps, ${stintTotalTimeSeconds?.toFixed(1)}s total`);
+}
+
 // Handle driver exiting the track
 function handleDriverExit(values, teamLap) {
   bufferFrozen = true;
@@ -709,6 +771,13 @@ function setupSocketListeners() {
         handleDriverEntry(teamLap);
         return;
       }
+
+      // Handle pit stop completion (PitstopActive goes from true to false)
+      const currentPitstopActive = values?.PitstopActive || false;
+      if (wasPitstopActive && !currentPitstopActive) {
+        handlePitStopCompletion(values);
+      }
+      wasPitstopActive = currentPitstopActive;
 
       // Lap-Based Buffer Unlock
       if (isOnTrack && bufferFrozen && lapEntryPoint !== null && teamLap >= lapEntryPoint + 2) {
