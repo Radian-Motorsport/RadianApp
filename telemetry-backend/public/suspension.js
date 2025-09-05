@@ -5,13 +5,8 @@ class SuspensionAnalyzer {
     constructor(socket) {
         this.socket = socket;
         this.elements = this.cacheElements();
-        this.setupOscilloscope();        // Update display elements with converted values
-        this.elements.maxCompression.textContent = `${(this.stats.maxCompression * 1000).toFixed(1)}mm`;
-        this.elements.minCompression.textContent = `${(this.stats.minCompression * 1000).toFixed(1)}mm`;
-        this.elements.avgFront.textContent = `${(this.stats.frontAvg * 1000).toFixed(1)}mm`;
-        this.elements.avgRear.textContent = `${(this.stats.rearAvg * 1000).toFixed(1)}mm`;
-        this.elements.frontBalance.textContent = `${this.stats.frontBalance.toFixed(1)}%`;
-        this.elements.rearBalance.textContent = `${this.stats.rearBalance.toFixed(1)}%`;  this.setupEventListeners();
+        this.setupOscilloscope();
+        this.setupEventListeners();
         
         // Data storage for analysis
         this.suspensionData = {
@@ -31,10 +26,10 @@ class SuspensionAnalyzer {
         
         // Statistics tracking
         this.stats = {
-            maxCompression: 0,
-            minCompression: 0,
-            frontAvg: 0,
-            rearAvg: 0,
+            maxCompressionLF: 0,
+            maxCompressionRF: 0,
+            maxCompressionLR: 0,
+            maxCompressionRR: 0,
             frontBalance: 50,
             rearBalance: 50
         };
@@ -63,10 +58,10 @@ class SuspensionAnalyzer {
             rrFill: document.getElementById('rr-fill'),
             
             // Statistics
-            maxCompression: document.getElementById('max-compression'),
-            minCompression: document.getElementById('min-compression'),
-            avgFront: document.getElementById('avg-front'),
-            avgRear: document.getElementById('avg-rear'),
+            maxCompressionLF: document.getElementById('max-compression-lf'),
+            maxCompressionRF: document.getElementById('max-compression-rf'),
+            maxCompressionLR: document.getElementById('max-compression-lr'),
+            maxCompressionRR: document.getElementById('max-compression-rr'),
             frontBalance: document.getElementById('front-balance'),
             rearBalance: document.getElementById('rear-balance'),
             
@@ -121,13 +116,19 @@ class SuspensionAnalyzer {
         // Travel slider control
         const travelSlider = document.getElementById('travel-slider');
         const travelValue = document.getElementById('travel-value');
-        // Set initial value on page load
-        travelValue.textContent = `${travelSlider.value}mm`;
-        travelSlider.addEventListener('input', (e) => {
-            const mmValue = parseInt(e.target.value);
-            travelValue.textContent = `${mmValue}mm`;
-            this.maxTravel = mmValue / 1000; // Convert mm to meters
-        });
+        
+        if (travelSlider && travelValue) {
+            // Set initial value on page load
+            travelValue.textContent = `${travelSlider.value}mm`;
+            
+            travelSlider.addEventListener('input', (e) => {
+                const mmValue = parseInt(e.target.value);
+                travelValue.textContent = `${mmValue}mm`;
+                this.maxTravel = mmValue / 1000; // Convert mm to meters
+            });
+        } else {
+            console.warn('Travel slider or value element not found');
+        }
         
         // Resize handler
         window.addEventListener('resize', () => {
@@ -262,37 +263,29 @@ class SuspensionAnalyzer {
     }
     
     updateStatistics() {
-        const deflections = [
-            this.suspensionData.lf.deflection,
-            this.suspensionData.rf.deflection,
-            this.suspensionData.lr.deflection,
-            this.suspensionData.rr.deflection
-        ];
-        
-        // Calculate statistics
-        this.stats.maxCompression = Math.max(...deflections);
-        this.stats.minCompression = Math.min(...deflections);
-        
-        this.stats.frontAvg = (this.suspensionData.lf.deflection + this.suspensionData.rf.deflection) / 2;
-        this.stats.rearAvg = (this.suspensionData.lr.deflection + this.suspensionData.rr.deflection) / 2;
+        // Track per-corner max compression
+        this.stats.maxCompressionLF = Math.max(this.stats.maxCompressionLF, Math.abs(this.suspensionData.lf.deflection));
+        this.stats.maxCompressionRF = Math.max(this.stats.maxCompressionRF, Math.abs(this.suspensionData.rf.deflection));
+        this.stats.maxCompressionLR = Math.max(this.stats.maxCompressionLR, Math.abs(this.suspensionData.lr.deflection));
+        this.stats.maxCompressionRR = Math.max(this.stats.maxCompressionRR, Math.abs(this.suspensionData.rr.deflection));
         
         // Balance calculations (left vs right)
-        const frontTotal = this.suspensionData.lf.deflection + this.suspensionData.rf.deflection;
-        const rearTotal = this.suspensionData.lr.deflection + this.suspensionData.rr.deflection;
+        const frontTotal = Math.abs(this.suspensionData.lf.deflection) + Math.abs(this.suspensionData.rf.deflection);
+        const rearTotal = Math.abs(this.suspensionData.lr.deflection) + Math.abs(this.suspensionData.rr.deflection);
         
         if (frontTotal > 0) {
-            this.stats.frontBalance = (this.suspensionData.lf.deflection / frontTotal) * 100;
+            this.stats.frontBalance = (Math.abs(this.suspensionData.lf.deflection) / frontTotal) * 100;
         }
         
         if (rearTotal > 0) {
-            this.stats.rearBalance = (this.suspensionData.lr.deflection / rearTotal) * 100;
+            this.stats.rearBalance = (Math.abs(this.suspensionData.lr.deflection) / rearTotal) * 100;
         }
         
-        // Update display
-        this.elements.maxCompression.textContent = `${this.stats.maxCompression.toFixed(3)}m`;
-        this.elements.minCompression.textContent = `${this.stats.minCompression.toFixed(3)}m`;
-        this.elements.avgFront.textContent = `${this.stats.frontAvg.toFixed(3)}m`;
-        this.elements.avgRear.textContent = `${this.stats.rearAvg.toFixed(3)}m`;
+        // Update display elements with converted values (meters to mm)
+        this.elements.maxCompressionLF.textContent = `${(this.stats.maxCompressionLF * 1000).toFixed(1)}mm`;
+        this.elements.maxCompressionRF.textContent = `${(this.stats.maxCompressionRF * 1000).toFixed(1)}mm`;
+        this.elements.maxCompressionLR.textContent = `${(this.stats.maxCompressionLR * 1000).toFixed(1)}mm`;
+        this.elements.maxCompressionRR.textContent = `${(this.stats.maxCompressionRR * 1000).toFixed(1)}mm`;
         this.elements.frontBalance.textContent = `${this.stats.frontBalance.toFixed(1)}%`;
         this.elements.rearBalance.textContent = `${this.stats.rearBalance.toFixed(1)}%`;
     }
