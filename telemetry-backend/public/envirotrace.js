@@ -101,15 +101,17 @@ class EnviroTrace {
       return;
     }
     
-    // Calculate x scaling based on actual data points to display
-    const pointsToDisplay = Math.min(this.buffer.length, this.options.maxPoints);
-    const xScale = this.canvas.width / pointsToDisplay;
+    // Always scale to full maxPoints for consistent streaming display
+    const xScale = this.canvas.width / this.options.maxPoints;
     const canvasHeight = this.canvas.height;
     
     // Get the most recent data to display (last maxPoints entries)
-    const dataToDisplay = this.buffer.slice(-pointsToDisplay);
+    const dataToDisplay = this.buffer.slice(-this.options.maxPoints);
     
-    console.log(`Drawing ${dataToDisplay.length} points, maxPoints: ${this.options.maxPoints}, xScale: ${xScale.toFixed(2)}`);
+    // Debug logging (less frequent)
+    if (Math.random() < 0.01) {
+      console.log(`Drawing ${dataToDisplay.length} of ${this.buffer.length} total points, maxPoints: ${this.options.maxPoints}, xScale: ${xScale.toFixed(3)}`);
+    }
     
     // Track Temperature (scale from typical range 10-60°C to full canvas height)
     this.ctx.beginPath();
@@ -117,7 +119,8 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.trackTemp === null || point.trackTemp === undefined) return;
-      const x = i * xScale;
+      // Position based on maxPoints scale, with newer data on the right
+      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
       // Scale temperature: map 0-60°C to 0-canvas height
       const y = canvasHeight - ((point.trackTemp / 60) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
@@ -130,7 +133,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.humidity === null || point.humidity === undefined) return;
-      const x = i * xScale;
+      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
       // Humidity: handle both 0-1 decimal and 0-100 percentage formats
       const humidityPercent = point.humidity > 1 ? point.humidity : point.humidity * 100;
       const y = canvasHeight - ((humidityPercent / 100) * canvasHeight);
@@ -144,7 +147,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.precipitation === null || point.precipitation === undefined) return;
-      const x = i * xScale;
+      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
       // Precipitation: handle both 0-1 decimal and 0-100 percentage formats
       const precipitationPercent = point.precipitation > 1 ? point.precipitation : point.precipitation * 100;
       const y = canvasHeight - ((precipitationPercent / 100) * canvasHeight);
@@ -158,7 +161,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.airPressure === null || point.airPressure === undefined) return;
-      const x = i * xScale;
+      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
       // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
       const pressureMbar = point.airPressure * 0.01;
       const y = canvasHeight - (((pressureMbar - 950) / 100) * canvasHeight);
