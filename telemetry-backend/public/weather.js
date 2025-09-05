@@ -27,7 +27,7 @@ function formatValue(value, type) {
     case 'temperature':
       return `${value.toFixed(1)}°C`;
     case 'pressure':
-      return `${(value / 1000).toFixed(1)} mbar`; // Convert Pa to millibar
+      return `${(value / 100).toFixed(1)} mbar`; // Convert Pa to millibar (divide by 100, not 1000)
     case 'percentage':
       return `${(value * 100).toFixed(1)}%`;
     case 'velocity':
@@ -48,6 +48,11 @@ function formatValue(value, type) {
 // Update weather data elements
 function updateWeatherData(values) {
   if (!values) return;
+
+  // Debug: Log track wetness value
+  if (values.TrackWetness !== undefined) {
+    console.log('Track wetness value:', values.TrackWetness, 'Type:', typeof values.TrackWetness);
+  }
 
   // Temperature & Pressure
   safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
