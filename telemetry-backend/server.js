@@ -83,6 +83,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static('public')); // Serve planner frontend
+app.use('/assets', express.static('../assets')); // Serve assets folder
 
 // Socket.io connection handler
 io.on('connection', (socket) => {

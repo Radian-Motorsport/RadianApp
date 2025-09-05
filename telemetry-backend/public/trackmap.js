@@ -30,11 +30,11 @@ class TrackMap {
     
     // Load the car icons
     this.carImg = new Image();
-    this.carImg.src = 'icon-active.png';
+    this.carImg.src = '/assets/icon-active.png';
     this.carAheadImg = new Image();
-    this.carAheadImg.src = 'icon-idle.png';  // Different icon for other cars
+    this.carAheadImg.src = '/assets/icon-idle.png';  // Different icon for other cars
     this.carBehindImg = new Image();
-    this.carBehindImg.src = 'icon-standby.png';  // Different icon for other cars
+    this.carBehindImg.src = '/assets/icon-standby.png';  // Different icon for other cars
     
     // Cache info box elements
     this.cacheInfoElements();
