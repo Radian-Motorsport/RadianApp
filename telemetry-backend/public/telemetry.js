@@ -27,6 +27,8 @@ let stintStartTime = null;
 let lastPitStopTimeValue = null;
 let lastSessionId = null;
 let lastSessionDate = new Date().toDateString();
+let tankCapacity = 104; // Default tank capacity in liters
+let avgFuelPerLap = 0; // Average fuel used per lap
 
 // Previous value tracking for color coding
 let previousValues = {
@@ -584,6 +586,11 @@ function processLapCompletion(lapCompleted, fuel) {
       avgFuelUsed3 = fuelUsageHistory.length >= 3
         ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
         : null;
+      
+      // Update avgFuelPerLap for trackmap usage
+      avgFuelPerLap = avgFuelUsed3 || (fuelUsageHistory.length > 0 
+        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length 
+        : 0);
 
       if (elements.fuelAvg) {
         elements.fuelAvg.textContent = `3-Lap Avg: ${avgFuelUsed3?.toFixed(2) ?? '--'} L`;
@@ -743,6 +750,16 @@ function setupSocketListeners() {
 
       // Update fuel gauge with live data
       const liveFuelLevel = values?.FuelLevel ?? 0;
+      const fuelLevelPct = values?.FuelLevelPct ?? 0;
+      
+      // Update tank capacity if we have both absolute and percentage values
+      if (liveFuelLevel > 0 && fuelLevelPct > 0) {
+        const calculatedCapacity = liveFuelLevel / fuelLevelPct;
+        if (calculatedCapacity > 50 && calculatedCapacity < 200) { // Reasonable range
+          tankCapacity = calculatedCapacity;
+        }
+      }
+      
       updateFuelGauge(liveFuelLevel);
 
       // Update weather data

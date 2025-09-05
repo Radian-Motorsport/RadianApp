@@ -97,13 +97,18 @@ class SuspensionAnalyzer {
     }
     
     setupEventListeners() {
-        // Socket event for telemetry data
+        // Socket event for telemetry data - bind context properly
         this.socket.on('telemetry', (data) => {
             if (data && data.values) {
-                this.updateSuspensionData(data.values);
-                this.updateDisplay();
-                this.updateStatistics();
-                this.updateOscilloscope();
+                console.log('Suspension: Received telemetry data');
+                try {
+                    this.updateSuspensionData(data.values);
+                    this.updateDisplay();
+                    this.updateStatistics();
+                    this.updateOscilloscope();
+                } catch (error) {
+                    console.error('Suspension: Error processing telemetry:', error);
+                }
             }
         });
         
@@ -415,6 +420,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof socket !== 'undefined' && socket) {
             window.suspensionAnalyzer = new SuspensionAnalyzer(socket);
             console.log('SuspensionAnalyzer initialized');
+            
+            // Verify methods are accessible
+            console.log('Methods check:', {
+                updateDisplay: typeof window.suspensionAnalyzer.updateDisplay,
+                updateCornerDisplay: typeof window.suspensionAnalyzer.updateCornerDisplay,
+                updateStatistics: typeof window.suspensionAnalyzer.updateStatistics
+            });
         } else {
             console.warn('Socket not available yet, retrying suspension initialization...');
             setTimeout(initializeSuspension, 500);
