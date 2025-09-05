@@ -116,9 +116,10 @@ class TrackMap {
       this.lapBuffer.push({ x: newX, y: newY });
       this.lapYaw.push(YawNorth);
       
-      // Detect lap wrap
-      if (LapDistPct < this.lastLapPct - 0.5) {
-        console.log('TrackMap: Lap wrap detected!', {
+      // Improved lap wrap detection - look for crossing the start/finish line
+      // Method 1: LapDistPct wrapping from high (>0.9) to low (<0.1)
+      if (this.lastLapPct > 0.9 && LapDistPct < 0.1) {
+        console.log('TrackMap: Lap wrap detected (Method 1)!', {
           LapDistPct,
           lastLapPct: this.lastLapPct,
           lapStarted: this.lapStarted,
@@ -138,6 +139,16 @@ class TrackMap {
           this.finalLapYaw = [...this.lapYaw];
           console.log('TrackMap: Lap completed! Final lap points:', this.finalLap.length);
         }
+      }
+      
+      // Method 2: Alternative detection - if we have enough data points and haven't started yet, force start
+      if (!this.lapStarted && this.lapBuffer.length > 200 && LapDistPct > 0.1) {
+        console.log('TrackMap: Force starting lap due to sufficient data points');
+        this.lapStarted = true;
+        this.currentLap = [...this.lapBuffer];
+        this.lapBuffer = [];
+        this.finalLapYaw = [...this.lapYaw];
+        this.lapYaw = [];
       }
       
       this.lastLapPct = LapDistPct;
