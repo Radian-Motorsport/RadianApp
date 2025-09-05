@@ -1249,6 +1249,76 @@ h2 {
   max-width: 600px; /* Match canvas width */
 }
 
+.weather-style-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.status-group {
+  background: rgba(34, 34, 34, 0.95);
+  border: 1.5px solid #333;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.status-group h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+  color: #ffc800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.status-grid label {
+  color: #4ecdc4;
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+.status-grid span {
+  color: #fff;
+  font-size: 1em;
+}
+
+/* Track Map Legend */
+.track-legend {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0 8px 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1em;
+}
+.legend-icon {
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background: #222;
+}
+.legend-label {
+  font-weight: bold;
+  color: #fff;
+  padding-left: 2px;
+}
+.legend-you { color: #ffc800; }
+.legend-ahead { color: #4ecdc4; }
+.legend-behind { color: #feca57; }
+
 .info-box {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);

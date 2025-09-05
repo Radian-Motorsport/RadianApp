@@ -17,24 +17,39 @@
   <div class="telemetry-block">
     <h2>Track Map</h2>
     <canvas id="trackCanvas" width="600" height="600"></canvas>
-    
-    <!-- Track Info Boxes -->
-    <div class="track-info-grid">
-      <div class="info-box">
+
+    <!-- Track Map Legend -->
+    <div class="track-legend">
+      <span class="legend-item"><img src="../assets/icon-active.png" class="legend-icon" alt="You"> <span class="legend-label legend-you">You</span></span>
+      <span class="legend-item"><img src="../assets/icon-idle.png" class="legend-icon" alt="Car Ahead"> <span class="legend-label legend-ahead">Car Ahead</span></span>
+      <span class="legend-item"><img src="../assets/icon-standby.png" class="legend-icon" alt="Car Behind"> <span class="legend-label legend-behind">Car Behind</span></span>
+    </div>
+
+    <!-- Track Info Boxes (Weather-style grid) -->
+    <div class="track-info-grid weather-style-grid">
+      <div class="status-group">
         <h3>Car Ahead</h3>
-        <div class="info-value" id="carAheadDistance">-- m</div>
+        <div class="status-grid">
+          <div><label>Distance:</label><span id="carAheadDistance">-- m</span></div>
+        </div>
       </div>
-      <div class="info-box">
+      <div class="status-group">
         <h3>Car Behind</h3>
-        <div class="info-value" id="carBehindDistance">-- m</div>
+        <div class="status-grid">
+          <div><label>Distance:</label><span id="carBehindDistance">-- m</span></div>
+        </div>
       </div>
-      <div class="info-box">
+      <div class="status-group">
         <h3>Fuel Level</h3>
-        <div class="info-value" id="fuelLevelPercent">--%</div>
+        <div class="status-grid">
+          <div><label>Percent:</label><span id="fuelLevelPercent">--%</span></div>
+        </div>
       </div>
-      <div class="info-box">
+      <div class="status-group">
         <h3>Estimated Laps</h3>
-        <div class="info-value" id="estimatedLaps">--</div>
+        <div class="status-grid">
+          <div><label>Laps:</label><span id="estimatedLaps">--</span></div>
+        </div>
       </div>
     </div>
   </div>
