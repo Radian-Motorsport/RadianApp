@@ -210,6 +210,8 @@ function setupTimeRangeSlider() {
       const newMaxPoints = Math.round(hours * 3600); // 3600 points per hour (1 point per second)
       window.enviroTrace.updateTimeRange(newMaxPoints);
       console.log(`Updated trace time range to ${hours} hours (${newMaxPoints} points)`);
+      console.log(`Current buffer length: ${window.enviroTrace.buffer.length}`);
+      console.log(`Data collection rate: 1 point per second (sampleRate: ${window.enviroTrace.options.sampleRate} at 10Hz telemetry)`);
     }
   });
   

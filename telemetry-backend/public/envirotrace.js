@@ -29,7 +29,7 @@ class EnviroTrace {
       precipitationColor: options.precipitationColor || '#87CEEB', // Light blue
       airPressureColor: options.airPressureColor || 'hotpink',
       tempScale: options.tempScale || 2, // Scale factor for temperature values
-      sampleRate: options.sampleRate || 60, // Take 1 sample every 60 telemetry updates (~1 second)
+      sampleRate: options.sampleRate || 10, // Take 1 sample every 10 telemetry updates (~1 second at 10Hz)
       ...options
     };
     
@@ -101,15 +101,21 @@ class EnviroTrace {
       return;
     }
     
-    // Calculate x scaling based on number of points and canvas width
-    const xScale = this.canvas.width / this.options.maxPoints;
+    // Calculate x scaling based on actual data points to display
+    const pointsToDisplay = Math.min(this.buffer.length, this.options.maxPoints);
+    const xScale = this.canvas.width / pointsToDisplay;
     const canvasHeight = this.canvas.height;
+    
+    // Get the most recent data to display (last maxPoints entries)
+    const dataToDisplay = this.buffer.slice(-pointsToDisplay);
+    
+    console.log(`Drawing ${dataToDisplay.length} points, maxPoints: ${this.options.maxPoints}, xScale: ${xScale.toFixed(2)}`);
     
     // Track Temperature (scale from typical range 10-60°C to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.trackTempColor;
     this.ctx.lineWidth = 1.5;
-    this.buffer.forEach((point, i) => {
+    dataToDisplay.forEach((point, i) => {
       if (point.trackTemp === null || point.trackTemp === undefined) return;
       const x = i * xScale;
       // Scale temperature: map 0-60°C to 0-canvas height
@@ -122,7 +128,7 @@ class EnviroTrace {
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.humidityColor;
     this.ctx.lineWidth = 1.5;
-    this.buffer.forEach((point, i) => {
+    dataToDisplay.forEach((point, i) => {
       if (point.humidity === null || point.humidity === undefined) return;
       const x = i * xScale;
       // Humidity: handle both 0-1 decimal and 0-100 percentage formats
@@ -136,7 +142,7 @@ class EnviroTrace {
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.precipitationColor;
     this.ctx.lineWidth = 1.5;
-    this.buffer.forEach((point, i) => {
+    dataToDisplay.forEach((point, i) => {
       if (point.precipitation === null || point.precipitation === undefined) return;
       const x = i * xScale;
       // Precipitation: handle both 0-1 decimal and 0-100 percentage formats
@@ -150,7 +156,7 @@ class EnviroTrace {
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.airPressureColor;
     this.ctx.lineWidth = 1.5;
-    this.buffer.forEach((point, i) => {
+    dataToDisplay.forEach((point, i) => {
       if (point.airPressure === null || point.airPressure === undefined) return;
       const x = i * xScale;
       // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
