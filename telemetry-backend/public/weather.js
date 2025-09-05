@@ -12,12 +12,21 @@ function safeUpdateElement(id, value) {
   const element = document.getElementById(id);
   if (element) {
     element.textContent = value;
+    console.log(`Updated ${id} with value: ${value}`); // Debug log
+  } else {
+    console.warn(`Element with ID '${id}' not found!`);
   }
 }
 
 // Lookup tables for weather conditions
 const skiesMap = {0: 'Clear', 1: 'Partly Cloudy', 2: 'Mostly Cloudy', 3: 'Overcast'};
-const wetnessMap = {0: 'Dry', 1: 'Mostly Dry', 2: 'Very Lightly Wet', 3: 'Lightly Wet', 4: 'Moderately Wet', 5: 'Very Wet', 6: 'Extremely Wet'};
+const wetnessMap = {
+  // Integer values (if they come as numbers)
+  0: 'Dry', 1: 'Mostly Dry', 2: 'Very Lightly Wet', 3: 'Lightly Wet', 4: 'Moderately Wet', 5: 'Very Wet', 6: 'Extremely Wet',
+  // String values (if they come as strings)
+  'Dry': 'Dry', 'Mostly Dry': 'Mostly Dry', 'Very Lightly Wet': 'Very Lightly Wet', 
+  'Lightly Wet': 'Lightly Wet', 'Moderately Wet': 'Moderately Wet', 'Very Wet': 'Very Wet', 'Extremely Wet': 'Extremely Wet'
+};
 
 // Format values for display
 function formatValue(value, type) {
@@ -39,7 +48,12 @@ function formatValue(value, type) {
     case 'skies':
       return skiesMap[value] || '--';
     case 'wetness':
-      return wetnessMap[value] || '--';
+      // Handle both string and integer values
+      if (typeof value === 'string') {
+        return value; // If it's already a string like "Mostly Dry", return it directly
+      } else {
+        return wetnessMap[value] || '--'; // If it's a number, use the lookup table
+      }
     default:
       return typeof value === 'number' ? value.toFixed(2) : value;
   }
@@ -49,9 +63,28 @@ function formatValue(value, type) {
 function updateWeatherData(values) {
   if (!values) return;
 
-  // Debug: Log track wetness value
-  if (values.TrackWetness !== undefined) {
-    console.log('Track wetness value:', values.TrackWetness, 'Type:', typeof values.TrackWetness);
+  // Debug: Log function call
+  if (Math.random() < 0.05) { // 5% chance
+    console.log('updateWeatherData called with TrackWetness:', values.TrackWetness);
+  }
+
+  // Debug: Log track wetness value and related fields (occasionally to avoid spam)
+  if (Math.random() < 0.05) { // 5% chance
+    console.log('Full weather telemetry sample:', {
+      TrackWetness: values.TrackWetness,
+      TrackSurfaceTemp: values.TrackSurfaceTemp,
+      WeatherType: values.WeatherType,
+      SessionFlags: values.SessionFlags,
+      TrackTemp: values.TrackTemp,
+      Precipitation: values.Precipitation
+    });
+    
+    // Check for alternative wetness field names by looking for any field with "wet" in the name
+    Object.keys(values).forEach(key => {
+      if (key.toLowerCase().includes('wet') || key.toLowerCase().includes('moisture') || key.toLowerCase().includes('surface')) {
+        console.log(`Potential wetness field ${key}:`, values[key]);
+      }
+    });
   }
 
   // Temperature & Pressure
@@ -68,7 +101,16 @@ function updateWeatherData(values) {
   // Track Conditions
   safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percentage'));
   safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percentage'));
-  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'wetness'));
+  
+  // Debug track wetness specifically
+  const wetnessValue = formatValue(values.TrackWetness, 'wetness');
+  console.log('Track wetness formatting:', {
+    rawValue: values.TrackWetness,
+    formattedValue: wetnessValue,
+    elementExists: !!document.getElementById('TrackWetness')
+  });
+  
+  safeUpdateElement('TrackWetness', wetnessValue);
   safeUpdateElement('FogLevel', formatValue(values.FogLevel, 'percentage'));
 }
 
