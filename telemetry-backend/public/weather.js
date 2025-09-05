@@ -106,16 +106,19 @@ document.addEventListener('DOMContentLoaded', () => {
     safeUpdateElement(field, '--');
   });
   
+  // Set up time range slider
+  setupTimeRangeSlider();
+  
   // Initialize the environment trace visualization
   // Wait for socket to be available from telemetry.js
   if (typeof socket !== 'undefined') {
-    window.enviroTrace = new EnviroTrace(socket, 'envCanvas');
+    window.enviroTrace = new EnviroTrace(socket, 'envCanvas', { maxPoints: 3600 });
     console.log('EnviroTrace initialized');
   } else {
     // If socket not ready yet, wait a bit and try again
     setTimeout(() => {
       if (typeof socket !== 'undefined') {
-        window.enviroTrace = new EnviroTrace(socket, 'envCanvas');
+        window.enviroTrace = new EnviroTrace(socket, 'envCanvas', { maxPoints: 3600 });
         console.log('EnviroTrace initialized (delayed)');
       } else {
         console.error('Socket not available for EnviroTrace initialization');
@@ -123,3 +126,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   }
 });
+
+// Set up time range slider functionality
+function setupTimeRangeSlider() {
+  const slider = document.getElementById('timeRangeSlider');
+  const valueDisplay = document.getElementById('timeRangeValue');
+  
+  if (!slider || !valueDisplay) {
+    console.warn('Time range slider elements not found');
+    return;
+  }
+  
+  // Update display text
+  function updateTimeDisplay(hours) {
+    if (hours < 1) {
+      valueDisplay.textContent = `${hours * 60} minutes`;
+    } else if (hours === 1) {
+      valueDisplay.textContent = '1 hour';
+    } else {
+      valueDisplay.textContent = `${hours} hours`;
+    }
+  }
+  
+  // Handle slider changes
+  slider.addEventListener('input', (e) => {
+    const hours = parseFloat(e.target.value);
+    updateTimeDisplay(hours);
+    
+    // Update EnviroTrace if it exists
+    if (window.enviroTrace) {
+      const newMaxPoints = hours * 3600; // 3600 points per hour
+      window.enviroTrace.updateTimeRange(newMaxPoints);
+      console.log(`Updated trace time range to ${hours} hours (${newMaxPoints} points)`);
+    }
+  });
+  
+  // Set initial display
+  updateTimeDisplay(parseFloat(slider.value));
+}

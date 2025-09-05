@@ -200,6 +200,22 @@ class EnviroTrace {
   }
   
   /**
+   * Update the time range for the trace
+   * @param {number} newMaxPoints - New maximum number of data points to display
+   */
+  updateTimeRange(newMaxPoints) {
+    this.options.maxPoints = newMaxPoints;
+    
+    // Trim existing data if necessary
+    if (this.buffer.length > newMaxPoints) {
+      const pointsToRemove = this.buffer.length - newMaxPoints;
+      this.buffer.splice(0, pointsToRemove);
+    }
+    
+    console.log(`EnviroTrace: Updated time range to ${newMaxPoints} points`);
+  }
+  
+  /**
    * Set up automatic saving to localStorage
    */
   setupAutoSave() {

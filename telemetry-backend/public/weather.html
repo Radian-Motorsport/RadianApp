@@ -7,7 +7,33 @@
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    .trace-controls {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .trace-controls label {
+      color: #fff;
+      font-weight: bold;
+    }
+    
+    #timeRangeSlider {
+      flex: 1;
+      max-width: 200px;
+    }
+    
+    #timeRangeValue {
+      color: #4CAF50;
+      font-weight: bold;
+      min-width: 60px;
+    }
+  </style>
 </head>
 <body>
   <!-- Top Bar -->
@@ -16,6 +42,14 @@
   <!-- Environment Section -->
   <div class="telemetry-block">
     <h2>Environment & Weather</h2>
+    
+    <!-- Time Range Control -->
+    <div class="trace-controls">
+      <label for="timeRangeSlider">Time Range: </label>
+      <input type="range" id="timeRangeSlider" min="0.5" max="2" value="1" step="0.5">
+      <span id="timeRangeValue">1 hour</span>
+    </div>
+    
     <canvas id="envCanvas" width="600" height="200"></canvas>
     
     <!-- Environment Graph Legend -->
