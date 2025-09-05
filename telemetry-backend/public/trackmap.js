@@ -67,6 +67,19 @@ class TrackMap {
       const values = data?.values;
       if (!values) return;
       
+      // Debug: Log every 100th telemetry update to avoid spam
+      if (Math.random() < 0.01) {
+        console.log('TrackMap: Telemetry received', {
+          Speed: values.Speed,
+          YawNorth: values.YawNorth,
+          LapDistPct: values.LapDistPct,
+          lapStarted: this.lapStarted,
+          lapCompleted: this.lapCompleted,
+          bufferLength: this.lapBuffer.length,
+          finalLapLength: this.finalLap.length
+        });
+      }
+      
       const { Speed, YawNorth, LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct } = values;
       
       // Update car distance and fuel data
@@ -105,16 +118,25 @@ class TrackMap {
       
       // Detect lap wrap
       if (LapDistPct < this.lastLapPct - 0.5) {
+        console.log('TrackMap: Lap wrap detected!', {
+          LapDistPct,
+          lastLapPct: this.lastLapPct,
+          lapStarted: this.lapStarted,
+          bufferLength: this.lapBuffer.length
+        });
+        
         if (!this.lapStarted) {
           this.lapStarted = true;
           this.currentLap = [...this.lapBuffer];
           this.lapBuffer = [];
           this.finalLapYaw = [...this.lapYaw];
           this.lapYaw = [];
+          console.log('TrackMap: First lap started, buffer cleared');
         } else {
           this.lapCompleted = true;
           this.finalLap = [...this.lapBuffer];
           this.finalLapYaw = [...this.lapYaw];
+          console.log('TrackMap: Lap completed! Final lap points:', this.finalLap.length);
         }
       }
       
@@ -351,6 +373,16 @@ class TrackMap {
   // Draw the track
   drawTrack() {
     this.trackCtx.clearRect(0, 0, this.trackCanvas.width, this.trackCanvas.height);
+    
+    // Debug: Log drawing status occasionally
+    if (Math.random() < 0.001) { // Very rarely to avoid spam
+      console.log('TrackMap: Drawing called', {
+        finalLapLength: this.finalLap.length,
+        lapCompleted: this.lapCompleted,
+        lapStarted: this.lapStarted,
+        bufferLength: this.lapBuffer.length
+      });
+    }
     
     if (this.finalLap.length > 0) {
       let smoothed = this.smooth(this.finalLap);
