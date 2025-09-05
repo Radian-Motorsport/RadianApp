@@ -200,14 +200,36 @@ function setupTimeRangeSlider() {
     const hours = parseFloat(e.target.value);
     updateTimeDisplay(hours);
     
+    // Save slider position to localStorage
+    if (window.storageManager) {
+      window.storageManager.save('weatherTimeRange', hours);
+    }
+    
     // Update EnviroTrace if it exists
     if (window.enviroTrace) {
-      const newMaxPoints = hours * 3600; // 3600 points per hour
+      const newMaxPoints = Math.round(hours * 3600); // 3600 points per hour (1 point per second)
       window.enviroTrace.updateTimeRange(newMaxPoints);
       console.log(`Updated trace time range to ${hours} hours (${newMaxPoints} points)`);
     }
   });
   
+  // Load saved slider position
+  let savedTimeRange = 1; // default to 1 hour
+  if (window.storageManager) {
+    const saved = window.storageManager.load('weatherTimeRange');
+    if (saved && saved.data) {
+      savedTimeRange = saved.data;
+      slider.value = savedTimeRange;
+      
+      // Update EnviroTrace with saved value
+      if (window.enviroTrace) {
+        const newMaxPoints = Math.round(savedTimeRange * 3600);
+        window.enviroTrace.updateTimeRange(newMaxPoints);
+        console.log(`Restored time range to ${savedTimeRange} hours (${newMaxPoints} points)`);
+      }
+    }
+  }
+  
   // Set initial display
-  updateTimeDisplay(parseFloat(slider.value));
+  updateTimeDisplay(savedTimeRange);
 }

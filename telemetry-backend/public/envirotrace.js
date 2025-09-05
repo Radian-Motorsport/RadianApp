@@ -26,7 +26,7 @@ class EnviroTrace {
       trackTempColor: options.trackTempColor || 'orange',
       airTempColor: options.airTempColor || 'cyan',
       humidityColor: options.humidityColor || 'purple',
-      skiesColor: options.skiesColor || 'blue',
+      precipitationColor: options.precipitationColor || '#87CEEB', // Light blue
       airPressureColor: options.airPressureColor || 'hotpink',
       tempScale: options.tempScale || 2, // Scale factor for temperature values
       sampleRate: options.sampleRate || 60, // Take 1 sample every 60 telemetry updates (~1 second)
@@ -67,7 +67,7 @@ class EnviroTrace {
       this.buffer.push({
         trackTemp: values.TrackTemp,
         humidity: values.RelativeHumidity,
-        skies: values.Skies, // Store raw 0-3 value, scaling handled in drawing
+        precipitation: values.Precipitation, // Store precipitation instead of skies
         airPressure: values.AirPressure, // Store in Pa, will convert to mbar for display
         timestamp: Date.now() // Add timestamp for persistence filtering
       });
@@ -132,15 +132,16 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
-    // Skies (0-3 scaled to 0-100% of canvas height) 
+    // Precipitation (0-1 or 0-100% scaled to canvas height)
     this.ctx.beginPath();
-    this.ctx.strokeStyle = this.options.skiesColor;
+    this.ctx.strokeStyle = this.options.precipitationColor;
     this.ctx.lineWidth = 1.5;
     this.buffer.forEach((point, i) => {
-      if (point.skies === null || point.skies === undefined) return;
+      if (point.precipitation === null || point.precipitation === undefined) return;
       const x = i * xScale;
-      // Skies: map 0-3 to full canvas height (0=0%, 1=33%, 2=67%, 3=100%)
-      const y = canvasHeight - ((point.skies / 3) * canvasHeight);
+      // Precipitation: handle both 0-1 decimal and 0-100 percentage formats
+      const precipitationPercent = point.precipitation > 1 ? point.precipitation : point.precipitation * 100;
+      const y = canvasHeight - ((precipitationPercent / 100) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
     });
     this.ctx.stroke();
