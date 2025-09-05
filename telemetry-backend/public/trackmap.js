@@ -225,7 +225,16 @@ class TrackMap {
         // Draw ahead car with different color/icon
         this.trackCtx.save();
         this.trackCtx.globalAlpha = 0.8;
-        this.trackCtx.drawImage(this.carAheadImg, aheadX - iconSize / 2, aheadY - iconSize / 2, iconSize, iconSize);
+        
+        if (this.carAheadImg && this.carAheadImg.complete) {
+          this.trackCtx.drawImage(this.carAheadImg, aheadX - iconSize / 2, aheadY - iconSize / 2, iconSize, iconSize);
+        } else {
+          // Fallback: draw a colored circle
+          this.trackCtx.fillStyle = '#4ecdc4';
+          this.trackCtx.beginPath();
+          this.trackCtx.arc(aheadX, aheadY, 6, 0, 2 * Math.PI);
+          this.trackCtx.fill();
+        }
         
         // Add small label
         this.trackCtx.fillStyle = '#4ecdc4';
@@ -248,7 +257,16 @@ class TrackMap {
         // Draw behind car with different color/icon
         this.trackCtx.save();
         this.trackCtx.globalAlpha = 0.8;
-        this.trackCtx.drawImage(this.carBehindImg, behindX - iconSize / 2, behindY - iconSize / 2, iconSize, iconSize);
+        
+        if (this.carBehindImg && this.carBehindImg.complete) {
+          this.trackCtx.drawImage(this.carBehindImg, behindX - iconSize / 2, behindY - iconSize / 2, iconSize, iconSize);
+        } else {
+          // Fallback: draw a colored circle
+          this.trackCtx.fillStyle = '#feca57';
+          this.trackCtx.beginPath();
+          this.trackCtx.arc(behindX, behindY, 6, 0, 2 * Math.PI);
+          this.trackCtx.fill();
+        }
         
         // Add small label
         this.trackCtx.fillStyle = '#feca57';
@@ -477,7 +495,27 @@ class TrackMap {
         const markerY = py * autoScale + offsetY;
         
         const iconSize = 16;
-        this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+        
+        // Debug car image and drawing
+        if (Math.random() < 0.02) {
+          console.log('Drawing player car:', {
+            carImgLoaded: this.carImg && this.carImg.complete,
+            markerX: markerX.toFixed(1),
+            markerY: markerY.toFixed(1),
+            smoothedLength: smoothed.length
+          });
+        }
+        
+        // Draw the car image if loaded
+        if (this.carImg && this.carImg.complete) {
+          this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+        } else {
+          // Fallback: draw a colored circle if image not loaded
+          this.trackCtx.fillStyle = '#ff6b6b';
+          this.trackCtx.beginPath();
+          this.trackCtx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
+          this.trackCtx.fill();
+        }
         
         // Debug position calculation (occasionally)
         if (Math.random() < 0.01) {

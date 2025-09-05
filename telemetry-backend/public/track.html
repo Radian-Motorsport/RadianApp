@@ -73,9 +73,12 @@
           const deleteBtn = document.getElementById('deleteTrackBtn');
           if (deleteBtn) {
             deleteBtn.addEventListener('click', function() {
-              if (window.trackMap) {
+              console.log('Delete button clicked, trackMap:', window.trackMap);
+              if (window.trackMap && typeof window.trackMap.deleteTrackData === 'function') {
                 window.trackMap.deleteTrackData();
                 console.log('Track data deleted - will regenerate on next lap');
+              } else {
+                console.error('TrackMap instance or deleteTrackData method not available');
               }
             });
           }
