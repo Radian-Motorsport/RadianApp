@@ -121,7 +121,8 @@ class SuspensionAnalyzer {
         // Travel slider control
         const travelSlider = document.getElementById('travel-slider');
         const travelValue = document.getElementById('travel-value');
-        
+        // Set initial value on page load
+        travelValue.textContent = `${travelSlider.value}mm`;
         travelSlider.addEventListener('input', (e) => {
             const mmValue = parseInt(e.target.value);
             travelValue.textContent = `${mmValue}mm`;
