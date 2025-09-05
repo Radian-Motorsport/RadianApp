@@ -217,6 +217,20 @@ class StorageManager {
   }
 
   /**
+   * Clear specific visualization data
+   * @param {string} component - Component name (enviroTrace, pedalTrace, trackMap)
+   */
+  clearVisualizationData(component) {
+    const key = this.storageKeys[component];
+    if (key) {
+      localStorage.removeItem(key);
+      console.log(`StorageManager: Cleared ${component} data`);
+    } else {
+      console.warn(`StorageManager: Unknown component ${component}`);
+    }
+  }
+
+  /**
    * Get storage usage information
    * @returns {object} - Storage usage stats
    */

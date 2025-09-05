@@ -747,6 +747,31 @@ h2 {
   margin-top: 0;
   border-bottom: 1px solid #333;
   padding-bottom: 8px;
+  position: relative;
+}
+
+/* Delete track data button */
+.delete-track-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  float: right;
+  margin-top: -2px;
+}
+
+.delete-track-btn:hover {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+  transform: scale(1.1);
+}
+
+.delete-track-btn:active {
+  transform: scale(0.95);
 }
 
 .telemetry-block h3 {

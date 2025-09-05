@@ -295,7 +295,7 @@ class TrackMap {
   }
   
   // Smoothing Function
-  smooth(points, windowSize = 5) {
+  smooth(points, windowSize = 3) {
     return points.map((pt, i) => {
       const slice = points.slice(Math.max(0, i - windowSize), i + 1);
       const avgX = slice.reduce((sum, p) => sum + p.x, 0) / slice.length;
@@ -467,18 +467,6 @@ class TrackMap {
           if (pct > 1) pct -= 1;
         }
         
-        // Debug position calculation
-        if (Math.random() < 0.01) { // Log occasionally to avoid spam
-          console.log('Player position debug:', {
-            liveLapPct: this.liveLapPct.toFixed(4),
-            prevLapPct: this.prevLapPct.toFixed(4),
-            targetLapPct: this.targetLapPct.toFixed(4),
-            elapsed: elapsed.toFixed(3),
-            lerpFactor: lerpFactor.toFixed(3),
-            finalPct: pct.toFixed(4)
-          });
-        }
-        
         const idx = Math.floor(pct * smoothed.length);
         const nextIdx = (idx + 1) % smoothed.length;
         const t = (pct * smoothed.length) - idx;
@@ -490,6 +478,16 @@ class TrackMap {
         
         const iconSize = 16;
         this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+        
+        // Debug position calculation (occasionally)
+        if (Math.random() < 0.01) {
+          console.log('Player position:', {
+            liveLapPct: this.liveLapPct.toFixed(4),
+            finalPct: pct.toFixed(4),
+            markerX: markerX.toFixed(1),
+            markerY: markerY.toFixed(1)
+          });
+        }
         
         // Draw car ahead and behind if distances are available and reasonable
         this.drawCarAheadBehind(smoothed, autoScale, offsetX, offsetY, pct, iconSize);
@@ -520,6 +518,29 @@ class TrackMap {
     } catch (error) {
       console.warn('TrackMap: Failed to load data from storage:', error);
     }
+  }
+  
+  /**
+   * Delete track data and reset for regeneration
+   */
+  deleteTrackData() {
+    // Clear all track data
+    this.finalLap = [];
+    this.finalLapYaw = [];
+    this.lapBuffer = [];
+    this.lapYaw = [];
+    this.lapStarted = false;
+    this.lapCompleted = false;
+    
+    // Clear storage
+    if (window.storageManager) {
+      window.storageManager.clearVisualizationData('trackMap');
+    }
+    
+    // Clear canvas
+    this.trackCtx.clearRect(0, 0, this.trackCanvas.width, this.trackCanvas.height);
+    
+    console.log('Track data deleted - track will regenerate on next lap');
   }
   
   /**
