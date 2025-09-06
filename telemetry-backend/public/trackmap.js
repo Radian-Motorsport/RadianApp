@@ -10,15 +10,19 @@ class TrackMap {
     this.startPosition = 0;
     
     // Car positioning data
-    this.fuelLevel = 0;
-    this.fuelLevelPct = 0;
-    this.tankCapacity = 104;
-    this.avgFuelPerLap = 0;
-    
-    // Car distance data
     this.carDistAhead = null;
     this.carDistBehind = null;
     this.trackLength = 0; // Will be calculated from track data
+    
+    // Class position tracking
+    this.playerCarIdx = null;
+    this.playerClassPosition = null;
+    this.carIdxClassPosition = null; // Array of all car positions
+    this.carIdxLapDistPct = null; // Array of all car lap distances
+    this.carIdxLapCompleted = null; // Array of all car lap counts
+    this.playerLapCompleted = null; // Player's lap count
+    this.carAheadIdx = null;
+    this.carBehindIdx = null;
     
     // Cache info box elements
     this.cacheInfoElements();
@@ -70,6 +74,13 @@ class TrackMap {
     this.carAheadMarker.setAttribute('stroke-width', '0.3');
     this.carAheadMarker.style.display = 'none'; // Hidden by default
     
+    // Create car ahead lap indicator ring
+    this.carAheadRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    this.carAheadRing.setAttribute('r', '2.5');
+    this.carAheadRing.setAttribute('fill', 'none');
+    this.carAheadRing.setAttribute('stroke-width', '0.8');
+    this.carAheadRing.style.display = 'none'; // Hidden by default
+    
     // Add title for tooltip
     const aheadTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
     aheadTitle.textContent = 'Car Ahead';
@@ -83,6 +94,13 @@ class TrackMap {
     this.carBehindMarker.setAttribute('stroke-width', '0.3');
     this.carBehindMarker.style.display = 'none'; // Hidden by default
     
+    // Create car behind lap indicator ring
+    this.carBehindRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    this.carBehindRing.setAttribute('r', '2.5');
+    this.carBehindRing.setAttribute('fill', 'none');
+    this.carBehindRing.setAttribute('stroke-width', '0.8');
+    this.carBehindRing.style.display = 'none'; // Hidden by default
+    
     // Add title for tooltip
     const behindTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
     behindTitle.textContent = 'Car Behind';
@@ -92,7 +110,9 @@ class TrackMap {
     this.svg.appendChild(this.trackPath);
     this.svg.appendChild(this.startFinishRect);
     this.svg.appendChild(this.carMarker);
+    this.svg.appendChild(this.carAheadRing);
     this.svg.appendChild(this.carAheadMarker);
+    this.svg.appendChild(this.carBehindRing);
     this.svg.appendChild(this.carBehindMarker);
     
     // Add corner numbers
@@ -184,31 +204,139 @@ class TrackMap {
   }
   
   updateRelativeCarPositions() {
-    // Update car ahead position
-    if (this.carDistAhead !== null && this.carDistAhead > 0 && this.trackLength > 0) {
-      const aheadLapPct = this.calculateRelativeLapPct(this.carDistAhead, true);
+    // Update car ahead position using class position data
+    if (this.carAheadIdx !== null && this.carIdxLapDistPct && this.carIdxLapDistPct[this.carAheadIdx] !== undefined) {
+      const aheadLapPct = this.carIdxLapDistPct[this.carAheadIdx];
       const aheadPositionAlongPath = (this.startPosition + (this.pathLength * aheadLapPct)) % this.pathLength;
       const aheadPoint = this.trackPath.getPointAtLength(aheadPositionAlongPath);
       
       this.carAheadMarker.setAttribute('cx', aheadPoint.x);
       this.carAheadMarker.setAttribute('cy', aheadPoint.y);
       this.carAheadMarker.style.display = 'block';
+      
+      // Update lap indicator ring
+      this.carAheadRing.setAttribute('cx', aheadPoint.x);
+      this.carAheadRing.setAttribute('cy', aheadPoint.y);
+      this.updateLapIndicator(this.carAheadIdx, this.carAheadRing);
+      
+      // Calculate and display distance
+      if (this.trackLength > 0) {
+        const distanceDiff = this.calculateDistanceBetweenCars(this.liveLapPct, aheadLapPct);
+        if (this.carAheadElement) {
+          this.carAheadElement.textContent = distanceDiff.toFixed(2) + ' m';
+        }
+      }
     } else {
       this.carAheadMarker.style.display = 'none';
+      this.carAheadRing.style.display = 'none';
+      if (this.carAheadElement) {
+        this.carAheadElement.textContent = '-- m';
+      }
     }
     
-    // Update car behind position
-    if (this.carDistBehind !== null && this.carDistBehind > 0 && this.trackLength > 0) {
-      const behindLapPct = this.calculateRelativeLapPct(this.carDistBehind, false);
+    // Update car behind position using class position data
+    if (this.carBehindIdx !== null && this.carIdxLapDistPct && this.carIdxLapDistPct[this.carBehindIdx] !== undefined) {
+      const behindLapPct = this.carIdxLapDistPct[this.carBehindIdx];
       const behindPositionAlongPath = (this.startPosition + (this.pathLength * behindLapPct)) % this.pathLength;
       const behindPoint = this.trackPath.getPointAtLength(behindPositionAlongPath);
       
       this.carBehindMarker.setAttribute('cx', behindPoint.x);
       this.carBehindMarker.setAttribute('cy', behindPoint.y);
       this.carBehindMarker.style.display = 'block';
+      
+      // Update lap indicator ring
+      this.carBehindRing.setAttribute('cx', behindPoint.x);
+      this.carBehindRing.setAttribute('cy', behindPoint.y);
+      this.updateLapIndicator(this.carBehindIdx, this.carBehindRing);
+      
+      // Calculate and display distance
+      if (this.trackLength > 0) {
+        const distanceDiff = this.calculateDistanceBetweenCars(behindLapPct, this.liveLapPct);
+        if (this.carBehindElement) {
+          this.carBehindElement.textContent = distanceDiff.toFixed(2) + ' m';
+        }
+      }
     } else {
       this.carBehindMarker.style.display = 'none';
+      this.carBehindRing.style.display = 'none';
+      if (this.carBehindElement) {
+        this.carBehindElement.textContent = '-- m';
+      }
     }
+  }
+  
+  updateLapIndicator(carIdx, ringElement) {
+    if (!this.carIdxLapCompleted || this.playerLapCompleted === null || carIdx === null) {
+      ringElement.style.display = 'none';
+      return;
+    }
+    
+    const carLapCompleted = this.carIdxLapCompleted[carIdx];
+    if (carLapCompleted === undefined) {
+      ringElement.style.display = 'none';
+      return;
+    }
+    
+    const lapDifference = carLapCompleted - this.playerLapCompleted;
+    
+    if (lapDifference === 0) {
+      // Same lap - no ring
+      ringElement.style.display = 'none';
+    } else if (lapDifference < 0) {
+      // Car is behind by laps - green ring
+      ringElement.setAttribute('stroke', '#00ff00');
+      ringElement.style.display = 'block';
+    } else {
+      // Car is ahead by laps - red ring
+      ringElement.setAttribute('stroke', '#ff0000');
+      ringElement.style.display = 'block';
+    }
+  }
+  
+  calculateDistanceBetweenCars(lapPct1, lapPct2) {
+    // Calculate distance between two cars based on their lap percentages
+    let diff = Math.abs(lapPct2 - lapPct1);
+    
+    // Handle wrap-around case (one car near finish, other near start)
+    if (diff > 0.5) {
+      diff = 1.0 - diff;
+    }
+    
+    return diff * this.trackLength;
+  }
+  
+  findCarsAheadAndBehind() {
+    if (!this.carIdxClassPosition || !this.playerCarIdx || this.playerClassPosition === null) {
+      this.carAheadIdx = null;
+      this.carBehindIdx = null;
+      return;
+    }
+    
+    // Find car ahead (one position better/lower number)
+    const positionAhead = this.playerClassPosition - 1;
+    this.carAheadIdx = null;
+    if (positionAhead > 0) {
+      // Find car with position ahead
+      for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
+        if (this.carIdxClassPosition[carIdx] === positionAhead) {
+          this.carAheadIdx = carIdx;
+          break;
+        }
+      }
+    }
+    
+    // Find car behind (one position worse/higher number)
+    const positionBehind = this.playerClassPosition + 1;
+    this.carBehindIdx = null;
+    // Find car with position behind
+    for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
+      if (this.carIdxClassPosition[carIdx] === positionBehind) {
+        this.carBehindIdx = carIdx;
+        break;
+      }
+    }
+    
+    console.log(`Player position: ${this.playerClassPosition}, Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
   }
   
   calculateRelativeLapPct(distance, isAhead) {
@@ -232,11 +360,10 @@ class TrackMap {
   }
 
   cacheInfoElements() {
-    this.fuelLevelElement = document.getElementById('fuelLevelPercent');
-    this.estimatedLapsElement = document.getElementById('estimatedLaps');
     this.carAheadElement = document.getElementById('carAheadDistance');
     this.carBehindElement = document.getElementById('carBehindDistance');
     this.lapDistPctElement = document.getElementById('lapDistPct');
+    this.classPositionElement = document.getElementById('classPosition');
   }
 
   setupListeners() {
@@ -253,48 +380,51 @@ class TrackMap {
         const values = data?.values;
         if (!values) return;
         
+        // Update player car index
+        if (values.PlayerCarIdx !== undefined) {
+          this.playerCarIdx = values.PlayerCarIdx;
+        }
+        
+        // Update class position arrays
+        if (values.CarIdxClassPosition !== undefined) {
+          this.carIdxClassPosition = values.CarIdxClassPosition;
+          
+          // Get player's current class position
+          if (this.playerCarIdx !== null && this.carIdxClassPosition[this.playerCarIdx] !== undefined) {
+            this.playerClassPosition = this.carIdxClassPosition[this.playerCarIdx];
+            
+            // Update class position display
+            if (this.classPositionElement) {
+              this.classPositionElement.textContent = this.playerClassPosition.toString();
+            }
+            
+            // Find cars ahead and behind based on class position
+            this.findCarsAheadAndBehind();
+          }
+        }
+        
+        // Update all cars' lap distance percentages
+        if (values.CarIdxLapDistPct !== undefined) {
+          this.carIdxLapDistPct = values.CarIdxLapDistPct;
+        }
+        
+        // Update all cars' lap completed counts
+        if (values.CarIdxLapCompleted !== undefined) {
+          this.carIdxLapCompleted = values.CarIdxLapCompleted;
+          
+          // Get player's current lap completed
+          if (this.playerCarIdx !== null && this.carIdxLapCompleted[this.playerCarIdx] !== undefined) {
+            this.playerLapCompleted = this.carIdxLapCompleted[this.playerCarIdx];
+          }
+        }
+        
         if (values.LapDistPct !== undefined) {
           this.updateCarPosition(values.LapDistPct);
           if (this.lapDistPctElement) {
             this.lapDistPctElement.textContent = (values.LapDistPct * 100).toFixed(1) + '%';
           }
         }
-        
-        if (values.FuelLevel !== undefined) {
-          this.fuelLevel = values.FuelLevel;
-          this.updateInfoBoxes();
-        }
-        
-        if (values.FuelLevelPct !== undefined) {
-          this.fuelLevelPct = values.FuelLevelPct;
-          this.updateInfoBoxes();
-        }
-        
-        if (values.CarDistAhead !== undefined) {
-          this.carDistAhead = values.CarDistAhead;
-          if (this.carAheadElement) {
-            this.carAheadElement.textContent = values.CarDistAhead.toFixed(2) + ' m';
-          }
-        }
-        
-        if (values.CarDistBehind !== undefined) {
-          this.carDistBehind = values.CarDistBehind;
-          if (this.carBehindElement) {
-            this.carBehindElement.textContent = values.CarDistBehind.toFixed(2) + ' m';
-          }
-        }
       });
-    }
-  }
-
-  updateInfoBoxes() {
-    if (this.fuelLevelElement && this.fuelLevelPct !== undefined) {
-      this.fuelLevelElement.textContent = (this.fuelLevelPct * 100).toFixed(1) + '%';
-    }
-    
-    if (this.estimatedLapsElement && this.avgFuelPerLap > 0 && this.fuelLevel !== undefined) {
-      const estimatedLaps = this.fuelLevel / this.avgFuelPerLap;
-      this.estimatedLapsElement.textContent = estimatedLaps.toFixed(1);
     }
   }
 }

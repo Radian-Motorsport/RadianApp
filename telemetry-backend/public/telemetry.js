@@ -825,7 +825,7 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
       
       console.log(`3-lap fuel average: ${previousValues.fuelAvg?.toFixed(2) ?? 'null'}`);
       
-      // Update avgFuelPerLap for trackmap usage
+      // Update avgFuelPerLap for general usage
       avgFuelPerLap = previousValues.fuelAvg || (fuelUsageHistory.length > 0 
         ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length 
         : 0);
