@@ -8,12 +8,25 @@ const inputsElements = {};
 
 // Time formatting function
 function formatTimeHMS(timeInSeconds) {
-  if (isNaN(timeInSeconds) || timeInSeconds == null) return '--:--:--';
+  // Debug logging to see what value we're getting
+  console.log('formatTimeHMS received:', timeInSeconds, 'type:', typeof timeInSeconds);
   
-  const hours = Math.floor(timeInSeconds / 3600);
-  const minutes = Math.floor((timeInSeconds % 3600) / 60);
-  const seconds = Math.floor(timeInSeconds % 60);
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  if (isNaN(timeInSeconds) || timeInSeconds == null || timeInSeconds === undefined) {
+    console.log('formatTimeHMS returning fallback for invalid value');
+    return '--:--:--';
+  }
+  
+  // Round to nearest second to handle decimal precision
+  const totalSeconds = Math.round(timeInSeconds);
+  
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  const result = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  console.log('formatTimeHMS result:', result);
+  
+  return result;
 }
 
 // Initialization function
@@ -126,6 +139,9 @@ function setupEventListeners() {
 // Update status elements with current values
 function updateStatusElements(values) {
   if (!values) return;
+  
+  // Debug logging for SessionTimeRemain specifically
+  console.log('updateStatusElements - SessionTimeRemain value:', values.SessionTimeRemain, 'type:', typeof values.SessionTimeRemain);
   
   // Race Info
   safeUpdateElement('SessionTimeRemain', formatTimeHMS(values.SessionTimeRemain));
