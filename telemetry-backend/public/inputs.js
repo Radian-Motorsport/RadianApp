@@ -51,7 +51,7 @@ function initInputsPage() {
 // Cache all DOM elements we'll need to update
 function cacheElements() {
   // Status elements
-  ['IsOnTrack', 'IsInGarage', 'PlayerCarPosition', 
+  ['SessionTimeRemain', 'IsOnTrack', 'IsInGarage', 'PlayerCarPosition', 
    'PlayerCarClassPosition', 'PlayerTrackSurface',
    'PlayerCarTeamIncidentCount', 
    'PlayerCarDriverIncidentCount', 'LapDistPct', 'RaceLaps',
@@ -227,8 +227,24 @@ function updateDriverControlElements(values) {
 // Safely update an element's text content
 function safeUpdateElement(id, value) {
   const element = inputsElements[id];
+  
+  // Debug logging for SessionTimeRemain specifically
+  if (id === 'SessionTimeRemain') {
+    console.log('safeUpdateElement - ID:', id, 'Value:', value, 'Element found:', !!element);
+    if (element) {
+      console.log('Element before update:', element.textContent);
+    }
+  }
+  
   if (element && value !== undefined) {
     element.textContent = value;
+    
+    // Debug logging after update for SessionTimeRemain
+    if (id === 'SessionTimeRemain') {
+      console.log('Element after update:', element.textContent);
+    }
+  } else if (id === 'SessionTimeRemain') {
+    console.log('safeUpdateElement failed - Element:', !!element, 'Value defined:', value !== undefined);
   }
 }
 
