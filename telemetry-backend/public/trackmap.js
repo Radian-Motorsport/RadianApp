@@ -249,6 +249,102 @@ class TrackMap {
     requestAnimationFrame(this.drawTrack.bind(this));
   }
 
+  // Draw the track using SVG path
+  drawTrack() {
+    this.trackCtx.clearRect(0, 0, this.trackCanvas.width, this.trackCanvas.height);
+    
+    if (!this.trackSVGPath || this.trackPoints.length === 0) {
+      requestAnimationFrame(this.drawTrack.bind(this));
+      return;
+    }
+    
+    // Calculate scaling to fit canvas
+    const padding = 20;
+    const trackWidth = this.trackBounds.maxX - this.trackBounds.minX;
+    const trackHeight = this.trackBounds.maxY - this.trackBounds.minY;
+    const scaleX = (this.trackCanvas.width - padding * 2) / trackWidth;
+    const scaleY = (this.trackCanvas.height - padding * 2) / trackHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    const offsetX = (this.trackCanvas.width - trackWidth * scale) / 2 - this.trackBounds.minX * scale;
+    const offsetY = (this.trackCanvas.height - trackHeight * scale) / 2 - this.trackBounds.minY * scale;
+    
+    // Transform and draw the SVG path
+    this.trackCtx.save();
+    this.trackCtx.translate(offsetX, offsetY);
+    this.trackCtx.scale(scale, scale);
+    
+    // Draw track outline
+    this.trackCtx.strokeStyle = 'white';
+    this.trackCtx.lineWidth = 2 / scale; // Adjust line width for scaling
+    this.trackCtx.stroke(this.trackSVGPath);
+    
+    this.trackCtx.restore();
+    
+    // Draw start/finish line
+    if (this.trackPoints.length > 0) {
+      const startPoint = this.trackPoints[0];
+      const finishX = startPoint.x * scale + offsetX;
+      const finishY = startPoint.y * scale + offsetY;
+      
+      this.trackCtx.strokeStyle = 'red';
+      this.trackCtx.lineWidth = 3;
+      this.trackCtx.beginPath();
+      this.trackCtx.moveTo(finishX - 8, finishY - 8);
+      this.trackCtx.lineTo(finishX + 8, finishY + 8);
+      this.trackCtx.moveTo(finishX - 8, finishY + 8);
+      this.trackCtx.lineTo(finishX + 8, finishY - 8);
+      this.trackCtx.stroke();
+      this.trackCtx.lineWidth = 1;
+    }
+    
+    // Draw car position
+    this.drawCarPosition(scale, offsetX, offsetY);
+    
+    requestAnimationFrame(this.drawTrack.bind(this));
+  }
+  
+  drawCarPosition(scale, offsetX, offsetY) {
+    if (this.liveLapPct <= 0 || this.liveLapPct > 1 || this.trackPoints.length === 0) return;
+    
+    // Get position along track
+    const position = this.getPositionFromPercent(this.liveLapPct);
+    if (!position) return;
+    
+    const markerX = position.x * scale + offsetX;
+    const markerY = position.y * scale + offsetY;
+    const iconSize = 16;
+    
+    // Draw player car
+    if (this.carImg && this.carImg.complete) {
+      this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
+    } else {
+      this.trackCtx.fillStyle = '#ff6b6b';
+      this.trackCtx.beginPath();
+      this.trackCtx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
+      this.trackCtx.fill();
+    }
+    
+    // Draw cars ahead and behind
+    this.drawOtherCars(scale, offsetX, offsetY, iconSize);
+  }
+  
+  getPositionFromPercent(pct) {
+    if (this.trackPoints.length === 0 || pct < 0 || pct > 1) return null;
+    
+    const idx = Math.floor(pct * this.trackPoints.length);
+    const nextIdx = (idx + 1) % this.trackPoints.length;
+    const t = (pct * this.trackPoints.length) - idx;
+    
+    const currentPoint = this.trackPoints[idx];
+    const nextPoint = this.trackPoints[nextIdx];
+    
+    return {
+      x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
+      y: currentPoint.y + (nextPoint.y - currentPoint.y) * t
+    };
+  }
+
   updateInfoBoxes() {
     if (this.infoElements.carAheadDistance) {
       this.infoElements.carAheadDistance.textContent = this.carAheadDistance > 0 
