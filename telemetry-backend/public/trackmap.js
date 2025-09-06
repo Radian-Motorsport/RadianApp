@@ -18,6 +18,8 @@ class TrackMap {
     this.playerCarIdx = null;
     this.playerClassPosition = null;
     this.playerPosition = null;
+    this.playerCarClass = null; // Player's car class
+    this.carIdxClass = null; // Array of all car classes
     this.carIdxClassPosition = null; // Array of all car positions
     this.carIdxPosition = null; // Array of all overall positions
     this.carIdxLapDistPct = null; // Array of all car lap distances
@@ -372,20 +374,37 @@ class TrackMap {
   }
   
   findCarsAheadAndBehind() {
-    console.log(`🏎️ Finding cars ahead/behind - Player class position: ${this.playerClassPosition}`);
+    console.log(`🏎️ Finding cars ahead/behind - Player class position: ${this.playerClassPosition}, Player class: ${this.playerCarClass}`);
     console.log(`🏎️ CarIdxClassPosition array:`, this.carIdxClassPosition);
     
-    if (!this.carIdxClassPosition || !this.playerCarIdx || this.playerClassPosition === null) {
-      console.log(`❌ Missing data - carIdxClassPosition: ${!!this.carIdxClassPosition}, playerCarIdx: ${this.playerCarIdx}, playerClassPosition: ${this.playerClassPosition}`);
+    if (!this.carIdxClassPosition || !this.carIdxClass || !this.playerCarIdx || this.playerClassPosition === null || this.playerCarClass === null) {
+      console.log(`❌ Missing data - carIdxClassPosition: ${!!this.carIdxClassPosition}, carIdxClass: ${!!this.carIdxClass}, playerCarIdx: ${this.playerCarIdx}, playerClassPosition: ${this.playerClassPosition}, playerCarClass: ${this.playerCarClass}`);
       this.carAheadIdx = null;
       this.carBehindIdx = null;
       return;
     }
     
-    // Find car ahead (one position better/lower number)
+    // Find car ahead (one position better/lower number) IN SAME CLASS
     const positionAhead = this.playerClassPosition - 1;
     this.carAheadIdx = null;
     if (positionAhead > 0) {
+      console.log(`🔍 Looking for car at position ${positionAhead} in class ${this.playerCarClass}`);
+      // Find car with position ahead IN SAME CLASS
+      for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
+        if (this.carIdxClass[carIdx] === this.playerCarClass && this.carIdxClassPosition[carIdx] === positionAhead) {
+          this.carAheadIdx = carIdx;
+          console.log(`✅ Found car ahead: carIdx ${carIdx} at class position ${positionAhead} in class ${this.playerCarClass}`);
+          break;
+        }
+        // Debug: show what we're checking
+        if (this.carIdxClassPosition[carIdx] > 0) {
+          console.log(`🔍 Checking carIdx ${carIdx}: class ${this.carIdxClass[carIdx]}, class position ${this.carIdxClassPosition[carIdx]}`);
+        }
+      }
+      if (this.carAheadIdx === null) {
+        console.log(`❌ No car found at position ${positionAhead} in class ${this.playerCarClass}`);
+      }
+    }
       console.log(`🔍 Looking for car at position ${positionAhead}`);
       // Find car with position ahead
       for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
@@ -404,29 +423,29 @@ class TrackMap {
       }
     }
     
-    // Find car behind (one position worse/higher number)
+    // Find car behind (one position worse/higher number) IN SAME CLASS
     const positionBehind = this.playerClassPosition + 1;
     this.carBehindIdx = null;
-    console.log(`🔍 Looking for car at position ${positionBehind} (behind position ${this.playerClassPosition})`);
+    console.log(`🔍 Looking for car at position ${positionBehind} in class ${this.playerCarClass} (behind position ${this.playerClassPosition})`);
     
-    // Debug: Show all cars and their class positions
-    console.log(`🏁 All class positions:`);
+    // Debug: Show all cars and their class positions  
+    console.log(`🏁 All cars with class and class position:`);
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
       if (this.carIdxClassPosition[carIdx] > 0) {
-        console.log(`  carIdx ${carIdx}: class position ${this.carIdxClassPosition[carIdx]}`);
+        console.log(`  carIdx ${carIdx}: class ${this.carIdxClass[carIdx]}, class position ${this.carIdxClassPosition[carIdx]}`);
       }
     }
     
-    // Find car with position behind
+    // Find car with position behind IN SAME CLASS
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
-      if (this.carIdxClassPosition[carIdx] === positionBehind) {
+      if (this.carIdxClass[carIdx] === this.playerCarClass && this.carIdxClassPosition[carIdx] === positionBehind) {
         this.carBehindIdx = carIdx;
-        console.log(`✅ Found car behind: carIdx ${carIdx} at class position ${positionBehind}`);
+        console.log(`✅ Found car behind: carIdx ${carIdx} at class position ${positionBehind} in class ${this.playerCarClass}`);
         break;
       }
     }
     if (this.carBehindIdx === null) {
-      console.log(`❌ No car found at position ${positionBehind}`);
+      console.log(`❌ No car found at position ${positionBehind} in class ${this.playerCarClass}`);
     }
     
     console.log(`🏁 Final result - Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
@@ -510,13 +529,18 @@ class TrackMap {
           console.log('Track length set from session data:', this.trackLength, 'meters');
         }
         
-        // Store driver info for car/driver names
-        if (data?.DriverInfo) {
+        // Store driver info for car/driver names - check both possible paths
+        if (data?.data?.DriverInfo) {
+          this.driverInfo = data.data.DriverInfo;
+          console.log('🏁 Driver info updated from data.data.DriverInfo:', this.driverInfo);
+          console.log('🏁 Number of drivers:', this.driverInfo.Drivers?.length);
+        } else if (data?.DriverInfo) {
           this.driverInfo = data.DriverInfo;
-          console.log('🏁 Driver info updated:', this.driverInfo);
+          console.log('🏁 Driver info updated from data.DriverInfo:', this.driverInfo);
           console.log('🏁 Number of drivers:', this.driverInfo.Drivers?.length);
         } else {
-          console.warn('❌ No DriverInfo found in session data');
+          console.warn('❌ No DriverInfo found in session data at data.DriverInfo or data.data.DriverInfo');
+          console.log('📋 Full session data structure:', data);
         }
       });
       
@@ -527,6 +551,18 @@ class TrackMap {
         // Update player car index
         if (values.PlayerCarIdx !== undefined) {
           this.playerCarIdx = values.PlayerCarIdx;
+        }
+        
+        // Update player car class
+        if (values.PlayerCarClass !== undefined) {
+          this.playerCarClass = values.PlayerCarClass;
+          console.log(`🏁 Player car class: ${this.playerCarClass}`);
+        }
+        
+        // Update car class array
+        if (values.CarIdxClass !== undefined) {
+          this.carIdxClass = values.CarIdxClass;
+          console.log(`🏎️ CarIdxClass updated`);
         }
         
         // Update class position arrays
