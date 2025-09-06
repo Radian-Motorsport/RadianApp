@@ -39,6 +39,9 @@ class TrackMap {
     
     // Setup event listeners
     this.setupListeners();
+    
+    // Check for existing session data from bufferedData
+    this.loadExistingSessionData();
   }
 
   initializeSVGTrack() {
@@ -193,6 +196,45 @@ class TrackMap {
         this.startPosition = i;
       }
     }
+  }
+
+  loadExistingSessionData() {
+    // Check if telemetry.js has already loaded session data into bufferedData
+    if (window.bufferedData && window.bufferedData.sessionInfo) {
+      console.log('📋 TrackMap: Loading existing sessionInfo from bufferedData');
+      this.updateSessionDisplay(window.bufferedData.sessionInfo);
+    } else {
+      console.log('📋 TrackMap: No existing sessionInfo found, waiting for new data');
+    }
+  }
+
+  updateSessionDisplay(data) {
+    console.log('📋 TrackMap updating session display with data:', data);
+    
+    if (data?.WeekendInfo?.TrackLength) {
+      this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
+      console.log('Track length set from session data:', this.trackLength, 'meters');
+    }
+    
+    // Store driver info - use the full session data object directly
+    this.driverInfo = data;  
+    console.log('Driver info set to session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
+    
+    // Update session data display elements
+    const trackNameEl = document.getElementById('sessionTrackName');
+    const trackLengthEl = document.getElementById('sessionTrackLength');
+    const sessionTypeEl = document.getElementById('sessionType');
+    const sessionLapsEl = document.getElementById('sessionLaps');
+    const sessionTimeEl = document.getElementById('sessionTime');
+    
+    // Use the correct data structure from sessiondata.json
+    if (trackNameEl) trackNameEl.textContent = data?.WeekendInfo?.TrackDisplayName || '--';
+    if (trackLengthEl) trackLengthEl.textContent = data?.WeekendInfo?.TrackLength || '--';
+    if (sessionTypeEl) sessionTypeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';
+    if (sessionLapsEl) sessionLapsEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionLaps || '--';
+    if (sessionTimeEl) sessionTimeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionTime || '--';
+    
+    console.log('📋 TrackMap: Session display elements updated');
   }
 
   updateCarPosition(lapPct) {
@@ -526,29 +568,7 @@ class TrackMap {
       // Listen for session info to get official track length and driver info
       this.socket.on('sessionInfo', (data) => {
         console.log('📋 TrackMap received sessionInfo:', data);
-        
-        if (data?.WeekendInfo?.TrackLength) {
-          this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
-          console.log('Track length set from session data:', this.trackLength, 'meters');
-        }
-        
-        // Store driver info - use the full session data object directly
-        this.driverInfo = data;  
-        console.log('Driver info set to session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
-        
-        // Update session data display elements
-        const trackNameEl = document.getElementById('sessionTrackName');
-        const trackLengthEl = document.getElementById('sessionTrackLength');
-        const sessionTypeEl = document.getElementById('sessionType');
-        const sessionLapsEl = document.getElementById('sessionLaps');
-        const sessionTimeEl = document.getElementById('sessionTime');
-        
-        // Use the correct data structure from sessiondata.json
-        if (trackNameEl) trackNameEl.textContent = data?.WeekendInfo?.TrackDisplayName || '--';
-        if (trackLengthEl) trackLengthEl.textContent = data?.WeekendInfo?.TrackLength || '--';
-        if (sessionTypeEl) sessionTypeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';
-        if (sessionLapsEl) sessionLapsEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionLaps || '--';
-        if (sessionTimeEl) sessionTimeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionTime || '--';
+        this.updateSessionDisplay(data);
       });
       
       this.socket.on('telemetry', (data) => {
