@@ -86,17 +86,15 @@
   
   <!-- Calculation Variables Section -->
   <div class="telemetry-block">
-    <h2>Calculation Variables <span class="info-badge" title="These values are used in the stint calculations">ℹ️</span></h2>
+    <h2>Calculation Variables</h2>
     <div class="race-info-grid calculation-variables">
       <div>
         <label>Fuel Per Lap:</label>
         <span id="fuel-per-lap">--</span>
-        <div class="tooltip">Defined in the input form above</div>
       </div>
       <div>
         <label>Lap Time:</label>
         <span id="avg-lap-time">--</span>
-        <div class="tooltip">Defined in the input form above</div>
       </div>
       <div>
         <label>Tank Capacity:</label>
@@ -113,7 +111,6 @@
       <div>
         <label>Safety Margin:</label>
         <span id="safety-margin-display">--</span>
-        <div class="tooltip">Amount of fuel reserved for safety</div>
       </div>
     </div>
   </div>
@@ -159,17 +156,118 @@
     let isPitting = false;
     let safetyMargin = 5; // Default 5% safety margin
 
+    // Storage functions for persistent data
+    function saveStaticPlannerState() {
+      const stateToSave = {
+        tankCapacity,
+        fuelPerLap,
+        avgLapTime,
+        raceDuration,
+        currentFuelLevel,
+        currentLap,
+        currentStintNumber,
+        pitStopTime,
+        safetyMargin,
+        stintData,
+        raceTimeRemaining,
+        nextPitStop,
+        stintDuration,
+        lapsPerStint,
+        isPitting
+      };
+      
+      try {
+        localStorage.setItem('staticPlannerState', JSON.stringify(stateToSave));
+      } catch (error) {
+        console.warn('Failed to save static planner state:', error);
+      }
+    }
+
+    function loadStaticPlannerState() {
+      try {
+        const savedState = localStorage.getItem('staticPlannerState');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          
+          // Restore variables
+          tankCapacity = state.tankCapacity || 104;
+          fuelPerLap = state.fuelPerLap || 2.8;
+          avgLapTime = state.avgLapTime || 90;
+          raceDuration = state.raceDuration || 3600;
+          currentFuelLevel = state.currentFuelLevel || 104;
+          currentLap = state.currentLap || 1;
+          currentStintNumber = state.currentStintNumber || 1;
+          pitStopTime = state.pitStopTime || 45;
+          safetyMargin = state.safetyMargin || 5;
+          stintData = state.stintData || [];
+          raceTimeRemaining = state.raceTimeRemaining || 3600;
+          nextPitStop = state.nextPitStop || 0;
+          stintDuration = state.stintDuration || 0;
+          lapsPerStint = state.lapsPerStint || 0;
+          isPitting = state.isPitting || false;
+          
+          // Update form inputs with loaded values
+          updateFormFromState();
+        }
+      } catch (error) {
+        console.warn('Failed to load static planner state:', error);
+      }
+    }
+
+    function updateFormFromState() {
+      // Update form inputs with current state values
+      document.getElementById('tankCapacity').value = tankCapacity;
+      document.getElementById('fuelPerLap').value = fuelPerLap;
+      document.getElementById('avgLapTime').value = avgLapTime;
+      document.getElementById('raceDuration').value = raceDuration / 60; // Convert to minutes
+      document.getElementById('currentFuelLevel').value = currentFuelLevel;
+      document.getElementById('currentLap').value = currentLap;
+      document.getElementById('currentStintNumber').value = currentStintNumber;
+      document.getElementById('pitStopTime').value = pitStopTime;
+      document.getElementById('safetyMargin').value = safetyMargin;
+    }
+
     // Initialize the page when DOM is loaded
     document.addEventListener('DOMContentLoaded', initStaticPlanner);
 
     function initStaticPlanner() {
+      // Load saved state first
+      loadStaticPlannerState();
+      
       // Set up event listeners
       document.getElementById('calculateButton').addEventListener('click', readFormValues);
       document.getElementById('resetButton').addEventListener('click', resetToDefaults);
       
-      // Calculate initial stint plan with default values
+      // Set up auto-save on form changes
+      setupAutoSave();
+      
+      // Calculate initial stint plan with loaded or default values
       calculateStintPlan();
       updateUI();
+      
+      // Set up periodic saving and page unload saving
+      setInterval(saveStaticPlannerState, 10000); // Save every 10 seconds
+      window.addEventListener('beforeunload', saveStaticPlannerState);
+      window.addEventListener('pagehide', saveStaticPlannerState);
+    }
+
+    function setupAutoSave() {
+      // Auto-save when form inputs change
+      const formInputs = [
+        'tankCapacity', 'fuelPerLap', 'avgLapTime', 
+        'raceDuration', 'currentFuelLevel', 'currentLap',
+        'currentStintNumber', 'pitStopTime', 'safetyMargin'
+      ];
+      
+      formInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.addEventListener('change', () => {
+            readFormValues();
+            saveStaticPlannerState();
+          });
+        }
+      });
     }
 
     function readFormValues() {
@@ -191,6 +289,9 @@
       // Recalculate stint plan with new values
       calculateStintPlan();
       updateUI();
+      
+      // Save state after reading form values
+      saveStaticPlannerState();
     }
 
     function resetToDefaults() {
@@ -220,6 +321,9 @@
       // Recalculate stint plan with default values
       calculateStintPlan();
       updateUI();
+      
+      // Save the reset state
+      saveStaticPlannerState();
     }
 
     // This function formats time from seconds into HH:MM:SS format
@@ -355,6 +459,9 @@
       } else {
         nextPitStop = 0;
       }
+      
+      // Save state after calculations
+      saveStaticPlannerState();
     }
 
     // Update UI with calculation results
