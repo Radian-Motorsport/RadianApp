@@ -54,7 +54,8 @@ let previousValues = {
   stintLapCount: null,
   stintFuelAvg: null,
   stintTotalTime: null,
-  stintAvgLapTime: null
+  stintAvgLapTime: null,
+  lastStintTireWear: null
 };
 let stintIncidentCount = 0;
 
@@ -136,7 +137,8 @@ function loadTelemetryState() {
       stintLapCount: null,
       stintFuelAvg: null,
       stintTotalTime: null,
-      stintAvgLapTime: null
+      stintAvgLapTime: null,
+      lastStintTireWear: null
     };
     stintIncidentCount = savedState.stintIncidentCount ?? 0;
     wasPitstopActive = savedState.wasPitstopActive ?? false;
@@ -283,6 +285,16 @@ function updateUIFromState() {
   
   if (elements.stintAvgLapTime && previousValues.stintAvgLapTime !== null && previousValues.stintAvgLapTime !== undefined) {
     elements.stintAvgLapTime.textContent = formatTimeMS(previousValues.stintAvgLapTime);
+  }
+  
+  // Update tire wear from last stint
+  if (previousValues.lastStintTireWear !== null && previousValues.lastStintTireWear !== undefined) {
+    updateTireWear(previousValues.lastStintTireWear);
+  }
+  
+  // Update last pit stop time
+  if (elements.lastPitStopTime && lastPitStopTimeValue !== null && lastPitStopTimeValue !== undefined) {
+    elements.lastPitStopTime.textContent = lastPitStopTimeValue;
   }
   
   // Update buffer status
@@ -544,16 +556,10 @@ function handlePitStopCompletion(values) {
   if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
   if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
   
-  // Take a fresh snapshot of tire wear after pit stop
-  const currentTireWear = {
-    RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
-    LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
-    RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
-    LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
-  };
-  
-  // Update tire wear display
-  updateTireWear(currentTireWear);
+  // Display tire wear from the previous stint (stored when entering pit road)
+  if (previousValues.lastStintTireWear) {
+    updateTireWear(previousValues.lastStintTireWear);
+  }
   
   // Update last pit stop time with actual completion timestamp
   if (elements.lastPitStopTime) {
@@ -608,13 +614,19 @@ function handleDriverExit(values, teamLap) {
   previousValues.stintTotalTime = stintTotalTimeSeconds;
   previousValues.stintAvgLapTime = stintAvgLapTimeSeconds;
 
-  // Tire wear snapshot
-  const lastStintTireWear = {
-    RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
-    LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
-    RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
-    LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
-  };
+  // Tire wear snapshot - use stored data from previous stint if available
+  if (previousValues.lastStintTireWear) {
+    updateTireWear(previousValues.lastStintTireWear);
+  } else {
+    // Fallback: create tire wear from current values (legacy support)
+    const lastStintTireWear = {
+      RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
+      LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
+      RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
+      LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
+    };
+    updateTireWear(lastStintTireWear);
+  }
 
   // Update UI with null checks
   if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
@@ -623,8 +635,6 @@ function handleDriverExit(values, teamLap) {
   if (elements.stintAvgLapTime) elements.stintAvgLapTime.textContent = stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--';
   if (elements.lastPitStopTime) elements.lastPitStopTime.textContent = lastPitStopTimeValue;
   if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
-  
-  updateTireWear(lastStintTireWear);
 
   if (elements.fuelPerLap) {
     updateValueWithColor(elements.fuelPerLap, `${lastFuelUsed?.toFixed(2) ?? '--'} L`, lastFuelUsed, 'fuel', 'fuelPerLap');
@@ -867,6 +877,18 @@ function setupSocketListeners() {
             console.log(`Actual stint lap count: ${calculatedStintLapCount} laps`);
           }
         }
+        
+        // Capture tire wear at end of stint (before pit entry)
+        const lastStintTireWear = {
+          RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
+          LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
+          RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
+          LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
+        };
+        
+        // Store tire wear data for persistence
+        previousValues.lastStintTireWear = lastStintTireWear;
+        console.log('Captured tire wear at end of stint:', lastStintTireWear);
         
       } else if (!onPitRoad && wasPitstopActive) {
         // Pit exit detected - new stint starts
