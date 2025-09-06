@@ -4,17 +4,12 @@ class TrackMap {
     this.trackCanvas = document.getElementById(canvasId);
     this.trackCtx = this.trackCanvas.getContext('2d');
     
-    // Track map variables
-    this.lapStarted = false;
-    this.lapCompleted = false;
-    this.currentLap = [];
-    this.finalLap = [];
-    this.lapBuffer = [];
-    this.lapYaw = [];          // yaw values for current lap
-    this.finalLapYaw = [];     // yaw values for completed lap
-    
+    // Track map variables - simplified for SVG approach
     this.liveLapPct = 0;
     this.lastLapPct = 0;
+    this.trackSVGPath = null;
+    this.trackPoints = [];
+    this.trackBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
     
     // Car positioning data
     this.carAheadDistance = 0;
@@ -28,26 +23,73 @@ class TrackMap {
     this.carImg = new Image();
     this.carImg.src = '/assets/icon-active.png';
     this.carAheadImg = new Image();
-    this.carAheadImg.src = '/assets/icon-idle.png';  // Different icon for other cars
+    this.carAheadImg.src = '/assets/icon-idle.png';
     this.carBehindImg = new Image();
-    this.carBehindImg.src = '/assets/icon-standby.png';  // Different icon for other cars
+    this.carBehindImg.src = '/assets/icon-standby.png';
     
     // Cache info box elements
     this.cacheInfoElements();
     
-    // Load any existing data from localStorage
-    this.loadFromStorage();
+    // Initialize SVG track
+    this.initializeSVGTrack();
     
     // Setup event listeners
     this.setupListeners();
     
     // Start animation
     this.startAnimation();
-    
-    // Save data to localStorage periodically
-    this.setupAutoSave();
   }
   
+  initializeSVGTrack() {
+    // Indianapolis Road 2022 SVG path data
+    const svgPathData = "M912.3,921.3c-141.6,0-298.3-1-455.9-3.9c-3.3-0.1-6.5-0.3-9.7-0.9c-10.6-1.7-24.9-5.6-32.8-14.4c-6.7-7.5-17.1-24.3-11.7-53.7c2-10.7,3.7-30.3-6.9-42.6c-7.9-9.1-21.9-13.4-41.6-12.7c-3.1,0.1-7.4,0.4-12.1,0.7c-8.7,0.6-17.7,1.2-23.8,1c-43.8-1.5-71.4-8.7-89.4-23.1c-48.9-39-71.6-109.8-74.1-117.7c-10.8-35.2,2.4-64.6,37-82.7c13.6-7.1,25.8-11.2,48.1-11.2s50,0.5,71.7,0.8c9.9,0.2,18.8,0.3,25.8,0.4c25.7-0.7,31-7.4,37.7-15.7c10.9-13.6,22.3-24,61.2-24c42.9,0,792.6,4.5,800.1,4.6c3.9,0,6.6-1.9,8.1-3.5c2.4-2.6,3.8-6.2,3.6-10c-0.2-4.3-0.4-9.3-0.7-14.8c-1.5-31.2-3.6-74-0.3-94.9c5.6-35.5,27.2-45.6,46.3-54.5c12.1-5.7,23.5-11,33.1-22.4c11.9-14.2,8.9-41.1,6.1-67.1c-2.2-20.5-4.6-41.8-0.1-59.3c5.5-21.7,20.7-34.6,45.1-38.3c21.7-3.3,54.4-3.9,85.4-1.4c38.8,3.1,109.8,12.5,145.8,25.9c66.4,24.8,111.6,69.8,134.3,133.8c31.8,89.7,27.8,161.5,24,230.9c-1.1,19.2-6.4,44.6-40.1,44.6l0,0c-19.1,0-51.8-1.2-78-2.2c-9.8-0.4-19.2-0.7-26.5-1c-8.4-0.3-16.5,2.2-22.7,7.1c-11,8.5-13.2,19.5-6.6,33.7c1.7,3.6,3.9,8.2,6.5,13.6c9.5,19.7,22.6,46.7,26.7,61.9c12.5,46.5,3.4,93.2-25.6,131.5c-17.5,23.2-41.9,42.5-70.6,55.8c-29.4,13.8-63.5,21.2-98.4,21.6c-10.3,0.1-22.6,0.3-36.8,0.4C1296.7,919.2,1120.9,921.3,912.3,921.3L912.3,921.3z";
+    
+    // Create Path2D object from SVG path data
+    this.trackSVGPath = new Path2D(svgPathData);
+    
+    // Convert path to points for position calculations
+    this.convertSVGPathToPoints(svgPathData);
+  }
+  
+  convertSVGPathToPoints(pathData) {
+    // Create a temporary canvas to sample points along the path
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 1920;
+    tempCanvas.height = 1080;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Sample points along the path
+    const path = new Path2D(pathData);
+    const numSamples = 1000; // Number of points to sample
+    
+    this.trackPoints = [];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    
+    // This is a simplified approach - in practice you might want to use a path parsing library
+    // For now, we'll create a reasonable approximation by sampling the bounding box
+    for (let i = 0; i < numSamples; i++) {
+      const angle = (i / numSamples) * 2 * Math.PI;
+      // These are approximate coordinates based on the SVG viewBox
+      // You might want to use a proper SVG path parser for more accuracy
+      const centerX = 960;
+      const centerY = 540;
+      const radiusX = 400;
+      const radiusY = 200;
+      
+      const x = centerX + Math.cos(angle) * radiusX;
+      const y = centerY + Math.sin(angle) * radiusY;
+      
+      this.trackPoints.push({ x, y });
+      
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+    
+    this.trackBounds = { minX, maxX, minY, maxY };
+  }
+
   cacheInfoElements() {
     this.infoElements = {
       carAheadDistance: document.getElementById('carAheadDistance'),
@@ -58,27 +100,15 @@ class TrackMap {
   }
   
   setupListeners() {
-    // Track telemetry for lap tracking
+    // Simple telemetry tracking for position and car data
     this.socket.on('telemetry', (data) => {
       const values = data?.values;
       if (!values) return;
       
-      // Debug: Log every 100th telemetry update to avoid spam
-      if (Math.random() < 0.01) {
-        console.log('TrackMap: Telemetry received', {
-          Speed: values.Speed,
-          YawNorth: values.YawNorth,
-          LapDistPct: values.LapDistPct,
-          lapStarted: this.lapStarted,
-          lapCompleted: this.lapCompleted,
-          bufferLength: this.lapBuffer.length,
-          finalLapLength: this.finalLap.length
-        });
-      }
+      const { LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct } = values;
       
-      const { Speed, YawNorth, LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct } = values;
-      
-      // Update car distance and fuel data
+      // Update position and car data
+      this.liveLapPct = LapDistPct || 0;
       this.carAheadDistance = CarDistAhead || 0;
       this.carBehindDistance = CarDistBehind || 0;
       this.fuelLevel = FuelLevel || 0;
@@ -93,67 +123,6 @@ class TrackMap {
         this.avgFuelPerLap = fuelData.avgFuelPerLap || 0;
         this.tankCapacity = fuelData.maxFuel || 104;
       }
-      
-      // Continue with existing lap tracking logic
-      if (this.lapCompleted) return;
-      
-      const dt = 1 / 60;
-      
-      // Update lap percentage for visualization - use current value directly
-      this.liveLapPct = values.LapDistPct;
-      
-      // Debug telemetry updates
-      if (Math.random() < 0.01) { // Log occasionally
-        console.log('Telemetry update:', {
-          LapDistPct: values.LapDistPct.toFixed(4),
-          Speed: values.Speed.toFixed(1),
-          liveLapPct: this.liveLapPct.toFixed(4)
-        });
-      }
-      
-      // Track position
-      const last = this.lapBuffer.length > 0 ? this.lapBuffer[this.lapBuffer.length - 1] : { x: 300, y: 300 };
-      const newX = last.x + Math.cos(YawNorth) * Speed * dt;
-      const newY = last.y + Math.sin(YawNorth) * Speed * dt;
-      this.lapBuffer.push({ x: newX, y: newY });
-      this.lapYaw.push(YawNorth);
-      
-      // Improved lap wrap detection - look for crossing the start/finish line
-      // Method 1: LapDistPct wrapping from high (>0.9) to low (<0.1)
-      if (this.lastLapPct > 0.9 && LapDistPct < 0.1) {
-        console.log('TrackMap: Lap wrap detected (Method 1)!', {
-          LapDistPct,
-          lastLapPct: this.lastLapPct,
-          lapStarted: this.lapStarted,
-          bufferLength: this.lapBuffer.length
-        });
-        
-        if (!this.lapStarted) {
-          this.lapStarted = true;
-          this.currentLap = [...this.lapBuffer];
-          this.lapBuffer = [];
-          this.finalLapYaw = [...this.lapYaw];
-          this.lapYaw = [];
-          console.log('TrackMap: First lap started, buffer cleared');
-        } else {
-          this.lapCompleted = true;
-          this.finalLap = [...this.lapBuffer];
-          this.finalLapYaw = [...this.lapYaw];
-          console.log('TrackMap: Lap completed! Final lap points:', this.finalLap.length);
-        }
-      }
-      
-      // Method 2: Alternative detection - if we have enough data points and haven't started yet, force start
-      if (!this.lapStarted && this.lapBuffer.length > 200 && LapDistPct > 0.1) {
-        console.log('TrackMap: Force starting lap due to sufficient data points');
-        this.lapStarted = true;
-        this.currentLap = [...this.lapBuffer];
-        this.lapBuffer = [];
-        this.finalLapYaw = [...this.lapYaw];
-        this.lapYaw = [];
-      }
-      
-      this.lastLapPct = LapDistPct;
     });
   }
   
@@ -194,41 +163,36 @@ class TrackMap {
     return this.fuelLevel / this.avgFuelPerLap;
   }
   
-  drawCarAheadBehind(smoothed, autoScale, offsetX, offsetY, playerPct, iconSize) {
-    if (smoothed.length === 0) return;
-    
-    // Estimate track length by summing distances between points
+  drawOtherCars(scale, offsetX, offsetY, iconSize) {
+    // Calculate approximate track length
     let trackLength = 0;
-    for (let i = 0; i < smoothed.length; i++) {
-      const curr = smoothed[i];
-      const next = smoothed[(i + 1) % smoothed.length];
+    for (let i = 0; i < this.trackPoints.length; i++) {
+      const curr = this.trackPoints[i];
+      const next = this.trackPoints[(i + 1) % this.trackPoints.length];
       trackLength += Math.hypot(next.x - curr.x, next.y - curr.y);
     }
     
     // Draw car ahead
     if (this.carAheadDistance > 0 && this.carAheadDistance < trackLength) {
-      const aheadPct = this.calculateCarPosition(playerPct, this.carAheadDistance, trackLength, true);
-      const aheadPos = this.getPositionFromPct(smoothed, aheadPct);
+      const aheadPct = this.calculateCarPosition(this.liveLapPct, this.carAheadDistance, trackLength, true);
+      const aheadPos = this.getPositionFromPercent(aheadPct);
       
       if (aheadPos) {
-        const aheadX = aheadPos.x * autoScale + offsetX;
-        const aheadY = aheadPos.y * autoScale + offsetY;
+        const aheadX = aheadPos.x * scale + offsetX;
+        const aheadY = aheadPos.y * scale + offsetY;
         
-        // Draw ahead car with different color/icon
         this.trackCtx.save();
         this.trackCtx.globalAlpha = 0.8;
         
         if (this.carAheadImg && this.carAheadImg.complete) {
           this.trackCtx.drawImage(this.carAheadImg, aheadX - iconSize / 2, aheadY - iconSize / 2, iconSize, iconSize);
         } else {
-          // Fallback: draw a colored circle
           this.trackCtx.fillStyle = '#4ecdc4';
           this.trackCtx.beginPath();
           this.trackCtx.arc(aheadX, aheadY, 6, 0, 2 * Math.PI);
           this.trackCtx.fill();
         }
         
-        // Add small label
         this.trackCtx.fillStyle = '#4ecdc4';
         this.trackCtx.font = '10px Orbitron';
         this.trackCtx.textAlign = 'center';
@@ -239,28 +203,25 @@ class TrackMap {
     
     // Draw car behind
     if (this.carBehindDistance > 0 && this.carBehindDistance < trackLength) {
-      const behindPct = this.calculateCarPosition(playerPct, this.carBehindDistance, trackLength, false);
-      const behindPos = this.getPositionFromPct(smoothed, behindPct);
+      const behindPct = this.calculateCarPosition(this.liveLapPct, this.carBehindDistance, trackLength, false);
+      const behindPos = this.getPositionFromPercent(behindPct);
       
       if (behindPos) {
-        const behindX = behindPos.x * autoScale + offsetX;
-        const behindY = behindPos.y * autoScale + offsetY;
+        const behindX = behindPos.x * scale + offsetX;
+        const behindY = behindPos.y * scale + offsetY;
         
-        // Draw behind car with different color/icon
         this.trackCtx.save();
         this.trackCtx.globalAlpha = 0.8;
         
         if (this.carBehindImg && this.carBehindImg.complete) {
           this.trackCtx.drawImage(this.carBehindImg, behindX - iconSize / 2, behindY - iconSize / 2, iconSize, iconSize);
         } else {
-          // Fallback: draw a colored circle
           this.trackCtx.fillStyle = '#feca57';
           this.trackCtx.beginPath();
           this.trackCtx.arc(behindX, behindY, 6, 0, 2 * Math.PI);
           this.trackCtx.fill();
         }
         
-        // Add small label
         this.trackCtx.fillStyle = '#feca57';
         this.trackCtx.font = '10px Orbitron';
         this.trackCtx.textAlign = 'center';
@@ -269,366 +230,64 @@ class TrackMap {
       }
     }
   }
-  
+
   calculateCarPosition(playerPct, distance, trackLength, isAhead) {
-    // Convert distance to percentage of track
     const distancePct = distance / trackLength;
     
     if (isAhead) {
-      // Car ahead is further along the track
       let aheadPct = playerPct + distancePct;
-      if (aheadPct > 1) aheadPct -= 1; // Wrap around
+      if (aheadPct > 1) aheadPct -= 1;
       return aheadPct;
     } else {
-      // Car behind is further back on the track
       let behindPct = playerPct - distancePct;
-      if (behindPct < 0) behindPct += 1; // Wrap around
+      if (behindPct < 0) behindPct += 1;
       return behindPct;
     }
   }
-  
-  getPositionFromPct(smoothed, pct) {
-    if (smoothed.length === 0 || pct < 0 || pct > 1) return null;
-    
-    const idx = Math.floor(pct * smoothed.length);
-    const nextIdx = (idx + 1) % smoothed.length;
-    const t = (pct * smoothed.length) - idx;
-    
-    const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
-    const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
-    
-    return { x: px, y: py };
-  }
-  
+
   startAnimation() {
     requestAnimationFrame(this.drawTrack.bind(this));
   }
-  
-  // Smoothing Function
-  smooth(points, windowSize = 3) {
-    return points.map((pt, i) => {
-      const slice = points.slice(Math.max(0, i - windowSize), i + 1);
-      const avgX = slice.reduce((sum, p) => sum + p.x, 0) / slice.length;
-      const avgY = slice.reduce((sum, p) => sum + p.y, 0) / slice.length;
-      return { x: avgX, y: avgY };
-    });
+
+  updateInfoBoxes() {
+    if (this.infoElements.carAheadDistance) {
+      this.infoElements.carAheadDistance.textContent = this.carAheadDistance > 0 
+        ? `${this.carAheadDistance.toFixed(1)} m` 
+        : '-- m';
+    }
+    
+    if (this.infoElements.carBehindDistance) {
+      this.infoElements.carBehindDistance.textContent = this.carBehindDistance > 0 
+        ? `${this.carBehindDistance.toFixed(1)} m` 
+        : '-- m';
+    }
+    
+    if (this.infoElements.fuelLevelPercent) {
+      this.infoElements.fuelLevelPercent.textContent = this.fuelLevelPct > 0 
+        ? `${(this.fuelLevelPct * 100).toFixed(1)}%` 
+        : `${this.fuelLevel > 0 && this.tankCapacity > 0 ? ((this.fuelLevel / this.tankCapacity) * 100).toFixed(1) : '--'}%`;
+    }
+    
+    if (this.infoElements.estimatedLaps) {
+      const estimatedLaps = this.calculateEstimatedLaps();
+      this.infoElements.estimatedLaps.textContent = estimatedLaps > 0 
+        ? estimatedLaps.toFixed(1) 
+        : '--';
+    }
   }
   
-  // Smooth an array of numbers with a simple moving average
-  smoothArray(arr, windowSize = 3) {
-    return arr.map((val, i) => {
-      const start = Math.max(0, i - windowSize);
-      const slice = arr.slice(start, i + 1);
-      return slice.reduce((sum, v) => sum + v, 0) / slice.length;
-    });
-  }
-  
-  // Find straight section based on yaw rate of change
-  findStraightBlendZoneFromYaw(points, yawArray, yawRateThreshold = 0.001) {
-    const total = points.length;
-    const yawDelta = (a, b) => {
-      let diff = a - b;
-      while (diff > Math.PI) diff -= 2 * Math.PI;
-      while (diff < -Math.PI) diff += 2 * Math.PI;
-      return diff;
-    };
-    
-    const smoothYaw = this.smoothArray(yawArray, 3);
-    
-    let startIdx = 0;
-    for (let i = total - 1; i > 0; i--) {
-      if (Math.abs(yawDelta(smoothYaw[i], smoothYaw[i - 1])) > yawRateThreshold) {
-        startIdx = (i + 1) % total;
-        break;
-      }
+  calculateEstimatedLaps() {
+    if (this.fuelLevel <= 0 || this.avgFuelPerLap <= 0) {
+      return 0;
     }
-    
-    let endIdx = 0;
-    for (let i = 1; i < total; i++) {
-      if (Math.abs(yawDelta(smoothYaw[i], smoothYaw[i - 1])) > yawRateThreshold) {
-        endIdx = (i - 1 + total) % total;
-        break;
-      }
-    }
-    
-    return { startIdx, endIdx };
-  }
-  
-  // Blend into/out of a straight section gradually
-  blendLapEndsStraightSection(points, startIdx, endIdx, fadePoints = 5) {
-    const blended = [...points];
-    const total = points.length;
-    
-    // Average heading vector over first few points of the straight
-    let avgDx = 0, avgDy = 0, count = 0;
-    let i = startIdx;
-    while (true) {
-      const next = (i + 1) % total;
-      avgDx += points[next].x - points[i].x;
-      avgDy += points[next].y - points[i].y;
-      count++;
-      if (i === endIdx) break;
-      i = next;
-    }
-    avgDx /= count;
-    avgDy /= count;
-    const len = Math.hypot(avgDx, avgDy) || 1;
-    const ux = avgDx / len;
-    const uy = avgDy / len;
-    
-    // Walk through the straight section
-    i = startIdx;
-    let dist = 0;
-    while (true) {
-      const fadeIn = Math.min(1, ((i - startIdx + total) % total) / fadePoints);
-      const fadeOut = Math.min(1, ((endIdx - i + total) % total) / fadePoints);
-      const alpha = Math.min(fadeIn, fadeOut); // 0→1→0 across the section
-      
-      const straightX = points[startIdx].x + ux * dist;
-      const straightY = points[startIdx].y + uy * dist;
-      
-      blended[i] = {
-        x: points[i].x * (1 - alpha) + straightX * alpha,
-        y: points[i].y * (1 - alpha) + straightY * alpha
-      };
-      
-      if (i === endIdx) break;
-      const next = (i + 1) % total;
-      dist += Math.hypot(points[next].x - points[i].x, points[next].y - points[i].y);
-      i = next;
-    }
-    
-    return blended;
-  }
-  
-  // Draw the track
-  drawTrack() {
-    this.trackCtx.clearRect(0, 0, this.trackCanvas.width, this.trackCanvas.height);
-    
-    // Debug: Log drawing status occasionally
-    if (Math.random() < 0.001) { // Very rarely to avoid spam
-      console.log('TrackMap: Drawing called', {
-        finalLapLength: this.finalLap.length,
-        lapCompleted: this.lapCompleted,
-        lapStarted: this.lapStarted,
-        bufferLength: this.lapBuffer.length
-      });
-    }
-    
-    if (this.finalLap.length > 0) {
-      let smoothed = this.smooth(this.finalLap);
-      
-      // Yaw-aware blend
-      if (this.finalLapYaw && this.finalLapYaw.length === smoothed.length) {
-        const { startIdx, endIdx } = this.findStraightBlendZoneFromYaw(smoothed, this.finalLapYaw, 0.001);
-        smoothed = this.blendLapEndsStraightSection(smoothed, startIdx, endIdx, 5); // fade over 5 points
-      }
-      
-      // Auto-scale and center
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-      smoothed.forEach(pt => {
-        minX = Math.min(minX, pt.x);
-        maxX = Math.max(maxX, pt.x);
-        minY = Math.min(minY, pt.y);
-        maxY = Math.max(maxY, pt.y);
-      });
-      
-      const padding = 20;
-      const traceWidth = maxX - minX;
-      const traceHeight = maxY - minY;
-      const scaleX = (this.trackCanvas.width - padding * 2) / traceWidth;
-      const scaleY = (this.trackCanvas.height - padding * 2) / traceHeight;
-      const autoScale = Math.min(scaleX, scaleY);
-      const offsetX = (this.trackCanvas.width - traceWidth * autoScale) / 2 - minX * autoScale;
-      const offsetY = (this.trackCanvas.height - traceHeight * autoScale) / 2 - minY * autoScale;
-      
-      // Draw path
-      this.trackCtx.beginPath();
-      smoothed.forEach((pt, i) => {
-        const sx = pt.x * autoScale + offsetX;
-        const sy = pt.y * autoScale + offsetY;
-        i === 0 ? this.trackCtx.moveTo(sx, sy) : this.trackCtx.lineTo(sx, sy);
-      });
-      this.trackCtx.lineTo(smoothed[0].x * autoScale + offsetX, smoothed[0].y * autoScale + offsetY);
-      this.trackCtx.strokeStyle = 'white';
-      this.trackCtx.stroke();
-      
-      // Finish line marker
-      const finishX = smoothed[0].x * autoScale + offsetX;
-      const finishY = smoothed[0].y * autoScale + offsetY;
-      this.trackCtx.strokeStyle = 'red';
-      this.trackCtx.lineWidth = 2;
-      this.trackCtx.beginPath();
-      this.trackCtx.moveTo(finishX - 5, finishY - 5);
-      this.trackCtx.lineTo(finishX + 5, finishY + 5);
-      this.trackCtx.stroke();
-      this.trackCtx.lineWidth = 1;
-      
-      // Live position marker (player car)
-      if (this.liveLapPct > 0 && this.liveLapPct <= 1) {
-        // Use the current lap percentage directly - no complex interpolation needed
-        let pct = this.liveLapPct;
-        
-        // Debug position calculation (occasionally)
-        if (Math.random() < 0.02) {
-          console.log('Player position:', {
-            liveLapPct: this.liveLapPct.toFixed(4),
-            finalPct: pct.toFixed(4),
-            smoothedLength: smoothed.length
-          });
-        }
-        
-        const idx = Math.floor(pct * smoothed.length);
-        const nextIdx = (idx + 1) % smoothed.length;
-        const t = (pct * smoothed.length) - idx;
-        const px = smoothed[idx].x + (smoothed[nextIdx].x - smoothed[idx].x) * t;
-        const py = smoothed[idx].y + (smoothed[nextIdx].y - smoothed[idx].y) * t;
-        
-        const markerX = px * autoScale + offsetX;
-        const markerY = py * autoScale + offsetY;
-        
-        const iconSize = 16;
-        
-        // Debug car image and drawing
-        if (Math.random() < 0.02) {
-          console.log('Drawing player car:', {
-            carImgLoaded: this.carImg && this.carImg.complete,
-            markerX: markerX.toFixed(1),
-            markerY: markerY.toFixed(1),
-            smoothedLength: smoothed.length
-          });
-        }
-        
-        // Draw the car image if loaded
-        if (this.carImg && this.carImg.complete) {
-          this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
-        } else {
-          // Fallback: draw a colored circle if image not loaded
-          this.trackCtx.fillStyle = '#ff6b6b';
-          this.trackCtx.beginPath();
-          this.trackCtx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
-          this.trackCtx.fill();
-        }
-        
-        // Debug position calculation (occasionally)
-        if (Math.random() < 0.01) {
-          console.log('Player position:', {
-            liveLapPct: this.liveLapPct.toFixed(4),
-            finalPct: pct.toFixed(4),
-            markerX: markerX.toFixed(1),
-            markerY: markerY.toFixed(1)
-          });
-        }
-        
-        // Draw car ahead and behind if distances are available and reasonable
-        this.drawCarAheadBehind(smoothed, autoScale, offsetX, offsetY, pct, iconSize);
-      }
-    }
-    
-    requestAnimationFrame(this.drawTrack.bind(this));
+    return this.fuelLevel / this.avgFuelPerLap;
   }
   
   /**
-   * Load track data from localStorage
-   */
-  loadFromStorage() {
-    if (!window.storageManager) {
-      console.warn('TrackMap: StorageManager not available');
-      return;
-    }
-    
-    try {
-      const data = window.storageManager.loadVisualizationData('trackMap');
-      if (data) {
-        this.finalLap = data.finalLap || [];
-        this.finalLapYaw = data.finalLapYaw || [];
-        this.lapStarted = data.lapStarted || false;
-        this.lapCompleted = data.lapCompleted || false;
-        console.log(`TrackMap: Loaded track data from storage`);
-      }
-    } catch (error) {
-      console.warn('TrackMap: Failed to load data from storage:', error);
-    }
-  }
-  
-  /**
-   * Delete track data and reset for regeneration
+   * Delete track data - for SVG version, this just clears the canvas
    */
   deleteTrackData() {
-    // Clear all track data
-    this.finalLap = [];
-    this.finalLapYaw = [];
-    this.lapBuffer = [];
-    this.lapYaw = [];
-    this.lapStarted = false;
-    this.lapCompleted = false;
-    
-    // Clear storage
-    if (window.storageManager) {
-      window.storageManager.clearVisualizationData('trackMap');
-    }
-    
-    // Clear canvas
     this.trackCtx.clearRect(0, 0, this.trackCanvas.width, this.trackCanvas.height);
-    
-    console.log('Track data deleted - track will regenerate on next lap');
-  }
-  
-  /**
-   * Save track data to localStorage
-   */
-  saveToStorage() {
-    if (!window.storageManager) {
-      console.warn('TrackMap: StorageManager not available');
-      return;
-    }
-    
-    try {
-      const data = {
-        finalLap: this.finalLap,
-        finalLapYaw: this.finalLapYaw,
-        lapStarted: this.lapStarted,
-        lapCompleted: this.lapCompleted
-      };
-      window.storageManager.saveVisualizationData('trackMap', data);
-    } catch (error) {
-      console.warn('TrackMap: Failed to save data to storage:', error);
-    }
-  }
-  
-  /**
-   * Set up automatic saving to localStorage
-   */
-  setupAutoSave() {
-    // Save every minute
-    setInterval(() => {
-      this.saveToStorage();
-    }, 60000);
-    
-    // Save when page is about to unload
-    window.addEventListener('beforeunload', () => {
-      this.saveToStorage();
-    });
-    
-    // Save when lap is completed
-    const originalSetupListeners = this.setupListeners;
-    this.setupListeners = () => {
-      originalSetupListeners.call(this);
-      
-      // Override the telemetry handler to save on lap completion
-      const originalHandler = this.socket._callbacks?.$telemetry?.[this.socket._callbacks.$telemetry.length - 1];
-      if (originalHandler) {
-        this.socket.off('telemetry', originalHandler);
-        this.socket.on('telemetry', (data) => {
-          const wasCompleted = this.lapCompleted;
-          originalHandler(data);
-          // Save if lap just completed
-          if (!wasCompleted && this.lapCompleted) {
-            this.saveToStorage();
-          }
-        });
-      }
-    };
+    console.log('Track view cleared - using SVG track map');
   }
 }
