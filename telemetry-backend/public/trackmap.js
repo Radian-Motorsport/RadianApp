@@ -73,6 +73,8 @@ class TrackMap {
     ];
     
     console.log('Loaded custom track with start/finish line and corner markers');
+    console.log('Start/finish coords:', this.startFinishCoords);
+    console.log('Track bounds will be calculated after path parsing...');
   }
   // Convert SVG path to coordinate points for car positioning
   convertSVGPathToPoints(pathData) {
@@ -281,12 +283,12 @@ class TrackMap {
     }
     
     // Calculate scaling to fit canvas with proper padding
-    const padding = 60; // Increased padding to ensure full track visibility
+    const padding = 40; // Reduced padding for smaller coordinate system
     const trackWidth = this.trackBounds.maxX - this.trackBounds.minX;
     const trackHeight = this.trackBounds.maxY - this.trackBounds.minY;
     const scaleX = (this.trackCanvas.width - padding * 2) / trackWidth;
     const scaleY = (this.trackCanvas.height - padding * 2) / trackHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.8; // Scale down by 20% to ensure full visibility
+    const scale = Math.min(scaleX, scaleY) * 1.2; // Increased scale for new smaller coordinate system
     
     const offsetX = (this.trackCanvas.width - trackWidth * scale) / 2 - this.trackBounds.minX * scale;
     const offsetY = (this.trackCanvas.height - trackHeight * scale) / 2 - this.trackBounds.minY * scale;
@@ -308,19 +310,19 @@ class TrackMap {
       const startX = this.startFinishCoords.x * scale + offsetX;
       const startY = this.startFinishCoords.y * scale + offsetY;
       
+      // Draw a red line across the track (like the SVG rectangle)
       this.trackCtx.strokeStyle = 'red';
-      this.trackCtx.lineWidth = 4;
+      this.trackCtx.lineWidth = 3;
       this.trackCtx.beginPath();
-      this.trackCtx.moveTo(startX - 10, startY - 10);
-      this.trackCtx.lineTo(startX + 10, startY + 10);
-      this.trackCtx.moveTo(startX - 10, startY + 10);
-      this.trackCtx.lineTo(startX + 10, startY - 10);
+      this.trackCtx.moveTo(startX - 8, startY);
+      this.trackCtx.lineTo(startX + 8, startY);
       this.trackCtx.stroke();
       
+      // Add S/F label
       this.trackCtx.fillStyle = 'red';
-      this.trackCtx.font = '12px Arial';
+      this.trackCtx.font = '10px Arial';
       this.trackCtx.textAlign = 'center';
-      this.trackCtx.fillText('S/F', startX, startY - 15);
+      this.trackCtx.fillText('S/F', startX, startY - 10);
     }
     
     // Draw corner markers if available
@@ -329,30 +331,13 @@ class TrackMap {
         const markerX = marker.coords.x * scale + offsetX;
         const markerY = marker.coords.y * scale + offsetY;
         
-        this.trackCtx.fillStyle = 'yellow';
-        this.trackCtx.font = 'bold 14px Arial';
+        this.trackCtx.fillStyle = 'white';
+        this.trackCtx.font = 'bold 12px "Road Rage", Arial';
         this.trackCtx.textAlign = 'center';
         this.trackCtx.textBaseline = 'middle';
         this.trackCtx.fillText(marker.text, markerX, markerY);
       });
     }
-    
-    // Debug: Show where we think lap 0% is (should be at start/finish line)
-    const debugStartPoint = this.startFinishCoords || this.trackPoints[0];
-    const debugX = debugStartPoint.x * scale + offsetX;
-    const debugY = debugStartPoint.y * scale + offsetY;
-    
-    // Draw a cyan circle to show our current 0% assumption
-    this.trackCtx.fillStyle = 'cyan';
-    this.trackCtx.beginPath();
-    this.trackCtx.arc(debugX, debugY, 8, 0, 2 * Math.PI);
-    this.trackCtx.fill();
-    
-    // Add text label
-    this.trackCtx.fillStyle = 'cyan';
-    this.trackCtx.font = '12px Arial';
-    this.trackCtx.textAlign = 'center';
-    this.trackCtx.fillText('0%', debugX, debugY - 12);
     
     // Draw car position
     this.drawCarPosition(scale, offsetX, offsetY);
@@ -422,13 +407,14 @@ class TrackMap {
         }
       }
       
-      // Calculate position relative to the start/finish line
-      const adjustedIdx = (closestIndex + Math.floor(pct * this.trackPoints.length)) % this.trackPoints.length;
-      const nextIdx = (adjustedIdx + 1) % this.trackPoints.length;
-      const t = (pct * this.trackPoints.length) - Math.floor(pct * this.trackPoints.length);
+      // Calculate position starting from the start/finish line
+      const totalPoints = this.trackPoints.length;
+      const targetIndex = (closestIndex + Math.floor(pct * totalPoints)) % totalPoints;
+      const nextIndex = (targetIndex + 1) % totalPoints;
+      const t = (pct * totalPoints) - Math.floor(pct * totalPoints);
       
-      const currentPoint = this.trackPoints[adjustedIdx];
-      const nextPoint = this.trackPoints[nextIdx];
+      const currentPoint = this.trackPoints[targetIndex];
+      const nextPoint = this.trackPoints[nextIndex];
       
       return {
         x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
