@@ -669,26 +669,55 @@
         return;
       }
       
+      // Group clients by driver name to show unique apps
+      const uniqueApps = new Map();
+      
       appClients.forEach(client => {
+        const driverKey = client.driverName || `UnknownApp_${client.id.substring(0, 6)}`;
+        
+        if (!uniqueApps.has(driverKey)) {
+          uniqueApps.set(driverKey, {
+            driverName: client.driverName,
+            broadcastingEnabled: client.broadcastingEnabled,
+            isActiveBroadcaster: client.isActiveBroadcaster,
+            connectionCount: 1,
+            lastTelemetryTime: client.lastTelemetryTime,
+            id: client.id
+          });
+        } else {
+          // Update existing entry with latest info and increment connection count
+          const existing = uniqueApps.get(driverKey);
+          existing.connectionCount++;
+          existing.broadcastingEnabled = existing.broadcastingEnabled || client.broadcastingEnabled;
+          existing.isActiveBroadcaster = existing.isActiveBroadcaster || client.isActiveBroadcaster;
+          if (client.lastTelemetryTime > existing.lastTelemetryTime) {
+            existing.lastTelemetryTime = client.lastTelemetryTime;
+          }
+        }
+      });
+      
+      // Display unique apps
+      uniqueApps.forEach(app => {
         const clientEl = document.createElement('div');
         clientEl.className = 'client-item';
         clientEl.style.justifyContent = 'center';
         
         const idSpan = document.createElement('span');
-        const isBroadcasting = client.broadcastingEnabled;
+        const isBroadcasting = app.broadcastingEnabled && app.isActiveBroadcaster;
         
         // Apps show driver name if available, or indicate it's an app
-        if (client.driverName) {
+        if (app.driverName) {
           const status = isBroadcasting ? ' 📡 BROADCASTING' : ' ⏸️ STANDBY';
           const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
           
-          idSpan.innerHTML = `🎮 ${client.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
+          idSpan.innerHTML = `🎮 ${app.driverName}<br><small style="color: ${statusColor};">${status}</small>`;
           idSpan.style.fontWeight = 'bold';
           idSpan.style.color = isBroadcasting ? '#4caf50' : '#ffffff';
         } else {
           const status = isBroadcasting ? ' 📡 BROADCASTING' : ' ⏸️ STANDBY';
           const statusColor = isBroadcasting ? '#4caf50' : '#ff9800';
-          idSpan.innerHTML = `🎮 Racing App<br><small style="color: ${statusColor};">ID: ${client.id.substring(0, 6)}... ${status}</small>`;
+          
+          idSpan.innerHTML = `🎮 Racing App<br><small style="color: ${statusColor};">ID: ${app.id.substring(0, 6)}... ${status}</small>`;
         }
         idSpan.style.textAlign = 'center';
         
