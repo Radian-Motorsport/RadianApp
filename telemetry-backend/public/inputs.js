@@ -6,6 +6,16 @@
 // DOM elements cache for inputs page
 const inputsElements = {};
 
+// Time formatting function
+function formatTimeHMS(timeInSeconds) {
+  if (isNaN(timeInSeconds) || timeInSeconds == null) return '--:--:--';
+  
+  const hours = Math.floor(timeInSeconds / 3600);
+  const minutes = Math.floor((timeInSeconds % 3600) / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
 // Initialization function
 function initInputsPage() {
   // Cache DOM elements for better performance
@@ -117,6 +127,10 @@ function setupEventListeners() {
 function updateStatusElements(values) {
   if (!values) return;
   
+  // Race Info
+  safeUpdateElement('SessionTimeRemain', formatTimeHMS(values.SessionTimeRemain));
+  
+  // Track Status
   safeUpdateElement('IsOnTrack', values.IsOnTrack);
   safeUpdateElement('IsInGarage', values.IsInGarage);
   safeUpdateElement('PlayerCarPosition', values.PlayerCarPosition);
