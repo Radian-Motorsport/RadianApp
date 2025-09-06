@@ -1047,30 +1047,19 @@ window.telemetryDashboard = {
     lapTimeHistory,
     avgLapTime: lapTimeHistory.length >= 3
       ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
-      : lapAvg3,
-    lastLapTime,
-    bestLapTime
+      : previousValues.lapAvg3,
+    lastLapTime: previousValues.lastLapTime,
+    bestLapTime: previousValues.lastLapTime // Using lastLapTime as fallback
   }),
   getRaceData: () => ({
     isRaceRunning: bufferedData?.values?.SessionTimeRemain < lastSessionTimeRemain,
     raceTimeRemaining: bufferedData?.values?.SessionTimeRemain || 0,
     currentLap,
     sessionInfo: bufferedData?.sessionInfo,
-    sessionType,
-    trackName,
-    sessionLaps,
-    sessionTime
-  }),
-  getDriverData: () => ({
-    driverName,
-    teamName,
-    carNumber
-  }),
-  getTireData: () => ({
-    tireWearFL,
-    tireWearFR,
-    tireWearRL,
-    tireWearRR
+    sessionType: '',
+    trackName: '',
+    sessionLaps: 0,
+    sessionTime: 0
   }),
   // Export reset function for use in index.html
   resetTelemetryData

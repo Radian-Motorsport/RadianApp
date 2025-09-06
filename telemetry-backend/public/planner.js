@@ -152,22 +152,27 @@ function initPlannerPage() {
     // Get fuel data
     if (window.telemetryDashboard.getFuelData) {
       const fuelData = window.telemetryDashboard.getFuelData();
+      console.log('Planner - Fuel data from index:', fuelData);
       
       if (fuelData.avgFuelUsed3 > 0) {
         fuelPerLap = fuelData.avgFuelUsed3;
+        console.log('Planner - Set fuelPerLap from index:', fuelPerLap);
       }
       
       if (fuelData.currentFuelLevel > 0) {
         currentFuelLevel = fuelData.currentFuelLevel;
+        console.log('Planner - Set currentFuelLevel from index:', currentFuelLevel);
       }
     }
     
     // Get lap time data
     if (window.telemetryDashboard.getLapTimeData) {
       const lapData = window.telemetryDashboard.getLapTimeData();
+      console.log('Planner - Lap data from index:', lapData);
       
       if (lapData.avgLapTime > 0) {
         avgLapTime = lapData.avgLapTime;
+        console.log('Planner - Set avgLapTime from index:', avgLapTime);
       }
     }
   } else {
@@ -276,6 +281,8 @@ function handleTelemetryData(data) {
     
     // Get fuel data
     const fuelData = window.telemetryDashboard.getFuelData();
+    console.log('Planner - Live fuel data from index:', fuelData);
+    
     if (fuelData) {
       if (fuelData.currentFuelLevel > 0) {
         currentFuelLevel = fuelData.currentFuelLevel;
@@ -283,13 +290,17 @@ function handleTelemetryData(data) {
       
       if (fuelData.avgFuelUsed3 > 0) {
         fuelPerLap = fuelData.avgFuelUsed3;
+        console.log('Planner - Updated fuelPerLap from index:', fuelPerLap);
       }
     }
     
     // Get lap time data
     const lapData = window.telemetryDashboard.getLapTimeData();
+    console.log('Planner - Live lap data from index:', lapData);
+    
     if (lapData && lapData.avgLapTime > 0) {
       avgLapTime = lapData.avgLapTime;
+      console.log('Planner - Updated avgLapTime from index:', avgLapTime);
     }
   }
   
@@ -451,8 +462,17 @@ function formatLapTime(timeInSeconds) {
 
 // Calculate the stint plan based on current values
 function calculateStintPlan() {
+  console.log('Planner - calculateStintPlan called with values:', {
+    fuelPerLap,
+    avgLapTime,
+    tankCapacity,
+    raceTimeRemaining,
+    isRaceRunning
+  });
+  
   // Don't calculate if we don't have valid data yet
   if (fuelPerLap <= 0 || avgLapTime <= 0 || tankCapacity <= 0) {
+    console.log('Planner - Using default values due to invalid data');
     // Set some reasonable defaults if we don't have real data
     fuelPerLap = fuelPerLap || 2.8;
     avgLapTime = avgLapTime || 90;
