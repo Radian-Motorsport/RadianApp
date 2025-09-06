@@ -271,8 +271,12 @@ function handleTelemetryData(data) {
   }
   
   // Extract race time remaining directly from SessionTimeRemain
-  if (values.SessionTimeRemain > 0) {
+  if (values.SessionTimeRemain !== undefined && values.SessionTimeRemain !== null && !isNaN(values.SessionTimeRemain) && values.SessionTimeRemain > 0) {
     raceTimeRemaining = values.SessionTimeRemain;
+    
+    // Update session time tracking for calculations
+    sessionTimeRemainHistory.push(values.SessionTimeRemain);
+    lastSessionTimeRemain = values.SessionTimeRemain;
   }
   
   // Extract lap info directly if not available from telemetryDashboard
@@ -389,11 +393,14 @@ function getAvgLapTimeFromTelemetry(data) {
 
 // This function formats time from seconds into HH:MM:SS format
 function formatTime(totalSeconds) {
-  if (totalSeconds === undefined || totalSeconds === null) return "--:--:--";
+  if (totalSeconds === undefined || totalSeconds === null || isNaN(totalSeconds)) return "--:--:--";
   
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
+  // Round to nearest second to handle decimal precision
+  const roundedSeconds = Math.round(totalSeconds);
+  
+  const hours = Math.floor(roundedSeconds / 3600);
+  const minutes = Math.floor((roundedSeconds % 3600) / 60);
+  const seconds = roundedSeconds % 60;
   const pad = (num) => String(num).padStart(2, '0');
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
