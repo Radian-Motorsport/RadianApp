@@ -591,10 +591,36 @@
       console.log('Updating client list with racing apps:', racingApps, 'and web viewers:', webViewers);
       if (!appListEl || !viewerListEl) return;
       
-      // Update Racing Apps list
-      appListEl.innerHTML = '';
+      // Group racing apps by driver name to show unique apps
+      const uniqueAppsMap = new Map();
       if (racingApps && racingApps.length > 0) {
         racingApps.forEach(client => {
+          const driverKey = client.driverName || `UnknownApp_${client.id.substring(0, 6)}`;
+          
+          if (!uniqueAppsMap.has(driverKey)) {
+            uniqueAppsMap.set(driverKey, {
+              driverName: client.driverName,
+              broadcastingEnabled: client.broadcastingEnabled,
+              isActiveBroadcaster: client.isActiveBroadcaster,
+              lastTelemetryTime: client.lastTelemetryTime,
+              id: client.id
+            });
+          } else {
+            // Update existing entry with latest info
+            const existing = uniqueAppsMap.get(driverKey);
+            existing.broadcastingEnabled = existing.broadcastingEnabled || client.broadcastingEnabled;
+            existing.isActiveBroadcaster = existing.isActiveBroadcaster || client.isActiveBroadcaster;
+            if (client.lastTelemetryTime > existing.lastTelemetryTime) {
+              existing.lastTelemetryTime = client.lastTelemetryTime;
+            }
+          }
+        });
+      }
+      
+      // Update Racing Apps list with unique apps
+      appListEl.innerHTML = '';
+      if (uniqueAppsMap.size > 0) {
+        uniqueAppsMap.forEach(client => {
           const clientEl = document.createElement('div');
           clientEl.className = 'client-item racing-app';
           clientEl.style.justifyContent = 'center';
