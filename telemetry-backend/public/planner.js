@@ -1,7 +1,7 @@
 // planner.js - Endurance Race Planning with Telemetry Data
 
-// Socket connection - will be initialized when available
-let socket = null;
+// Socket connection is already initialized in telemetry.js
+// const socket = io('https://radianapp.onrender.com'); // Removed to avoid duplicate declaration
 
 // State variables for stint calculations
 let stintData = [];
@@ -183,41 +183,29 @@ function initPlannerPage() {
 }
 
 function setupEventListeners() {
-  // Initialize socket connection if not already available
-  if (!socket) {
-    // Try to get socket from global scope first
-    if (window.socket) {
-      socket = window.socket;
-      console.log('Planner: Using existing global socket connection');
-    } else if (window.io) {
-      socket = io();
-      console.log('Planner: Created new socket connection');
-    }
-  }
-  
-  // Set up event listeners if socket is available
-  if (socket) {
+  // Use the global socket from telemetry.js
+  if (window.socket) {
     // Test socket connectivity
-    socket.emit('test', 'planner-connection-test');
+    window.socket.emit('test', 'planner-connection-test');
     
     // Listen for telemetry data
-    socket.on('telemetry', handleTelemetryData);
+    window.socket.on('telemetry', handleTelemetryData);
     
     // Listen for session info updates
-    socket.on('sessionUpdate', handleSessionUpdate);
+    window.socket.on('sessionUpdate', handleSessionUpdate);
     
     // Test connection by listening for any event
-    socket.on('connect', () => {
+    window.socket.on('connect', () => {
       console.log('Planner: Socket connected successfully');
     });
     
-    socket.on('disconnect', () => {
+    window.socket.on('disconnect', () => {
       console.log('Planner: Socket disconnected');
     });
     
-    console.log('Planner: Event listeners set up, socket state:', socket.connected);
+    console.log('Planner: Event listeners set up, socket state:', window.socket.connected);
   } else {
-    console.warn('Planner: Socket not available, retrying in 1 second');
+    console.warn('Planner: Global socket not available, retrying in 1 second');
     setTimeout(setupEventListeners, 1000);
   }
 }
