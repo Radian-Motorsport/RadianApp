@@ -1,7 +1,7 @@
 // planner.js - Endurance Race Planning with Telemetry Data
 
-// Socket connection is already initialized in telemetry.js
-// const socket = io('https://radianapp.onrender.com'); // Removed to avoid duplicate declaration
+// Socket connection - will be initialized when available
+let socket = null;
 
 // State variables for stint calculations
 let stintData = [];
@@ -113,13 +113,17 @@ function setupPlannerAutoSave() {
 document.addEventListener('DOMContentLoaded', initPlannerPage);
 
 function initPlannerPage() {
+  console.log('Planner: Initializing page');
+  
   // Load saved planner state
   loadPlannerState();
   
   // Set up auto-save
   setupPlannerAutoSave();
   
+  // Set up event listeners (will retry if socket not available)
   setupEventListeners();
+  
   setupDataSharing();
   
   // Initialize trend tracking variables
@@ -179,11 +183,43 @@ function initPlannerPage() {
 }
 
 function setupEventListeners() {
-  // Listen for telemetry data
-  socket.on('telemetry', handleTelemetryData);
+  // Initialize socket connection if not already available
+  if (!socket) {
+    // Try to get socket from global scope first
+    if (window.socket) {
+      socket = window.socket;
+      console.log('Planner: Using existing global socket connection');
+    } else if (window.io) {
+      socket = io();
+      console.log('Planner: Created new socket connection');
+    }
+  }
   
-  // Listen for session info updates
-  socket.on('sessionUpdate', handleSessionUpdate);
+  // Set up event listeners if socket is available
+  if (socket) {
+    // Test socket connectivity
+    socket.emit('test', 'planner-connection-test');
+    
+    // Listen for telemetry data
+    socket.on('telemetry', handleTelemetryData);
+    
+    // Listen for session info updates
+    socket.on('sessionUpdate', handleSessionUpdate);
+    
+    // Test connection by listening for any event
+    socket.on('connect', () => {
+      console.log('Planner: Socket connected successfully');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('Planner: Socket disconnected');
+    });
+    
+    console.log('Planner: Event listeners set up, socket state:', socket.connected);
+  } else {
+    console.warn('Planner: Socket not available, retrying in 1 second');
+    setTimeout(setupEventListeners, 1000);
+  }
 }
 
 function setupDataSharing() {
@@ -239,6 +275,14 @@ function handleTelemetryData(data) {
     console.log('Planner - No values in telemetry data');
     return;
   }
+  
+  // Log a few key values to verify data is flowing
+  console.log('Planner - Key telemetry values:', {
+    sessionTimeRemain: values.SessionTimeRemain,
+    fuelLevel: values.FuelLevel,
+    lap: values.Lap,
+    isOnTrack: values.IsOnTrack
+  });
   
   // Try to get data from telemetryDashboard first
   if (window.telemetryDashboard) {
