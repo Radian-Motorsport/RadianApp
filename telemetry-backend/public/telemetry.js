@@ -261,6 +261,9 @@ function updateUIFromState() {
   
   if (elements.fuelAvg && previousValues.fuelAvg !== null && previousValues.fuelAvg !== undefined) {
     updateValueWithColor(elements.fuelAvg, `${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg, 'fuel', 'fuelAvg');
+    console.log('Restored fuelAvg from state:', previousValues.fuelAvg);
+  } else {
+    console.log('fuelAvg not restored - element exists:', !!elements.fuelAvg, 'value:', previousValues.fuelAvg);
   }
   
   if (elements.fuelAvg5 && previousValues.fuelAvg5 !== null && previousValues.fuelAvg5 !== undefined) {
@@ -791,14 +794,20 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   // Fuel Usage Tracking
   if (fuelAtLapStart !== null) {
     const fuelUsed = fuelAtLapStart - fuel;
+    console.log(`Fuel tracking: fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}, currentFuel=${fuel?.toFixed(2)}, fuelUsed=${fuelUsed?.toFixed(2)}`);
+    
     if (fuelUsed >= 0 && isFinite(fuelUsed)) {
       fuelUsageHistory.push(fuelUsed);
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
+      
+      console.log(`Fuel usage history (${fuelUsageHistory.length} laps):`, fuelUsageHistory.map(f => f.toFixed(2)));
 
       // 3-Lap Fuel Average - store in global previousValues
       previousValues.fuelAvg = fuelUsageHistory.length >= 3
         ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
         : null;
+      
+      console.log(`3-lap fuel average: ${previousValues.fuelAvg?.toFixed(2) ?? 'null'}`);
       
       // Update avgFuelPerLap for trackmap usage
       avgFuelPerLap = previousValues.fuelAvg || (fuelUsageHistory.length > 0 
@@ -806,7 +815,7 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
         : 0);
 
       if (elements.fuelAvg) {
-        elements.fuelAvg.textContent = `3-Lap Avg: ${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`;
+        updateValueWithColor(elements.fuelAvg, `${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg, 'fuel', 'fuelAvg');
       }
 
       // 5-Lap Fuel Average
