@@ -324,13 +324,6 @@ function initDashboard() {
     stintAvgLapTime: document.getElementById('stintAvgLapTime'),
     lastPitStopTime: document.getElementById('lastPitStopTime'),
     stintIncidents: document.getElementById('stintIncidents'),
-    // Current stint progress elements
-    currentStintDuration: document.getElementById('currentStintDuration'),
-    averageStintDuration: document.getElementById('averageStintDuration'),
-    currentStintLapCount: document.getElementById('currentStintLapCount'),
-    averageStintLapCount: document.getElementById('averageStintLapCount'),
-    raceTimeRemaining: document.getElementById('raceTimeRemaining'),
-    totalStintCount: document.getElementById('totalStintCount'),
     // Tire elements
     tireRF: document.getElementById('tireRF'),
     tireLF: document.getElementById('tireLF'),
@@ -368,48 +361,6 @@ function updateFuelGauge(level) {
   const fuel = Number(level).toFixed(1);
   elements.fuelGauge.value = fuel;
   elements.fuelValue.textContent = `${fuel}%`;
-}
-
-// Update stint progress display
-function updateStintProgress(values) {
-  if (!values) return;
-  
-  const stintData = window.telemetryDashboard?.getStintData?.() || {};
-  
-  // Current stint elapsed time
-  if (elements.currentStintDuration) {
-    const currentElapsed = stintData.currentStintElapsed || 0;
-    elements.currentStintDuration.textContent = currentElapsed > 0 ? formatTimeHMS(currentElapsed) : '--:--:--';
-  }
-  
-  // Average stint duration
-  if (elements.averageStintDuration) {
-    const avgDuration = stintData.averageStintDuration || 0;
-    elements.averageStintDuration.textContent = avgDuration > 0 ? formatTimeHMS(avgDuration) : '--:--:--';
-  }
-  
-  // Current stint lap count
-  if (elements.currentStintLapCount) {
-    const currentLapCount = stintData.currentStintLapCount || 0;
-    elements.currentStintLapCount.textContent = currentLapCount > 0 ? currentLapCount.toString() : '--';
-  }
-  
-  // Average stint lap count
-  if (elements.averageStintLapCount) {
-    const avgLapCount = stintData.averageStintLapCount || 0;
-    elements.averageStintLapCount.textContent = avgLapCount > 0 ? Math.round(avgLapCount).toString() : '--';
-  }
-  
-  // Race time remaining
-  if (elements.raceTimeRemaining && values.SessionTimeRemain) {
-    elements.raceTimeRemaining.textContent = formatTimeHMS(values.SessionTimeRemain);
-  }
-  
-  // Total stint count
-  if (elements.totalStintCount) {
-    const totalStints = stintData.stintDurations?.length || 0;
-    elements.totalStintCount.textContent = totalStints > 0 ? totalStints.toString() : '--';
-  }
 }
 
 // Update weather data display
@@ -571,11 +522,8 @@ function handlePitStopCompletion(values) {
   // Use the actual stint lap count from global tracking (calculated via OnPitRoad)
   const stintLapCount = actualStintLapCount > 0 ? actualStintLapCount : 0;
   
-  // Calculate fuel averages from history
-  const lastFuelUsed = fuelUsageHistory.at(-1);
-  const avgFuelUsed = fuelUsageHistory.length > 0
-    ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
-    : null;
+  // Calculate stint average fuel usage: tankCapacity / stint lap count
+  const avgFuelUsed = stintLapCount > 0 ? tankCapacity / stintLapCount : null;
   
   // Use the actual stint duration from global tracking (calculated via SessionTimeRemain)
   const stintTotalTimeSeconds = actualStintDuration > 0 ? actualStintDuration : null;
@@ -1008,9 +956,6 @@ function setupSocketListeners() {
 
       // Update weather data
       updateWeatherData(values);
-      
-      // Update stint progress
-      updateStintProgress(values);
 
       // Display Logic
       const safeValues = bufferedData?.values;
