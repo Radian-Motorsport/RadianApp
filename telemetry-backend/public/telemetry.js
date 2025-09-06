@@ -38,7 +38,13 @@ let previousValues = {
   fuelAvg5: null,
   lastLapTime: null,
   lapAvg3: null,
-  lapAvg5: null
+  lapAvg5: null,
+  projectedLaps: null,
+  projectedTime: null,
+  stintLapCount: null,
+  stintFuelAvg: null,
+  stintTotalTime: null,
+  stintAvgLapTime: null
 };
 let stintIncidentCount = 0;
 
@@ -108,7 +114,13 @@ function loadTelemetryState() {
       fuelAvg5: null,
       lastLapTime: null,
       lapAvg3: null,
-      lapAvg5: null
+      lapAvg5: null,
+      projectedLaps: null,
+      projectedTime: null,
+      stintLapCount: null,
+      stintFuelAvg: null,
+      stintTotalTime: null,
+      stintAvgLapTime: null
     };
     stintIncidentCount = savedState.stintIncidentCount ?? 0;
     wasPitstopActive = savedState.wasPitstopActive ?? false;
@@ -223,6 +235,32 @@ function updateUIFromState() {
   
   if (elements.lapAvg5 && previousValues.lapAvg5 !== null && previousValues.lapAvg5 !== undefined) {
     updateValueWithColor(elements.lapAvg5, formatTimeMS(previousValues.lapAvg5), previousValues.lapAvg5, 'lapTime', 'lapAvg5');
+  }
+  
+  // Update projected values
+  if (elements.fuelProjectedLaps && previousValues.projectedLaps !== null && previousValues.projectedLaps !== undefined) {
+    updateValueWithColor(elements.fuelProjectedLaps, `${previousValues.projectedLaps?.toFixed(2) ?? '--'}`, previousValues.projectedLaps, 'projection');
+  }
+  
+  if (elements.fuelProjectedTime && previousValues.projectedTime !== null && previousValues.projectedTime !== undefined) {
+    updateValueWithColor(elements.fuelProjectedTime, formatTimeMS(previousValues.projectedTime), previousValues.projectedTime, 'projection');
+  }
+  
+  // Update stint values
+  if (elements.stintLapCount && previousValues.stintLapCount !== null && previousValues.stintLapCount !== undefined) {
+    elements.stintLapCount.textContent = previousValues.stintLapCount?.toString() ?? '--';
+  }
+  
+  if (elements.stintFuelAvg && previousValues.stintFuelAvg !== null && previousValues.stintFuelAvg !== undefined) {
+    elements.stintFuelAvg.textContent = `${previousValues.stintFuelAvg?.toFixed(2) ?? '--'} L`;
+  }
+  
+  if (elements.stintTotalTime && previousValues.stintTotalTime !== null && previousValues.stintTotalTime !== undefined) {
+    elements.stintTotalTime.textContent = formatTimeHMS(previousValues.stintTotalTime);
+  }
+  
+  if (elements.stintAvgLapTime && previousValues.stintAvgLapTime !== null && previousValues.stintAvgLapTime !== undefined) {
+    elements.stintAvgLapTime.textContent = formatTimeMS(previousValues.stintAvgLapTime);
   }
   
   // Update buffer status
@@ -475,6 +513,12 @@ function handlePitStopCompletion(values) {
     ? stintTotalTimeSeconds / stintLapCount 
     : null;
   
+  // Store stint values for persistence
+  previousValues.stintLapCount = stintLapCount;
+  previousValues.stintFuelAvg = avgFuelUsed;
+  previousValues.stintTotalTime = stintTotalTimeSeconds;
+  previousValues.stintAvgLapTime = stintAvgLapTimeSeconds;
+  
   // Update stint summary UI
   if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
   if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
@@ -539,6 +583,12 @@ function handleDriverExit(values, teamLap) {
   
   // Update last pit stop time
   lastPitStopTimeValue = stintTotalTimeSeconds ? formatTimeMS(stintTotalTimeSeconds) : '--:--';
+
+  // Store stint values for persistence
+  previousValues.stintLapCount = stintLapCount;
+  previousValues.stintFuelAvg = avgFuelUsed;
+  previousValues.stintTotalTime = stintTotalTimeSeconds;
+  previousValues.stintAvgLapTime = stintAvgLapTimeSeconds;
 
   // Tire wear snapshot
   const lastStintTireWear = {
@@ -680,6 +730,10 @@ function processLapCompletion(lapCompleted, fuel) {
   const projectedTimeSec = projectedLaps && previousValues.lapAvg3
     ? projectedLaps * previousValues.lapAvg3
     : null;
+
+  // Store projected values for persistence
+  previousValues.projectedLaps = projectedLaps;
+  previousValues.projectedTime = projectedTimeSec;
 
   if (elements.fuelProjectedLaps) {
     updateValueWithColor(elements.fuelProjectedLaps, `${projectedLaps?.toFixed(2) ?? '--'}`, projectedLaps, 'projection');
@@ -939,7 +993,13 @@ function resetTelemetryData() {
       fuelAvg5: null,
       lastLapTime: null,
       lapAvg3: null,
-      lapAvg5: null
+      lapAvg5: null,
+      projectedLaps: null,
+      projectedTime: null,
+      stintLapCount: null,
+      stintFuelAvg: null,
+      stintTotalTime: null,
+      stintAvgLapTime: null
     };
     stintIncidentCount = 0;
     
