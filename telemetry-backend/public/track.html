@@ -15,8 +15,8 @@
 
   <!-- Track Map -->
   <div class="telemetry-block">
-    <h2>Track Map <button id="deleteTrackBtn" class="delete-track-btn" title="Delete track data and regenerate">🗑️</button></h2>
-    <canvas id="trackCanvas"></canvas>
+    <h2>Track Map</h2>
+    <div id="trackContainer"></div>
 
     <!-- Track Info Boxes (Weather-style grid) -->
     <div class="track-info-grid weather-style-grid">
@@ -59,22 +59,8 @@
       // Wait for socket to be available from telemetry.js
       function initTrackMap() {
         if (typeof socket !== 'undefined' && socket) {
-          window.trackMap = new TrackMap(socket, 'trackCanvas');
+          window.trackMap = new TrackMap(socket, 'trackContainer');
           console.log('TrackMap initialized successfully');
-          
-          // Add delete track data button functionality
-          const deleteBtn = document.getElementById('deleteTrackBtn');
-          if (deleteBtn) {
-            deleteBtn.addEventListener('click', function() {
-              console.log('Delete button clicked, trackMap:', window.trackMap);
-              if (window.trackMap && typeof window.trackMap.deleteTrackData === 'function') {
-                window.trackMap.deleteTrackData();
-                console.log('Track data deleted - will regenerate on next lap');
-              } else {
-                console.error('TrackMap instance or deleteTrackData method not available');
-              }
-            });
-          }
         } else {
           console.warn('Socket not ready, retrying track map initialization...');
           setTimeout(initTrackMap, 500);
