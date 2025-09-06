@@ -42,6 +42,23 @@ class TrackMap {
     
     // Check for existing session data from bufferedData
     this.loadExistingSessionData();
+    
+    // Also check periodically in case data arrives later
+    this.sessionDataChecker = setInterval(() => {
+      if (window.bufferedData && window.bufferedData.sessionInfo && !this.driverInfo) {
+        console.log('📋 TrackMap: Found sessionInfo on periodic check');
+        this.updateSessionDisplay(window.bufferedData.sessionInfo);
+        clearInterval(this.sessionDataChecker);
+      }
+    }, 1000);
+    
+    // Clear the checker after 30 seconds to avoid infinite checking
+    setTimeout(() => {
+      if (this.sessionDataChecker) {
+        clearInterval(this.sessionDataChecker);
+        console.log('📋 TrackMap: Stopped periodic sessionInfo checking after 30 seconds');
+      }
+    }, 30000);
   }
 
   initializeSVGTrack() {
@@ -199,17 +216,38 @@ class TrackMap {
   }
 
   loadExistingSessionData() {
+    console.log('📋 TrackMap: loadExistingSessionData called');
+    console.log('📋 Checking window.bufferedData:', window.bufferedData);
+    
     // Check if telemetry.js has already loaded session data into bufferedData
     if (window.bufferedData && window.bufferedData.sessionInfo) {
-      console.log('📋 TrackMap: Loading existing sessionInfo from bufferedData');
+      console.log('📋 TrackMap: Found existing sessionInfo in bufferedData');
+      console.log('📋 Existing sessionInfo data:', window.bufferedData.sessionInfo);
       this.updateSessionDisplay(window.bufferedData.sessionInfo);
     } else {
-      console.log('📋 TrackMap: No existing sessionInfo found, waiting for new data');
+      console.log('📋 TrackMap: No existing sessionInfo found');
+      console.log('  - window.bufferedData exists:', !!window.bufferedData);
+      if (window.bufferedData) {
+        console.log('  - sessionInfo exists in bufferedData:', !!window.bufferedData.sessionInfo);
+      }
+      console.log('📋 TrackMap: Will wait for new sessionInfo data');
     }
   }
 
   updateSessionDisplay(data) {
-    console.log('📋 TrackMap updating session display with data:', data);
+    console.log('📋 TrackMap updateSessionDisplay called with data:', data);
+    console.log('📋 Data structure check:');
+    console.log('  - WeekendInfo exists:', !!data?.WeekendInfo);
+    console.log('  - TrackDisplayName:', data?.WeekendInfo?.TrackDisplayName);
+    console.log('  - TrackLength:', data?.WeekendInfo?.TrackLength);
+    console.log('  - SessionInfo exists:', !!data?.SessionInfo);
+    console.log('  - Sessions array exists:', !!data?.SessionInfo?.Sessions);
+    console.log('  - First session exists:', !!data?.SessionInfo?.Sessions?.[0]);
+    if (data?.SessionInfo?.Sessions?.[0]) {
+      console.log('  - SessionType:', data.SessionInfo.Sessions[0].SessionType);
+      console.log('  - SessionLaps:', data.SessionInfo.Sessions[0].SessionLaps);
+      console.log('  - SessionTime:', data.SessionInfo.Sessions[0].SessionTime);
+    }
     
     if (data?.WeekendInfo?.TrackLength) {
       this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
@@ -227,12 +265,39 @@ class TrackMap {
     const sessionLapsEl = document.getElementById('sessionLaps');
     const sessionTimeEl = document.getElementById('sessionTime');
     
+    console.log('📋 DOM elements check:');
+    console.log('  - trackNameEl found:', !!trackNameEl);
+    console.log('  - trackLengthEl found:', !!trackLengthEl);
+    console.log('  - sessionTypeEl found:', !!sessionTypeEl);
+    console.log('  - sessionLapsEl found:', !!sessionLapsEl);
+    console.log('  - sessionTimeEl found:', !!sessionTimeEl);
+    
     // Use the correct data structure from sessiondata.json
-    if (trackNameEl) trackNameEl.textContent = data?.WeekendInfo?.TrackDisplayName || '--';
-    if (trackLengthEl) trackLengthEl.textContent = data?.WeekendInfo?.TrackLength || '--';
-    if (sessionTypeEl) sessionTypeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';
-    if (sessionLapsEl) sessionLapsEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionLaps || '--';
-    if (sessionTimeEl) sessionTimeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionTime || '--';
+    if (trackNameEl) {
+      const value = data?.WeekendInfo?.TrackDisplayName || '--';
+      trackNameEl.textContent = value;
+      console.log('  - Set trackName to:', value);
+    }
+    if (trackLengthEl) {
+      const value = data?.WeekendInfo?.TrackLength || '--';
+      trackLengthEl.textContent = value;
+      console.log('  - Set trackLength to:', value);
+    }
+    if (sessionTypeEl) {
+      const value = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';
+      sessionTypeEl.textContent = value;
+      console.log('  - Set sessionType to:', value);
+    }
+    if (sessionLapsEl) {
+      const value = data?.SessionInfo?.Sessions?.[0]?.SessionLaps || '--';
+      sessionLapsEl.textContent = value;
+      console.log('  - Set sessionLaps to:', value);
+    }
+    if (sessionTimeEl) {
+      const value = data?.SessionInfo?.Sessions?.[0]?.SessionTime || '--';
+      sessionTimeEl.textContent = value;
+      console.log('  - Set sessionTime to:', value);
+    }
     
     console.log('📋 TrackMap: Session display elements updated');
   }

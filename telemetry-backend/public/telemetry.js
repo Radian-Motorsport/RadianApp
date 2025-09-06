@@ -917,17 +917,29 @@ function setupSocketListeners() {
   // Session info processing
   socket.on('sessionInfo', (data) => {
     console.log('📋 Received sessionInfo in telemetry.js:', data);
+    console.log('📋 Current bufferedData before update:', bufferedData);
     
     // Store session info in bufferedData for trackmap and other components
     if (!bufferedData) {
       bufferedData = { values: null, sessionInfo: null };
+      console.log('📋 Created new bufferedData object');
     }
     bufferedData.sessionInfo = data;
     
+    console.log('📋 BufferedData after sessionInfo update:', bufferedData);
+    console.log('📋 SessionInfo stored - structure check:');
+    console.log('  - WeekendInfo exists:', !!bufferedData.sessionInfo?.WeekendInfo);
+    console.log('  - SessionInfo exists:', !!bufferedData.sessionInfo?.SessionInfo);
+    
     // Save to storage for persistence
     saveTelemetryState();
+    console.log('📋 Telemetry state saved to storage');
     
-    console.log('📋 SessionInfo stored in bufferedData');
+    // Make bufferedData globally accessible
+    window.bufferedData = bufferedData;
+    console.log('📋 BufferedData made globally accessible');
+    
+    console.log('📋 SessionInfo stored in bufferedData successfully');
   });
 
   // Main telemetry processing
