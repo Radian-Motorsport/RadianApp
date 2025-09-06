@@ -148,6 +148,7 @@ class TrackMap {
     this.estimatedLapsElement = document.getElementById('estimatedLaps');
     this.carAheadElement = document.getElementById('carAheadDistance');
     this.carBehindElement = document.getElementById('carBehindDistance');
+    this.lapDistPctElement = document.getElementById('lapDistPct');
   }
 
   setupListeners() {
@@ -155,6 +156,9 @@ class TrackMap {
       this.socket.on('telemetryData', (data) => {
         if (data.LapDistPct !== undefined) {
           this.updateCarPosition(data.LapDistPct);
+          if (this.lapDistPctElement) {
+            this.lapDistPctElement.textContent = (data.LapDistPct * 100).toFixed(1) + '%';
+          }
         }
         
         if (data.FuelLevel !== undefined) {
@@ -164,17 +168,30 @@ class TrackMap {
         
         if (data.FuelLevelPct !== undefined) {
           this.fuelLevelPct = data.FuelLevelPct;
+          this.updateInfoBoxes();
+        }
+        
+        if (data.CarDistAhead !== undefined) {
+          if (this.carAheadElement) {
+            this.carAheadElement.textContent = data.CarDistAhead + ' m';
+          }
+        }
+        
+        if (data.CarDistBehind !== undefined) {
+          if (this.carBehindElement) {
+            this.carBehindElement.textContent = data.CarDistBehind + ' m';
+          }
         }
       });
     }
   }
 
   updateInfoBoxes() {
-    if (this.fuelLevelElement) {
+    if (this.fuelLevelElement && this.fuelLevelPct !== undefined) {
       this.fuelLevelElement.textContent = (this.fuelLevelPct * 100).toFixed(1) + '%';
     }
     
-    if (this.estimatedLapsElement && this.avgFuelPerLap > 0) {
+    if (this.estimatedLapsElement && this.avgFuelPerLap > 0 && this.fuelLevel !== undefined) {
       const estimatedLaps = this.fuelLevel / this.avgFuelPerLap;
       this.estimatedLapsElement.textContent = estimatedLaps.toFixed(1);
     }
