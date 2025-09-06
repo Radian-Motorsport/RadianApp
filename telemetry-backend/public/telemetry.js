@@ -25,6 +25,11 @@ socket.onAny((eventName, ...args) => {
   console.log(`📡 RECEIVED EVENT: ${eventName}`, args);
 });
 
+// Add a simple test listener
+socket.on('sessionInfo', (data) => {
+  console.log('🚨 BASIC sessionInfo listener triggered!', data);
+});
+
 // Make elements globally accessible and ensure it's always an object
 window.elements = window.elements || {};
 let elements = window.elements;
