@@ -623,14 +623,15 @@ function handleDriverExit(values, teamLap) {
   syncToServer();
 }
 
-// Handle driver entering the track
-// Format time in minutes:seconds or hours:minutes:seconds
+// Format time in minutes:seconds:milliseconds (MM:SS:mmm)
 function formatTimeMS(timeInSeconds) {
-  if (isNaN(timeInSeconds)) return '--:--';
+  if (isNaN(timeInSeconds)) return '--:--:---';
   
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = Math.floor(timeInSeconds % 60);
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const milliseconds = Math.floor((timeInSeconds % 1) * 1000);
+  
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
 }
 
 function formatTimeHMS(timeInSeconds) {

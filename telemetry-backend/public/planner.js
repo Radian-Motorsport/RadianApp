@@ -405,6 +405,17 @@ function formatTime(totalSeconds) {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
+// This function formats lap time from seconds into MM:SS:mmm format
+function formatLapTime(timeInSeconds) {
+  if (timeInSeconds === undefined || timeInSeconds === null || isNaN(timeInSeconds)) return "--:--:---";
+  
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+  const milliseconds = Math.floor((timeInSeconds % 1) * 1000);
+  
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
+}
+
 // Calculate the stint plan based on current values
 function calculateStintPlan() {
   // Don't calculate if we don't have valid data yet
@@ -552,7 +563,7 @@ function updateUI() {
   
   // Update calculation variables
   document.getElementById('fuel-per-lap').textContent = fuelPerLap.toFixed(2) + " L";
-  document.getElementById('avg-lap-time').textContent = formatTime(avgLapTime);
+  document.getElementById('avg-lap-time').textContent = formatLapTime(avgLapTime);
   document.getElementById('max-fuel').textContent = tankCapacity.toFixed(1) + " L";
   document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
   document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
