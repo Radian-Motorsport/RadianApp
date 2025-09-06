@@ -407,7 +407,16 @@ class TrackMap {
     // Find car behind (one position worse/higher number)
     const positionBehind = this.playerClassPosition + 1;
     this.carBehindIdx = null;
-    console.log(`🔍 Looking for car at position ${positionBehind}`);
+    console.log(`🔍 Looking for car at position ${positionBehind} (behind position ${this.playerClassPosition})`);
+    
+    // Debug: Show all cars and their class positions
+    console.log(`🏁 All class positions:`);
+    for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
+      if (this.carIdxClassPosition[carIdx] > 0) {
+        console.log(`  carIdx ${carIdx}: class position ${this.carIdxClassPosition[carIdx]}`);
+      }
+    }
+    
     // Find car with position behind
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
       if (this.carIdxClassPosition[carIdx] === positionBehind) {
