@@ -291,26 +291,15 @@ class TrackMap {
   }
   
   getDriverInfo(carIdx) {
-    console.log(`🚗 Getting driver info for carIdx: ${carIdx}`);
-    console.log(`🚗 driverInfo exists: ${!!this.driverInfo}`);
-    console.log(`🚗 driverInfo.Drivers exists: ${!!this.driverInfo?.Drivers}`);
-    console.log(`🚗 driverInfo.Drivers length: ${this.driverInfo?.Drivers?.length}`);
-    
-    if (!this.driverInfo || !this.driverInfo.Drivers || !this.driverInfo.Drivers[carIdx]) {
-      console.log(`❌ No driver info found for carIdx: ${carIdx}`);
+    if (!this.driverInfo || !this.driverInfo.DriverInfo || !this.driverInfo.DriverInfo.Drivers || !this.driverInfo.DriverInfo.Drivers[carIdx]) {
       return { driverName: '--', carName: '--' };
     }
     
-    const driver = this.driverInfo.Drivers[carIdx];
-    console.log(`✅ Driver found for carIdx ${carIdx}:`, driver);
-    
-    const result = {
+    const driver = this.driverInfo.DriverInfo.Drivers[carIdx];
+    return {
       driverName: driver.UserName || '--',
       carName: driver.CarScreenName || '--'
     };
-    
-    console.log(`🏁 Returning driver info:`, result);
-    return result;
   }
   
   formatLapTime(timeInSeconds) {
@@ -374,11 +363,7 @@ class TrackMap {
   }
   
   findCarsAheadAndBehind() {
-    console.log(`🏎️ Finding cars ahead/behind - Player class position: ${this.playerClassPosition}, Player class: ${this.playerCarClass}`);
-    console.log(`🏎️ CarIdxClassPosition array:`, this.carIdxClassPosition);
-    
     if (!this.carIdxClassPosition || !this.carIdxClass || !this.playerCarIdx || this.playerClassPosition === null || this.playerCarClass === null) {
-      console.log(`❌ Missing data - carIdxClassPosition: ${!!this.carIdxClassPosition}, carIdxClass: ${!!this.carIdxClass}, playerCarIdx: ${this.playerCarIdx}, playerClassPosition: ${this.playerClassPosition}, playerCarClass: ${this.playerCarClass}`);
       this.carAheadIdx = null;
       this.carBehindIdx = null;
       return;
@@ -388,67 +373,23 @@ class TrackMap {
     const positionAhead = this.playerClassPosition - 1;
     this.carAheadIdx = null;
     if (positionAhead > 0) {
-      console.log(`🔍 Looking for car at position ${positionAhead} in class ${this.playerCarClass}`);
-      // Find car with position ahead IN SAME CLASS
       for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
         if (this.carIdxClass[carIdx] === this.playerCarClass && this.carIdxClassPosition[carIdx] === positionAhead) {
           this.carAheadIdx = carIdx;
-          console.log(`✅ Found car ahead: carIdx ${carIdx} at class position ${positionAhead} in class ${this.playerCarClass}`);
           break;
         }
-        // Debug: show what we're checking
-        if (this.carIdxClassPosition[carIdx] > 0) {
-          console.log(`🔍 Checking carIdx ${carIdx}: class ${this.carIdxClass[carIdx]}, class position ${this.carIdxClassPosition[carIdx]}`);
-        }
-      }
-      if (this.carAheadIdx === null) {
-        console.log(`❌ No car found at position ${positionAhead} in class ${this.playerCarClass}`);
-      }
-    }
-      console.log(`🔍 Looking for car at position ${positionAhead}`);
-      // Find car with position ahead
-      for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
-        if (this.carIdxClassPosition[carIdx] === positionAhead) {
-          this.carAheadIdx = carIdx;
-          console.log(`✅ Found car ahead: carIdx ${carIdx} at class position ${positionAhead}`);
-          break;
-        }
-        // Debug: show what we're checking
-        if (this.carIdxClassPosition[carIdx] > 0) {
-          console.log(`🔍 Checking carIdx ${carIdx}: class position ${this.carIdxClassPosition[carIdx]}`);
-        }
-      }
-      if (this.carAheadIdx === null) {
-        console.log(`❌ No car found at position ${positionAhead}`);
       }
     }
     
     // Find car behind (one position worse/higher number) IN SAME CLASS
     const positionBehind = this.playerClassPosition + 1;
     this.carBehindIdx = null;
-    console.log(`🔍 Looking for car at position ${positionBehind} in class ${this.playerCarClass} (behind position ${this.playerClassPosition})`);
-    
-    // Debug: Show all cars and their class positions  
-    console.log(`🏁 All cars with class and class position:`);
-    for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
-      if (this.carIdxClassPosition[carIdx] > 0) {
-        console.log(`  carIdx ${carIdx}: class ${this.carIdxClass[carIdx]}, class position ${this.carIdxClassPosition[carIdx]}`);
-      }
-    }
-    
-    // Find car with position behind IN SAME CLASS
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
       if (this.carIdxClass[carIdx] === this.playerCarClass && this.carIdxClassPosition[carIdx] === positionBehind) {
         this.carBehindIdx = carIdx;
-        console.log(`✅ Found car behind: carIdx ${carIdx} at class position ${positionBehind} in class ${this.playerCarClass}`);
         break;
       }
     }
-    if (this.carBehindIdx === null) {
-      console.log(`❌ No car found at position ${positionBehind} in class ${this.playerCarClass}`);
-    }
-    
-    console.log(`🏁 Final result - Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
     
     // Update car info displays
     this.updateCarInfo(this.carAheadIdx, {
@@ -529,19 +470,10 @@ class TrackMap {
           console.log('Track length set from session data:', this.trackLength, 'meters');
         }
         
-        // Store driver info for car/driver names - check both possible paths
-        if (data?.data?.DriverInfo) {
-          this.driverInfo = data.data.DriverInfo;
-          console.log('🏁 Driver info updated from data.data.DriverInfo:', this.driverInfo);
-          console.log('🏁 Number of drivers:', this.driverInfo.Drivers?.length);
-        } else if (data?.DriverInfo) {
-          this.driverInfo = data.DriverInfo;
-          console.log('🏁 Driver info updated from data.DriverInfo:', this.driverInfo);
-          console.log('🏁 Number of drivers:', this.driverInfo.Drivers?.length);
-        } else {
-          console.warn('❌ No DriverInfo found in session data at data.DriverInfo or data.data.DriverInfo');
-          console.log('📋 Full session data structure:', data);
-        }
+        // Store driver info - try the correct sessionInfo path
+        // Store driver info from correct path
+        this.driverInfo = data.data;
+        console.log('Driver info set to full session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
       });
       
       this.socket.on('telemetry', (data) => {
