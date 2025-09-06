@@ -59,7 +59,8 @@ function getOrCreateHttpClient(req) {
       driverName: null,
       broadcastingEnabled: false, // Will be updated based on telemetry activity
       isActiveBroadcaster: false,
-      lastTelemetryTime: null
+      lastTelemetryTime: null,
+      paused: false // Add pause control
     });
   }
   
@@ -284,8 +285,13 @@ app.post('/telemetry', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress;
   const userAgent = req.get('User-Agent') || 'Unknown';
 
+  // Ignore all telemetry if IsOnTrack is false
   const isOnTrack = data?.values?.IsOnTrack;
-  
+  if (isOnTrack === false) {
+    console.log(`📡 Telemetry ignored (driver not on track - IsOnTrack: ${isOnTrack})`);
+    return res.sendStatus(200);
+  }
+
   // Extract driver name from telemetry data if provided
   const telemetryDriverName = data?.driverName;
 
@@ -360,8 +366,14 @@ app.post('/telemetry', (req, res) => {
     lastBroadcastedSession = currentSessionId;
   }
 
-  io.emit('telemetry', data); // Broadcast to planner
-  console.log('📡 Telemetry received:', data);
+  // Only broadcast telemetry data if driver is on track
+  if (isOnTrack === true) {
+    io.emit('telemetry', data); // Broadcast to planner
+    console.log('📡 Telemetry broadcasted (driver on track):', data);
+  } else {
+    console.log(`📡 Telemetry ignored (driver not on track - IsOnTrack: ${isOnTrack})`);
+  }
+  
   res.sendStatus(200);
 });
 
@@ -371,6 +383,13 @@ app.post('/sessionInfo', (req, res) => {
   const data = req.body;
   const clientIp = req.ip || req.connection.remoteAddress;
   const userAgent = req.get('User-Agent') || 'Unknown';
+
+  // Ignore all session info if IsOnTrack is false
+  const isOnTrack = data?.IsOnTrack;
+  if (isOnTrack === false) {
+    console.log(`📋 SessionInfo ignored (driver not on track - IsOnTrack: ${isOnTrack})`);
+    return res.sendStatus(200);
+  }
 
   currentSessionId = data?.WeekendInfo?.SessionID;
   
