@@ -42,63 +42,58 @@ class TrackMap {
   }
   
   initializeSVGTrack() {
-    // Indianapolis Road 2022 SVG path data
-    const svgPathData = "M912.3,921.3c-141.6,0-298.3-1-455.9-3.9c-3.3-0.1-6.5-0.3-9.7-0.9c-10.6-1.7-24.9-5.6-32.8-14.4c-6.7-7.5-17.1-24.3-11.7-53.7c2-10.7,3.7-30.3-6.9-42.6c-7.9-9.1-21.9-13.4-41.6-12.7c-3.1,0.1-7.4,0.4-12.1,0.7c-8.7,0.6-17.7,1.2-23.8,1c-43.8-1.5-71.4-8.7-89.4-23.1c-48.9-39-71.6-109.8-74.1-117.7c-10.8-35.2,2.4-64.6,37-82.7c13.6-7.1,25.8-11.2,48.1-11.2s50,0.5,71.7,0.8c9.9,0.2,18.8,0.3,25.8,0.4c25.7-0.7,31-7.4,37.7-15.7c10.9-13.6,22.3-24,61.2-24c42.9,0,792.6,4.5,800.1,4.6c3.9,0,6.6-1.9,8.1-3.5c2.4-2.6,3.8-6.2,3.6-10c-0.2-4.3-0.4-9.3-0.7-14.8c-1.5-31.2-3.6-74-0.3-94.9c5.6-35.5,27.2-45.6,46.3-54.5c12.1-5.7,23.5-11,33.1-22.4c11.9-14.2,8.9-41.1,6.1-67.1c-2.2-20.5-4.6-41.8-0.1-59.3c5.5-21.7,20.7-34.6,45.1-38.3c21.7-3.3,54.4-3.9,85.4-1.4c38.8,3.1,109.8,12.5,145.8,25.9c66.4,24.8,111.6,69.8,134.3,133.8c31.8,89.7,27.8,161.5,24,230.9c-1.1,19.2-6.4,44.6-40.1,44.6l0,0c-19.1,0-51.8-1.2-78-2.2c-9.8-0.4-19.2-0.7-26.5-1c-8.4-0.3-16.5,2.2-22.7,7.1c-11,8.5-13.2,19.5-6.6,33.7c1.7,3.6,3.9,8.2,6.5,13.6c9.5,19.7,22.6,46.7,26.7,61.9c12.5,46.5,3.4,93.2-25.6,131.5c-17.5,23.2-41.9,42.5-70.6,55.8c-29.4,13.8-63.5,21.2-98.4,21.6c-10.3,0.1-22.6,0.3-36.8,0.4C1296.7,919.2,1120.9,921.3,912.3,921.3L912.3,921.3z";
+    // Use your custom Inkscape-edited track path data
+    const svgPathData = "m 111.47367,511.28151 c -37.465001,0 -78.925201,-0.26458 -120.6235406,-1.03187 -0.8731204,-0.0265 -1.7197904,-0.0794 -2.5664604,-0.23813 -2.80458,-0.44979 -6.58812,-1.48166 -8.67833,-3.81 -1.77271,-1.98437 -4.52437,-6.42937 -3.09562,-14.20812 0.52916,-2.83104 0.97895,-8.01688 -1.82563,-11.27125 -2.09021,-2.40771 -5.79437,-3.54542 -11.00666,-3.36021 -0.82021,0.0265 -1.95792,0.10583 -3.20146,0.18521 -2.30188,0.15875 -4.68313,0.3175 -6.29709,0.26458 -11.588743,-0.39687 -18.891239,-2.30187 -23.653739,-6.11187 -12.93812,-10.31875 -18.94416,-29.05124 -19.60562,-31.14145 -2.8575,-9.31333 0.635,-17.09208 9.78958,-21.88104 3.59834,-1.87854 6.82625,-2.96334 12.72646,-2.96334 5.90021,0 13.229156,0.1323 18.970619,0.21167 2.61937,0.0529 4.97416,0.0794 6.82625,0.10583 6.79979,-0.1852 8.20208,-1.95791 9.97479,-4.15395 2.88395,-3.59834 5.9002,-6.35 16.1925,-6.35 11.3506204,0 209.708761,1.19062 211.693131,1.21708 1.03188,0 1.74625,-0.50271 2.14313,-0.92604 0.635,-0.68792 1.00541,-1.64042 0.9525,-2.64584 -0.0529,-1.1377 -0.10584,-2.46062 -0.18521,-3.91583 -0.39688,-8.25501 -0.9525,-19.57918 -0.0794,-25.10897 1.48167,-9.3927 7.19667,-12.06499 12.25021,-14.41978 3.20146,-1.50813 6.21771,-2.91042 8.75771,-5.92667 3.14854,-3.75708 2.35479,-10.87438 1.61396,-17.75354 -0.58209,-5.42396 -1.21709,-11.05959 -0.0265,-15.6898 1.45521,-5.74146 5.47687,-9.15458 11.93271,-10.13354 5.74146,-0.87312 14.39333,-1.03187 22.59541,-0.37042 10.26584,0.82021 29.05125,3.3073 38.57625,6.85271 17.56834,6.56167 29.5275,18.46792 35.53355,35.40126 8.41375,23.73312 7.35541,42.73021 6.35,61.09229 -0.29105,5.08 -1.69334,11.80042 -10.6098,11.80042 v 0 c -5.05354,0 -13.70541,-0.3175 -20.6375,-0.58208 -2.59291,-0.10584 -5.08,-0.18521 -7.01145,-0.26459 -2.2225,-0.0794 -4.36563,0.58209 -6.00605,1.87854 -2.91041,2.24896 -3.4925,5.15938 -1.74625,8.91646 0.4498,0.9525 1.03188,2.16959 1.7198,3.59834 2.51354,5.21229 5.97958,12.35603 7.06437,16.37769 3.30729,12.30313 0.89958,24.65917 -6.77333,34.79271 -4.63021,6.13834 -11.08604,11.24479 -18.67959,14.76375 -7.77875,3.65125 -16.80104,5.60917 -26.035,5.715 -2.7252,0.0265 -5.97958,0.0794 -9.73666,0.10584 -25.87625,0.42333 -72.39,0.97895 -127.5821,0.97895 z";
     
     // Create Path2D object from SVG path data
     this.trackSVGPath = new Path2D(svgPathData);
     
     // Convert path to points for position calculations
     this.convertSVGPathToPoints(svgPathData);
-  }
-  
-  convertSVGPathToPoints(pathData) {
-    // Create points that better represent the actual Indianapolis Road Course layout
-    // Based on the SVG viewBox of 1920x1080
-    const numSamples = 1000;
-    this.trackPoints = [];
     
-    // Indianapolis Road Course approximate layout points
-    // This creates a more accurate representation of the actual track shape
-    const trackLayout = [
-      // Start/finish straight
-      {x: 200, y: 540}, {x: 400, y: 540}, {x: 600, y: 540}, {x: 800, y: 540},
-      // Turn 1 complex
-      {x: 900, y: 540}, {x: 950, y: 520}, {x: 980, y: 480}, {x: 1000, y: 440},
-      {x: 1020, y: 400}, {x: 1040, y: 360}, {x: 1060, y: 320},
-      // Back straight portion
-      {x: 1080, y: 280}, {x: 1100, y: 260}, {x: 1150, y: 250}, {x: 1200, y: 240},
-      {x: 1300, y: 235}, {x: 1400, y: 230}, {x: 1500, y: 225},
-      // Turn complex
-      {x: 1600, y: 220}, {x: 1650, y: 240}, {x: 1680, y: 280}, {x: 1700, y: 320},
-      {x: 1720, y: 360}, {x: 1730, y: 400}, {x: 1735, y: 450}, {x: 1730, y: 500},
-      // More corners
-      {x: 1720, y: 550}, {x: 1700, y: 600}, {x: 1670, y: 640}, {x: 1630, y: 670},
-      {x: 1580, y: 690}, {x: 1520, y: 700}, {x: 1460, y: 705}, {x: 1400, y: 710},
-      // Return section
-      {x: 1300, y: 715}, {x: 1200, y: 720}, {x: 1100, y: 725}, {x: 1000, y: 730},
-      {x: 900, y: 735}, {x: 800, y: 740}, {x: 700, y: 745}, {x: 600, y: 750},
-      // Final turns back to start/finish
-      {x: 500, y: 755}, {x: 400, y: 750}, {x: 350, y: 730}, {x: 320, y: 700},
-      {x: 300, y: 660}, {x: 290, y: 620}, {x: 285, y: 580}, {x: 290, y: 540}
+    // Set your custom start/finish line position (red rectangle from the SVG)
+    this.startFinishCoords = { x: 139.96884, y: 505.50729 };
+    
+    // Set your corner markers from the SVG
+    this.cornerMarkers = [
+      { coords: { x: -16.673576, y: 501.79282 }, text: "1" },
+      { coords: { x: -25.347214, y: 473.10086 }, text: "2" },
+      { coords: { x: -63.520531, y: 469.34137 }, text: "3" },
+      { coords: { x: -90.704567, y: 415.84088 }, text: "4" },
+      { coords: { x: -36.039398, y: 430.29352 }, text: "5" },
+      { coords: { x: -21.298529, y: 398.48938 }, text: "6" },
+      { coords: { x: 205.71706, y: 414.3949 }, text: "7" },
+      { coords: { x: 188.37593, y: 366.9556 }, text: "8" },
+      { coords: { x: 229.43178, y: 358.8696 }, text: "9" },
+      { coords: { x: 211.80443, y: 304.79269 }, text: "10" },
+      { coords: { x: 309.53891, y: 347.59158 }, text: "11" },
+      { coords: { x: 316.19919, y: 415.55069 }, text: "12" },
+      { coords: { x: 273.97668, y: 427.69131 }, text: "13" },
+      { coords: { x: 302.3071, y: 492.18753 }, text: "14" }
     ];
     
-    // Interpolate between layout points to create smooth track
-    for (let i = 0; i < trackLayout.length; i++) {
-      const current = trackLayout[i];
-      const next = trackLayout[(i + 1) % trackLayout.length];
-      
-      // Add multiple points between each layout point for smoothness
-      const steps = Math.floor(numSamples / trackLayout.length);
-      for (let step = 0; step < steps; step++) {
-        const t = step / steps;
-        const x = current.x + (next.x - current.x) * t;
-        const y = current.y + (next.y - current.y) * t;
-        this.trackPoints.push({ x, y });
-      }
-    }
+    console.log('Loaded custom track with start/finish line and corner markers');
+  }
+  // Convert SVG path to coordinate points for car positioning
+  convertSVGPathToPoints(pathData) {
+    // Parse the actual SVG path data to get real track coordinates
+    // This creates points along the actual Indianapolis track shape
     
-    // Calculate bounds
+    // For now, let's sample points along the actual SVG path
+    // We'll extract coordinates from the path data
+    const path = new Path2D(pathData);
+    
+    // Sample points along the path - this is a simplified approach
+    // In reality, you'd want to use a proper SVG path parser
+    this.trackPoints = [];
+    
+    // Extract rough coordinates from the path data string
+    // The path starts around coordinates that we can estimate from the path data
+    const coords = this.extractCoordsFromPath(pathData);
+    
+    this.trackPoints = coords;
+    
+    // Calculate bounds from actual coordinates
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     this.trackPoints.forEach(point => {
       minX = Math.min(minX, point.x);
@@ -108,6 +103,30 @@ class TrackMap {
     });
     
     this.trackBounds = { minX, maxX, minY, maxY };
+    
+    console.log('Track bounds:', this.trackBounds);
+    console.log('Track points count:', this.trackPoints.length);
+  }
+  
+  extractCoordsFromPath(pathData) {
+    // Simple extraction of coordinates from SVG path
+    // This is a basic parser - for production you'd want something more robust
+    const coords = [];
+    
+    // Extract all number pairs from the path data
+    const numbers = pathData.match(/[-+]?\d*\.?\d+/g) || [];
+    
+    // Group numbers into x,y pairs
+    for (let i = 0; i < numbers.length - 1; i += 2) {
+      const x = parseFloat(numbers[i]);
+      const y = parseFloat(numbers[i + 1]);
+      
+      if (!isNaN(x) && !isNaN(y)) {
+        coords.push({ x, y });
+      }
+    }
+    
+    return coords;
   }
 
   cacheInfoElements() {
@@ -284,8 +303,56 @@ class TrackMap {
     
     this.trackCtx.restore();
     
-    // Note: Start/finish line would need to be determined from track-specific data
-    // The SVG path doesn't include explicit start/finish line markers
+    // Draw custom start/finish line if available
+    if (this.startFinishCoords) {
+      const startX = this.startFinishCoords.x * scale + offsetX;
+      const startY = this.startFinishCoords.y * scale + offsetY;
+      
+      this.trackCtx.strokeStyle = 'red';
+      this.trackCtx.lineWidth = 4;
+      this.trackCtx.beginPath();
+      this.trackCtx.moveTo(startX - 10, startY - 10);
+      this.trackCtx.lineTo(startX + 10, startY + 10);
+      this.trackCtx.moveTo(startX - 10, startY + 10);
+      this.trackCtx.lineTo(startX + 10, startY - 10);
+      this.trackCtx.stroke();
+      
+      this.trackCtx.fillStyle = 'red';
+      this.trackCtx.font = '12px Arial';
+      this.trackCtx.textAlign = 'center';
+      this.trackCtx.fillText('S/F', startX, startY - 15);
+    }
+    
+    // Draw corner markers if available
+    if (this.cornerMarkers && this.cornerMarkers.length > 0) {
+      this.cornerMarkers.forEach(marker => {
+        const markerX = marker.coords.x * scale + offsetX;
+        const markerY = marker.coords.y * scale + offsetY;
+        
+        this.trackCtx.fillStyle = 'yellow';
+        this.trackCtx.font = 'bold 14px Arial';
+        this.trackCtx.textAlign = 'center';
+        this.trackCtx.textBaseline = 'middle';
+        this.trackCtx.fillText(marker.text, markerX, markerY);
+      });
+    }
+    
+    // Debug: Show where we think lap 0% is (should be at start/finish line)
+    const debugStartPoint = this.startFinishCoords || this.trackPoints[0];
+    const debugX = debugStartPoint.x * scale + offsetX;
+    const debugY = debugStartPoint.y * scale + offsetY;
+    
+    // Draw a cyan circle to show our current 0% assumption
+    this.trackCtx.fillStyle = 'cyan';
+    this.trackCtx.beginPath();
+    this.trackCtx.arc(debugX, debugY, 8, 0, 2 * Math.PI);
+    this.trackCtx.fill();
+    
+    // Add text label
+    this.trackCtx.fillStyle = 'cyan';
+    this.trackCtx.font = '12px Arial';
+    this.trackCtx.textAlign = 'center';
+    this.trackCtx.fillText('0%', debugX, debugY - 12);
     
     // Draw car position
     this.drawCarPosition(scale, offsetX, offsetY);
@@ -336,6 +403,40 @@ class TrackMap {
   getPositionFromPercent(pct) {
     if (this.trackPoints.length === 0 || pct < 0 || pct > 1) return null;
     
+    // If we have a custom start/finish line position, use it to calibrate the track
+    if (this.startFinishCoords) {
+      // Find the closest track point to our start/finish line
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      
+      for (let i = 0; i < this.trackPoints.length; i++) {
+        const point = this.trackPoints[i];
+        const distance = Math.hypot(
+          point.x - this.startFinishCoords.x,
+          point.y - this.startFinishCoords.y
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = i;
+        }
+      }
+      
+      // Calculate position relative to the start/finish line
+      const adjustedIdx = (closestIndex + Math.floor(pct * this.trackPoints.length)) % this.trackPoints.length;
+      const nextIdx = (adjustedIdx + 1) % this.trackPoints.length;
+      const t = (pct * this.trackPoints.length) - Math.floor(pct * this.trackPoints.length);
+      
+      const currentPoint = this.trackPoints[adjustedIdx];
+      const nextPoint = this.trackPoints[nextIdx];
+      
+      return {
+        x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
+        y: currentPoint.y + (nextPoint.y - currentPoint.y) * t
+      };
+    }
+    
+    // Fallback to old method if no start/finish line defined
     const idx = Math.floor(pct * this.trackPoints.length);
     const nextIdx = (idx + 1) % this.trackPoints.length;
     const t = (pct * this.trackPoints.length) - idx;
