@@ -1056,10 +1056,10 @@ window.telemetryDashboard = {
     raceTimeRemaining: bufferedData?.values?.SessionTimeRemain || 0,
     currentLap,
     sessionInfo: bufferedData?.sessionInfo,
-    sessionType: '',
-    trackName: '',
-    sessionLaps: 0,
-    sessionTime: 0
+    sessionType: bufferedData?.sessionInfo?.SessionInfo?.Sessions?.[0]?.SessionType || '',
+    trackName: bufferedData?.sessionInfo?.WeekendInfo?.TrackDisplayName || '',
+    sessionLaps: bufferedData?.sessionInfo?.SessionInfo?.Sessions?.[0]?.SessionLaps || 0,
+    sessionTime: bufferedData?.sessionInfo?.SessionInfo?.Sessions?.[0]?.SessionTime || 0
   }),
   // Export reset function for use in index.html
   resetTelemetryData

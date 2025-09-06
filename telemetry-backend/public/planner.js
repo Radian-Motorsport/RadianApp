@@ -625,10 +625,6 @@ function updateUI() {
   document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
   document.getElementById('safety-margin-display').textContent = "5% (" + (tankCapacity * 0.05).toFixed(1) + " L)";
   
-  // Update trend indicators for fuel and lap time
-  updateTrendIndicator('fuel-trend', window.lastFuelPerLap, fuelPerLap);
-  updateTrendIndicator('laptime-trend', window.lastAvgLapTime, avgLapTime);
-  
   // Store current values for next trend calculation
   window.lastFuelPerLap = fuelPerLap;
   window.lastAvgLapTime = avgLapTime;
@@ -686,36 +682,4 @@ function updateRefreshRate() {
   }
   
   plannerLastTelemetryTime = now;
-}
-
-// Function to update trend indicators (up, down, stable)
-function updateTrendIndicator(elementId, previousValue, currentValue) {
-  const element = document.getElementById(elementId);
-  if (!element || previousValue === undefined || currentValue === undefined) {
-    return;
-  }
-  
-  // Remove existing classes
-  element.classList.remove('trend-up', 'trend-down', 'trend-stable');
-  
-  // Determine trend direction
-  const difference = currentValue - previousValue;
-  const threshold = (previousValue * 0.02); // 2% change threshold
-  
-  if (Math.abs(difference) < threshold) {
-    // Stable
-    element.innerHTML = "━";
-    element.classList.add('trend-stable');
-    element.title = "Value is stable";
-  } else if (difference > 0) {
-    // Increasing (showing up arrow)
-    element.innerHTML = "▲";
-    element.classList.add('trend-up');
-    element.title = `Increased by ${Math.abs(difference).toFixed(2)}`;
-  } else {
-    // Decreasing (showing down arrow)
-    element.innerHTML = "▼";
-    element.classList.add('trend-down');
-    element.title = `Decreased by ${Math.abs(difference).toFixed(2)}`;
-  }
 }
