@@ -837,7 +837,7 @@ function setupSocketListeners() {
       if (!safeValues) return;
 
       // Calculated Values
-      const lapCompleted = safeValues.LapCompleted;
+      const lapCompleted = safeValues?.CarIdxLapCompleted?.[safeValues?.PlayerCarIdx] || safeValues.LapCompleted;
       const fuel = safeValues.FuelLevel;
       currentLap = lapCompleted;
       const driverReady = currentLap >= MIN_LAPS_FOR_VALID_DATA;
