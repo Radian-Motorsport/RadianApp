@@ -535,6 +535,19 @@ class TrackMap {
         // Store driver info - use the full session data object directly
         this.driverInfo = data;  
         console.log('Driver info set to session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
+        
+        // Update session data display elements
+        const trackNameEl = document.getElementById('sessionTrackName');
+        const trackLengthEl = document.getElementById('sessionTrackLength');
+        const sessionTypeEl = document.getElementById('sessionType');
+        const sessionLapsEl = document.getElementById('sessionLaps');
+        const sessionTimeEl = document.getElementById('sessionTime');
+        
+        if (trackNameEl) trackNameEl.textContent = data?.WeekendInfo?.TrackDisplayName || '--';
+        if (trackLengthEl) trackLengthEl.textContent = data?.WeekendInfo?.TrackLength || '--';
+        if (sessionTypeEl) sessionTypeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';
+        if (sessionLapsEl) sessionLapsEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionLaps || '--';
+        if (sessionTimeEl) sessionTimeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionTime || '--';
       });
       
       this.socket.on('telemetry', (data) => {
