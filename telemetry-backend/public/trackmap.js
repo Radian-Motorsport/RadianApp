@@ -10,6 +10,7 @@ class TrackMap {
     this.trackSVGPath = null;
     this.trackPoints = [];
     this.trackBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+    this.playerPosition = 0; // Current player position in race
     
     // Car positioning data
     this.carAheadDistance = 0;
@@ -105,7 +106,7 @@ class TrackMap {
       const values = data?.values;
       if (!values) return;
       
-      const { LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct } = values;
+      const { LapDistPct, CarDistAhead, CarDistBehind, FuelLevel, FuelLevelPct, Position } = values;
       
       // Update position and car data
       this.liveLapPct = LapDistPct || 0;
@@ -113,6 +114,7 @@ class TrackMap {
       this.carBehindDistance = CarDistBehind || 0;
       this.fuelLevel = FuelLevel || 0;
       this.fuelLevelPct = FuelLevelPct || 0;
+      this.playerPosition = Position || 0; // Player's current race position
       
       // Update info boxes
       this.updateInfoBoxes();
@@ -163,7 +165,7 @@ class TrackMap {
     return this.fuelLevel / this.avgFuelPerLap;
   }
   
-  drawOtherCars(scale, offsetX, offsetY, iconSize) {
+  drawOtherCars(scale, offsetX, offsetY, circleRadius) {
     // Calculate approximate track length
     let trackLength = 0;
     for (let i = 0; i < this.trackPoints.length; i++) {
@@ -172,32 +174,18 @@ class TrackMap {
       trackLength += Math.hypot(next.x - curr.x, next.y - curr.y);
     }
     
-    // Draw car ahead
-    if (this.carAheadDistance > 0 && this.carAheadDistance < trackLength) {
+    // Draw car ahead (only if player is not in 1st place)
+    if (this.playerPosition > 1 && this.carAheadDistance > 0 && this.carAheadDistance < trackLength) {
       const aheadPct = this.calculateCarPosition(this.liveLapPct, this.carAheadDistance, trackLength, true);
       const aheadPos = this.getPositionFromPercent(aheadPct);
       
       if (aheadPos) {
         const aheadX = aheadPos.x * scale + offsetX;
         const aheadY = aheadPos.y * scale + offsetY;
+        const aheadPosition = this.playerPosition - 1; // Car ahead is one position better
         
-        this.trackCtx.save();
-        this.trackCtx.globalAlpha = 0.8;
-        
-        if (this.carAheadImg && this.carAheadImg.complete) {
-          this.trackCtx.drawImage(this.carAheadImg, aheadX - iconSize / 2, aheadY - iconSize / 2, iconSize, iconSize);
-        } else {
-          this.trackCtx.fillStyle = '#4ecdc4';
-          this.trackCtx.beginPath();
-          this.trackCtx.arc(aheadX, aheadY, 6, 0, 2 * Math.PI);
-          this.trackCtx.fill();
-        }
-        
-        this.trackCtx.fillStyle = '#4ecdc4';
-        this.trackCtx.font = '10px Orbitron';
-        this.trackCtx.textAlign = 'center';
-        this.trackCtx.fillText('A', aheadX, aheadY - iconSize);
-        this.trackCtx.restore();
+        // Grey circle with white text
+        this.drawCarCircle(aheadX, aheadY, circleRadius, '#808080', 'white', aheadPosition);
       }
     }
     
@@ -209,24 +197,10 @@ class TrackMap {
       if (behindPos) {
         const behindX = behindPos.x * scale + offsetX;
         const behindY = behindPos.y * scale + offsetY;
+        const behindPosition = this.playerPosition + 1; // Car behind is one position worse
         
-        this.trackCtx.save();
-        this.trackCtx.globalAlpha = 0.8;
-        
-        if (this.carBehindImg && this.carBehindImg.complete) {
-          this.trackCtx.drawImage(this.carBehindImg, behindX - iconSize / 2, behindY - iconSize / 2, iconSize, iconSize);
-        } else {
-          this.trackCtx.fillStyle = '#feca57';
-          this.trackCtx.beginPath();
-          this.trackCtx.arc(behindX, behindY, 6, 0, 2 * Math.PI);
-          this.trackCtx.fill();
-        }
-        
-        this.trackCtx.fillStyle = '#feca57';
-        this.trackCtx.font = '10px Orbitron';
-        this.trackCtx.textAlign = 'center';
-        this.trackCtx.fillText('B', behindX, behindY - iconSize);
-        this.trackCtx.restore();
+        // White circle with black text
+        this.drawCarCircle(behindX, behindY, circleRadius, 'white', 'black', behindPosition);
       }
     }
   }
@@ -258,13 +232,13 @@ class TrackMap {
       return;
     }
     
-    // Calculate scaling to fit canvas
-    const padding = 20;
+    // Calculate scaling to fit canvas with more padding for better view
+    const padding = 40; // Increased padding to ensure full track is visible
     const trackWidth = this.trackBounds.maxX - this.trackBounds.minX;
     const trackHeight = this.trackBounds.maxY - this.trackBounds.minY;
     const scaleX = (this.trackCanvas.width - padding * 2) / trackWidth;
     const scaleY = (this.trackCanvas.height - padding * 2) / trackHeight;
-    const scale = Math.min(scaleX, scaleY);
+    const scale = Math.min(scaleX, scaleY) * 0.9; // Scale down by 10% to ensure full visibility
     
     const offsetX = (this.trackCanvas.width - trackWidth * scale) / 2 - this.trackBounds.minX * scale;
     const offsetY = (this.trackCanvas.height - trackHeight * scale) / 2 - this.trackBounds.minY * scale;
@@ -276,7 +250,7 @@ class TrackMap {
     
     // Draw track outline
     this.trackCtx.strokeStyle = 'white';
-    this.trackCtx.lineWidth = 2 / scale; // Adjust line width for scaling
+    this.trackCtx.lineWidth = 3 / scale; // Slightly thicker line for better visibility
     this.trackCtx.stroke(this.trackSVGPath);
     
     this.trackCtx.restore();
@@ -288,12 +262,12 @@ class TrackMap {
       const finishY = startPoint.y * scale + offsetY;
       
       this.trackCtx.strokeStyle = 'red';
-      this.trackCtx.lineWidth = 3;
+      this.trackCtx.lineWidth = 4;
       this.trackCtx.beginPath();
-      this.trackCtx.moveTo(finishX - 8, finishY - 8);
-      this.trackCtx.lineTo(finishX + 8, finishY + 8);
-      this.trackCtx.moveTo(finishX - 8, finishY + 8);
-      this.trackCtx.lineTo(finishX + 8, finishY - 8);
+      this.trackCtx.moveTo(finishX - 10, finishY - 10);
+      this.trackCtx.lineTo(finishX + 10, finishY + 10);
+      this.trackCtx.moveTo(finishX - 10, finishY + 10);
+      this.trackCtx.lineTo(finishX + 10, finishY - 10);
       this.trackCtx.stroke();
       this.trackCtx.lineWidth = 1;
     }
@@ -313,20 +287,35 @@ class TrackMap {
     
     const markerX = position.x * scale + offsetX;
     const markerY = position.y * scale + offsetY;
-    const iconSize = 16;
+    const circleRadius = 12;
     
-    // Draw player car
-    if (this.carImg && this.carImg.complete) {
-      this.trackCtx.drawImage(this.carImg, markerX - iconSize / 2, markerY - iconSize / 2, iconSize, iconSize);
-    } else {
-      this.trackCtx.fillStyle = '#ff6b6b';
-      this.trackCtx.beginPath();
-      this.trackCtx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
-      this.trackCtx.fill();
-    }
+    // Draw player car - Pink circle with white text
+    this.drawCarCircle(markerX, markerY, circleRadius, '#ff69b4', 'white', this.playerPosition);
     
     // Draw cars ahead and behind
-    this.drawOtherCars(scale, offsetX, offsetY, iconSize);
+    this.drawOtherCars(scale, offsetX, offsetY, circleRadius);
+  }
+  
+  drawCarCircle(x, y, radius, fillColor, textColor, positionNumber) {
+    // Draw colored circle
+    this.trackCtx.fillStyle = fillColor;
+    this.trackCtx.beginPath();
+    this.trackCtx.arc(x, y, radius, 0, 2 * Math.PI);
+    this.trackCtx.fill();
+    
+    // Add subtle border
+    this.trackCtx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    this.trackCtx.lineWidth = 1;
+    this.trackCtx.stroke();
+    
+    // Draw position number
+    if (positionNumber && positionNumber > 0) {
+      this.trackCtx.fillStyle = textColor;
+      this.trackCtx.font = 'bold 12px Orbitron, monospace';
+      this.trackCtx.textAlign = 'center';
+      this.trackCtx.textBaseline = 'middle';
+      this.trackCtx.fillText(positionNumber.toString(), x, y);
+    }
   }
   
   getPositionFromPercent(pct) {
