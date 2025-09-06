@@ -75,7 +75,8 @@ function saveTelemetryState() {
   
   const stateToSave = {
     lastLapCompleted,
-    fuelAtLapStart,
+    // DO NOT save fuelAtLapStart - it's a live tracking variable
+    // fuelAtLapStart,
     fuelUsageHistory,
     lapTimeHistory,
     lastLapStartTime,
@@ -116,7 +117,8 @@ function loadTelemetryState() {
   if (savedState) {
     // Restore state variables
     lastLapCompleted = savedState.lastLapCompleted ?? -1;
-    fuelAtLapStart = savedState.fuelAtLapStart ?? null;
+    // DO NOT restore fuelAtLapStart - it should only be set when a new lap starts
+    // fuelAtLapStart = savedState.fuelAtLapStart ?? null;
     fuelUsageHistory = savedState.fuelUsageHistory ?? [];
     lapTimeHistory = savedState.lapTimeHistory ?? [];
     lastLapStartTime = savedState.lastLapStartTime ?? null;
@@ -182,7 +184,8 @@ function syncToServer() {
   // Create state object
   const stateToSync = {
     lastLapCompleted,
-    fuelAtLapStart,
+    // DO NOT sync fuelAtLapStart - it's a live tracking variable
+    // fuelAtLapStart,
     fuelUsageHistory,
     lapTimeHistory,
     lastLapStartTime,
@@ -214,7 +217,8 @@ function applyServerState(serverState) {
   
   // Apply state from server
   lastLapCompleted = serverState.lastLapCompleted;
-  fuelAtLapStart = serverState.fuelAtLapStart;
+  // DO NOT restore fuelAtLapStart - it should only be set when a new lap starts
+  // fuelAtLapStart = serverState.fuelAtLapStart;
   fuelUsageHistory = serverState.fuelUsageHistory;
   lapTimeHistory = serverState.lapTimeHistory;
   lastLapStartTime = serverState.lastLapStartTime;
@@ -728,6 +732,12 @@ function handleDriverEntry(teamLap) {
   stintStartTime = Date.now();
   stintIncidentCount = 0;
   
+  // Initialize fuel tracking for first lap
+  if (bufferedData?.values?.FuelLevel) {
+    fuelAtLapStart = bufferedData.values.FuelLevel;
+    console.log(`Driver entered - initialized fuelAtLapStart to ${fuelAtLapStart?.toFixed(2)}L for first lap tracking`);
+  }
+  
   // Initialize first stint if not already tracking
   if (lastStintStartSessionTime === null && bufferedData?.values?.SessionTimeRemain) {
     lastStintStartSessionTime = bufferedData.values.SessionTimeRemain;
@@ -865,6 +875,8 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
 
   fuelAtLapStart = fuel;
   lastLapCompleted = lapCompleted;
+  
+  console.log(`Lap ${lapCompleted} completed - setting fuelAtLapStart to ${fuel?.toFixed(2)}L for next lap`);
   
   // Sync state to server after lap completion
   syncToServer();
