@@ -17,12 +17,17 @@ class TrackMap {
     // Class position tracking
     this.playerCarIdx = null;
     this.playerClassPosition = null;
+    this.playerPosition = null;
     this.carIdxClassPosition = null; // Array of all car positions
+    this.carIdxPosition = null; // Array of all overall positions
     this.carIdxLapDistPct = null; // Array of all car lap distances
     this.carIdxLapCompleted = null; // Array of all car lap counts
+    this.carIdxLastLapTime = null; // Array of all car last lap times
+    this.carIdxBestLapTime = null; // Array of all car best lap times
     this.playerLapCompleted = null; // Player's lap count
     this.carAheadIdx = null;
     this.carBehindIdx = null;
+    this.driverInfo = null; // Session driver info
     
     // Cache info box elements
     this.cacheInfoElements();
@@ -218,20 +223,9 @@ class TrackMap {
       this.carAheadRing.setAttribute('cx', aheadPoint.x);
       this.carAheadRing.setAttribute('cy', aheadPoint.y);
       this.updateLapIndicator(this.carAheadIdx, this.carAheadRing);
-      
-      // Calculate and display distance
-      if (this.trackLength > 0) {
-        const distanceDiff = this.calculateDistanceBetweenCars(this.liveLapPct, aheadLapPct);
-        if (this.carAheadElement) {
-          this.carAheadElement.textContent = distanceDiff.toFixed(2) + ' m';
-        }
-      }
     } else {
       this.carAheadMarker.style.display = 'none';
       this.carAheadRing.style.display = 'none';
-      if (this.carAheadElement) {
-        this.carAheadElement.textContent = '-- m';
-      }
     }
     
     // Update car behind position using class position data
@@ -248,20 +242,9 @@ class TrackMap {
       this.carBehindRing.setAttribute('cx', behindPoint.x);
       this.carBehindRing.setAttribute('cy', behindPoint.y);
       this.updateLapIndicator(this.carBehindIdx, this.carBehindRing);
-      
-      // Calculate and display distance
-      if (this.trackLength > 0) {
-        const distanceDiff = this.calculateDistanceBetweenCars(behindLapPct, this.liveLapPct);
-        if (this.carBehindElement) {
-          this.carBehindElement.textContent = distanceDiff.toFixed(2) + ' m';
-        }
-      }
     } else {
       this.carBehindMarker.style.display = 'none';
       this.carBehindRing.style.display = 'none';
-      if (this.carBehindElement) {
-        this.carBehindElement.textContent = '-- m';
-      }
     }
   }
   
@@ -305,6 +288,78 @@ class TrackMap {
     return diff * this.trackLength;
   }
   
+  getDriverInfo(carIdx) {
+    if (!this.driverInfo || !this.driverInfo.Drivers || !this.driverInfo.Drivers[carIdx]) {
+      return { driverName: '--', carName: '--' };
+    }
+    
+    const driver = this.driverInfo.Drivers[carIdx];
+    return {
+      driverName: driver.UserName || '--',
+      carName: driver.CarScreenName || '--'
+    };
+  }
+  
+  formatLapTime(timeInSeconds) {
+    if (!timeInSeconds || timeInSeconds <= 0) return '--:--';
+    
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes}:${seconds.toFixed(3).padStart(6, '0')}`;
+  }
+  
+  updateCarInfo(carIdx, elements) {
+    if (carIdx === null) {
+      // Clear all elements
+      elements.driver.textContent = '--';
+      elements.car.textContent = '--';
+      elements.position.textContent = '--';
+      elements.classPos.textContent = '--';
+      elements.laps.textContent = '--';
+      elements.lastLap.textContent = '--:--';
+      elements.bestLap.textContent = '--:--';
+      return;
+    }
+    
+    // Get driver and car info
+    const driverInfo = this.getDriverInfo(carIdx);
+    elements.driver.textContent = driverInfo.driverName;
+    elements.car.textContent = driverInfo.carName;
+    
+    // Position info
+    if (this.carIdxPosition && this.carIdxPosition[carIdx] !== undefined) {
+      elements.position.textContent = this.carIdxPosition[carIdx].toString();
+    } else {
+      elements.position.textContent = '--';
+    }
+    
+    if (this.carIdxClassPosition && this.carIdxClassPosition[carIdx] !== undefined) {
+      elements.classPos.textContent = this.carIdxClassPosition[carIdx].toString();
+    } else {
+      elements.classPos.textContent = '--';
+    }
+    
+    // Lap info
+    if (this.carIdxLapCompleted && this.carIdxLapCompleted[carIdx] !== undefined) {
+      elements.laps.textContent = this.carIdxLapCompleted[carIdx].toString();
+    } else {
+      elements.laps.textContent = '--';
+    }
+    
+    // Lap times
+    if (this.carIdxLastLapTime && this.carIdxLastLapTime[carIdx] !== undefined) {
+      elements.lastLap.textContent = this.formatLapTime(this.carIdxLastLapTime[carIdx]);
+    } else {
+      elements.lastLap.textContent = '--:--';
+    }
+    
+    if (this.carIdxBestLapTime && this.carIdxBestLapTime[carIdx] !== undefined) {
+      elements.bestLap.textContent = this.formatLapTime(this.carIdxBestLapTime[carIdx]);
+    } else {
+      elements.bestLap.textContent = '--:--';
+    }
+  }
+  
   findCarsAheadAndBehind() {
     if (!this.carIdxClassPosition || !this.playerCarIdx || this.playerClassPosition === null) {
       this.carAheadIdx = null;
@@ -337,6 +392,27 @@ class TrackMap {
     }
     
     console.log(`Player position: ${this.playerClassPosition}, Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
+    
+    // Update car info displays
+    this.updateCarInfo(this.carAheadIdx, {
+      driver: this.carAheadDriver,
+      car: this.carAheadCar,
+      position: this.carAheadPosition,
+      classPos: this.carAheadClassPos,
+      laps: this.carAheadLaps,
+      lastLap: this.carAheadLastLap,
+      bestLap: this.carAheadBestLap
+    });
+    
+    this.updateCarInfo(this.carBehindIdx, {
+      driver: this.carBehindDriver,
+      car: this.carBehindCar,
+      position: this.carBehindPosition,
+      classPos: this.carBehindClassPos,
+      laps: this.carBehindLaps,
+      lastLap: this.carBehindLastLap,
+      bestLap: this.carBehindBestLap
+    });
   }
   
   calculateRelativeLapPct(distance, isAhead) {
@@ -360,19 +436,44 @@ class TrackMap {
   }
 
   cacheInfoElements() {
-    this.carAheadElement = document.getElementById('carAheadDistance');
-    this.carBehindElement = document.getElementById('carBehindDistance');
-    this.lapDistPctElement = document.getElementById('lapDistPct');
+    // Car ahead elements
+    this.carAheadDriver = document.getElementById('carAheadDriver');
+    this.carAheadCar = document.getElementById('carAheadCar');
+    this.carAheadPosition = document.getElementById('carAheadPosition');
+    this.carAheadClassPos = document.getElementById('carAheadClassPos');
+    this.carAheadLaps = document.getElementById('carAheadLaps');
+    this.carAheadLastLap = document.getElementById('carAheadLastLap');
+    this.carAheadBestLap = document.getElementById('carAheadBestLap');
+    
+    // Car behind elements
+    this.carBehindDriver = document.getElementById('carBehindDriver');
+    this.carBehindCar = document.getElementById('carBehindCar');
+    this.carBehindPosition = document.getElementById('carBehindPosition');
+    this.carBehindClassPos = document.getElementById('carBehindClassPos');
+    this.carBehindLaps = document.getElementById('carBehindLaps');
+    this.carBehindLastLap = document.getElementById('carBehindLastLap');
+    this.carBehindBestLap = document.getElementById('carBehindBestLap');
+    
+    // Player elements
+    this.playerPositionElement = document.getElementById('playerPosition');
     this.classPositionElement = document.getElementById('classPosition');
+    this.playerLapsElement = document.getElementById('playerLaps');
+    this.lapDistPctElement = document.getElementById('lapDistPct');
   }
 
   setupListeners() {
     if (this.socket) {
-      // Listen for session info to get official track length
+      // Listen for session info to get official track length and driver info
       this.socket.on('sessionInfo', (data) => {
         if (data?.WeekendInfo?.TrackLength) {
           this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
           console.log('Track length set from session data:', this.trackLength, 'meters');
+        }
+        
+        // Store driver info for car/driver names
+        if (data?.DriverInfo) {
+          this.driverInfo = data.DriverInfo;
+          console.log('Driver info updated:', this.driverInfo);
         }
       });
       
@@ -403,6 +504,21 @@ class TrackMap {
           }
         }
         
+        // Update overall position array
+        if (values.CarIdxPosition !== undefined) {
+          this.carIdxPosition = values.CarIdxPosition;
+          
+          // Get player's overall position
+          if (this.playerCarIdx !== null && this.carIdxPosition[this.playerCarIdx] !== undefined) {
+            this.playerPosition = this.carIdxPosition[this.playerCarIdx];
+            
+            // Update player position display
+            if (this.playerPositionElement) {
+              this.playerPositionElement.textContent = this.playerPosition.toString();
+            }
+          }
+        }
+        
         // Update all cars' lap distance percentages
         if (values.CarIdxLapDistPct !== undefined) {
           this.carIdxLapDistPct = values.CarIdxLapDistPct;
@@ -415,7 +531,21 @@ class TrackMap {
           // Get player's current lap completed
           if (this.playerCarIdx !== null && this.carIdxLapCompleted[this.playerCarIdx] !== undefined) {
             this.playerLapCompleted = this.carIdxLapCompleted[this.playerCarIdx];
+            
+            // Update player lap display
+            if (this.playerLapsElement) {
+              this.playerLapsElement.textContent = this.playerLapCompleted.toString();
+            }
           }
+        }
+        
+        // Update lap time arrays
+        if (values.CarIdxLastLapTime !== undefined) {
+          this.carIdxLastLapTime = values.CarIdxLastLapTime;
+        }
+        
+        if (values.CarIdxBestLapTime !== undefined) {
+          this.carIdxBestLapTime = values.CarIdxBestLapTime;
         }
         
         if (values.LapDistPct !== undefined) {
