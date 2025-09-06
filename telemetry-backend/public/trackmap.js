@@ -459,6 +459,68 @@ class TrackMap {
     this.lapDistPctElement = document.getElementById('lapDistPct');
   }
 
+  updateOtherCarPositions() {
+    // Update car markers on the track map based on their lap distance
+    if (!this.carIdxLapDistPct || !this.carIdxClass || !this.playerCarClass || !this.svg) return;
+    
+    // Remove all existing car markers
+    const existingMarkers = this.svg.querySelectorAll('.car-marker');
+    existingMarkers.forEach(marker => marker.remove());
+    
+    // Add markers for cars in the same class as the player
+    for (let carIdx = 0; carIdx < this.carIdxLapDistPct.length; carIdx++) {
+      if (carIdx === this.playerCarIdx) continue; // Skip player car
+      if (this.carIdxClass[carIdx] !== this.playerCarClass) continue; // Only show same class
+      if (this.carIdxLapDistPct[carIdx] === undefined || this.carIdxLapDistPct[carIdx] < 0) continue; // Skip invalid positions
+      
+      const lapPct = this.carIdxLapDistPct[carIdx];
+      const position = this.getPositionFromLapPercentage(lapPct);
+      
+      // Create car marker
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      marker.setAttribute('class', 'car-marker');
+      marker.setAttribute('cx', position.x);
+      marker.setAttribute('cy', position.y);
+      marker.setAttribute('r', '3');
+      marker.setAttribute('fill', '#ff6b35');
+      marker.setAttribute('stroke', '#fff');
+      marker.setAttribute('stroke-width', '1');
+      
+      // Add driver info as tooltip
+      const driverInfo = this.getDriverInfo(carIdx);
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = `${driverInfo.driverName} (${driverInfo.carName})`;
+      marker.appendChild(title);
+      
+      this.svg.appendChild(marker);
+    }
+  }
+
+  getPositionFromLapPercentage(lapPct) {
+    // Convert lap percentage to position on actual track path
+    if (!this.trackPath || !this.pathLength) {
+      // Fallback to simple circular positioning if track path not available
+      const angle = lapPct * 2 * Math.PI;
+      const centerX = 132; // Center of the SVG viewBox (264.58333 / 2)
+      const centerY = 132;
+      const radius = 80;
+      
+      return {
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle)
+      };
+    }
+    
+    // Calculate position along the actual track path
+    const distance = (lapPct * this.pathLength + this.startPosition) % this.pathLength;
+    const point = this.trackPath.getPointAtLength(distance);
+    
+    return {
+      x: point.x,
+      y: point.y
+    };
+  }
+
   setupListeners() {
     if (this.socket) {
       // Listen for session info to get official track length and driver info
@@ -470,10 +532,9 @@ class TrackMap {
           console.log('Track length set from session data:', this.trackLength, 'meters');
         }
         
-        // Store driver info - try the correct sessionInfo path
-        // Store driver info from correct path
-        this.driverInfo = data.data;
-        console.log('Driver info set to full session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
+        // Store driver info - use the full session data object directly
+        this.driverInfo = data;  
+        console.log('Driver info set to session data:', data.DriverInfo ? 'DriverInfo exists' : 'No DriverInfo');
       });
       
       this.socket.on('telemetry', (data) => {
@@ -535,6 +596,9 @@ class TrackMap {
         // Update all cars' lap distance percentages
         if (values.CarIdxLapDistPct !== undefined) {
           this.carIdxLapDistPct = values.CarIdxLapDistPct;
+          
+          // Update car positions on track map
+          this.updateOtherCarPositions();
         }
         
         // Update all cars' lap completed counts
