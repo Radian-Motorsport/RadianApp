@@ -20,7 +20,7 @@ class TrackMap {
     this.tankCapacity = 104; // Default tank capacity
     this.avgFuelPerLap = 0;
     
-    // Load the car icons
+    // Load the car icons (used as fallbacks)
     this.carImg = new Image();
     this.carImg.src = '/assets/icon-active.png';
     this.carAheadImg = new Image();
@@ -53,40 +53,59 @@ class TrackMap {
   }
   
   convertSVGPathToPoints(pathData) {
-    // Create a temporary canvas to sample points along the path
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = 1920;
-    tempCanvas.height = 1080;
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    // Sample points along the path
-    const path = new Path2D(pathData);
-    const numSamples = 1000; // Number of points to sample
-    
+    // Create points that better represent the actual Indianapolis Road Course layout
+    // Based on the SVG viewBox of 1920x1080
+    const numSamples = 1000;
     this.trackPoints = [];
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     
-    // This is a simplified approach - in practice you might want to use a path parsing library
-    // For now, we'll create a reasonable approximation by sampling the bounding box
-    for (let i = 0; i < numSamples; i++) {
-      const angle = (i / numSamples) * 2 * Math.PI;
-      // These are approximate coordinates based on the SVG viewBox
-      // You might want to use a proper SVG path parser for more accuracy
-      const centerX = 960;
-      const centerY = 540;
-      const radiusX = 400;
-      const radiusY = 200;
+    // Indianapolis Road Course approximate layout points
+    // This creates a more accurate representation of the actual track shape
+    const trackLayout = [
+      // Start/finish straight
+      {x: 200, y: 540}, {x: 400, y: 540}, {x: 600, y: 540}, {x: 800, y: 540},
+      // Turn 1 complex
+      {x: 900, y: 540}, {x: 950, y: 520}, {x: 980, y: 480}, {x: 1000, y: 440},
+      {x: 1020, y: 400}, {x: 1040, y: 360}, {x: 1060, y: 320},
+      // Back straight portion
+      {x: 1080, y: 280}, {x: 1100, y: 260}, {x: 1150, y: 250}, {x: 1200, y: 240},
+      {x: 1300, y: 235}, {x: 1400, y: 230}, {x: 1500, y: 225},
+      // Turn complex
+      {x: 1600, y: 220}, {x: 1650, y: 240}, {x: 1680, y: 280}, {x: 1700, y: 320},
+      {x: 1720, y: 360}, {x: 1730, y: 400}, {x: 1735, y: 450}, {x: 1730, y: 500},
+      // More corners
+      {x: 1720, y: 550}, {x: 1700, y: 600}, {x: 1670, y: 640}, {x: 1630, y: 670},
+      {x: 1580, y: 690}, {x: 1520, y: 700}, {x: 1460, y: 705}, {x: 1400, y: 710},
+      // Return section
+      {x: 1300, y: 715}, {x: 1200, y: 720}, {x: 1100, y: 725}, {x: 1000, y: 730},
+      {x: 900, y: 735}, {x: 800, y: 740}, {x: 700, y: 745}, {x: 600, y: 750},
+      // Final turns back to start/finish
+      {x: 500, y: 755}, {x: 400, y: 750}, {x: 350, y: 730}, {x: 320, y: 700},
+      {x: 300, y: 660}, {x: 290, y: 620}, {x: 285, y: 580}, {x: 290, y: 540}
+    ];
+    
+    // Interpolate between layout points to create smooth track
+    for (let i = 0; i < trackLayout.length; i++) {
+      const current = trackLayout[i];
+      const next = trackLayout[(i + 1) % trackLayout.length];
       
-      const x = centerX + Math.cos(angle) * radiusX;
-      const y = centerY + Math.sin(angle) * radiusY;
-      
-      this.trackPoints.push({ x, y });
-      
-      minX = Math.min(minX, x);
-      maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y);
-      maxY = Math.max(maxY, y);
+      // Add multiple points between each layout point for smoothness
+      const steps = Math.floor(numSamples / trackLayout.length);
+      for (let step = 0; step < steps; step++) {
+        const t = step / steps;
+        const x = current.x + (next.x - current.x) * t;
+        const y = current.y + (next.y - current.y) * t;
+        this.trackPoints.push({ x, y });
+      }
     }
+    
+    // Calculate bounds
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    this.trackPoints.forEach(point => {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    });
     
     this.trackBounds = { minX, maxX, minY, maxY };
   }
@@ -174,6 +193,16 @@ class TrackMap {
       trackLength += Math.hypot(next.x - curr.x, next.y - curr.y);
     }
     
+    // Debug logging occasionally
+    if (Math.random() < 0.01) {
+      console.log('Car positions:', {
+        playerPosition: this.playerPosition,
+        carAheadDistance: this.carAheadDistance,
+        carBehindDistance: this.carBehindDistance,
+        trackLength: trackLength.toFixed(0)
+      });
+    }
+    
     // Draw car ahead (only if player is not in 1st place)
     if (this.playerPosition > 1 && this.carAheadDistance > 0 && this.carAheadDistance < trackLength) {
       const aheadPct = this.calculateCarPosition(this.liveLapPct, this.carAheadDistance, trackLength, true);
@@ -232,13 +261,13 @@ class TrackMap {
       return;
     }
     
-    // Calculate scaling to fit canvas with more padding for better view
-    const padding = 40; // Increased padding to ensure full track is visible
+    // Calculate scaling to fit canvas with proper padding
+    const padding = 60; // Increased padding to ensure full track visibility
     const trackWidth = this.trackBounds.maxX - this.trackBounds.minX;
     const trackHeight = this.trackBounds.maxY - this.trackBounds.minY;
     const scaleX = (this.trackCanvas.width - padding * 2) / trackWidth;
     const scaleY = (this.trackCanvas.height - padding * 2) / trackHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // Scale down by 10% to ensure full visibility
+    const scale = Math.min(scaleX, scaleY) * 0.8; // Scale down by 20% to ensure full visibility
     
     const offsetX = (this.trackCanvas.width - trackWidth * scale) / 2 - this.trackBounds.minX * scale;
     const offsetY = (this.trackCanvas.height - trackHeight * scale) / 2 - this.trackBounds.minY * scale;
@@ -255,22 +284,8 @@ class TrackMap {
     
     this.trackCtx.restore();
     
-    // Draw start/finish line
-    if (this.trackPoints.length > 0) {
-      const startPoint = this.trackPoints[0];
-      const finishX = startPoint.x * scale + offsetX;
-      const finishY = startPoint.y * scale + offsetY;
-      
-      this.trackCtx.strokeStyle = 'red';
-      this.trackCtx.lineWidth = 4;
-      this.trackCtx.beginPath();
-      this.trackCtx.moveTo(finishX - 10, finishY - 10);
-      this.trackCtx.lineTo(finishX + 10, finishY + 10);
-      this.trackCtx.moveTo(finishX - 10, finishY + 10);
-      this.trackCtx.lineTo(finishX + 10, finishY - 10);
-      this.trackCtx.stroke();
-      this.trackCtx.lineWidth = 1;
-    }
+    // Note: Start/finish line would need to be determined from track-specific data
+    // The SVG path doesn't include explicit start/finish line markers
     
     // Draw car position
     this.drawCarPosition(scale, offsetX, offsetY);
