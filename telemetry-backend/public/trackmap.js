@@ -154,32 +154,35 @@ class TrackMap {
   setupListeners() {
     if (this.socket) {
       this.socket.on('telemetry', (data) => {
-        if (data.LapDistPct !== undefined) {
-          this.updateCarPosition(data.LapDistPct);
+        const values = data?.values;
+        if (!values) return;
+        
+        if (values.LapDistPct !== undefined) {
+          this.updateCarPosition(values.LapDistPct);
           if (this.lapDistPctElement) {
-            this.lapDistPctElement.textContent = (data.LapDistPct * 100).toFixed(1) + '%';
+            this.lapDistPctElement.textContent = (values.LapDistPct * 100).toFixed(1) + '%';
           }
         }
         
-        if (data.FuelLevel !== undefined) {
-          this.fuelLevel = data.FuelLevel;
+        if (values.FuelLevel !== undefined) {
+          this.fuelLevel = values.FuelLevel;
           this.updateInfoBoxes();
         }
         
-        if (data.FuelLevelPct !== undefined) {
-          this.fuelLevelPct = data.FuelLevelPct;
+        if (values.FuelLevelPct !== undefined) {
+          this.fuelLevelPct = values.FuelLevelPct;
           this.updateInfoBoxes();
         }
         
-        if (data.CarDistAhead !== undefined) {
+        if (values.CarDistAhead !== undefined) {
           if (this.carAheadElement) {
-            this.carAheadElement.textContent = data.CarDistAhead + ' m';
+            this.carAheadElement.textContent = values.CarDistAhead + ' m';
           }
         }
         
-        if (data.CarDistBehind !== undefined) {
+        if (values.CarDistBehind !== undefined) {
           if (this.carBehindElement) {
-            this.carBehindElement.textContent = data.CarDistBehind + ' m';
+            this.carBehindElement.textContent = values.CarDistBehind + ' m';
           }
         }
       });
