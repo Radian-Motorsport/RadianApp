@@ -483,19 +483,26 @@
       const racingApps = info.racingApps || [];
       const webViewers = info.webViewers || [];
       
-      // Update main connection count (only telemetry apps)
-      connectionCountEl.textContent = racingApps.length;
+      // Calculate unique apps by driver name
+      const uniqueAppsMap = new Map();
+      racingApps.forEach(client => {
+        const driverKey = client.driverName || `UnknownApp_${client.id.substring(0, 6)}`;
+        if (!uniqueAppsMap.has(driverKey)) {
+          uniqueAppsMap.set(driverKey, client);
+        }
+      });
+      const uniqueApps = Array.from(uniqueAppsMap.values());
       
-      // Update section counts
-      appCountEl.textContent = `(${racingApps.length})`;
-      viewerCountEl.textContent = `(${webViewers.length})`;
+      // Update main connection count (only unique telemetry apps)
+      connectionCountEl.textContent = uniqueApps.length;
+      appCountEl.textContent = `(${uniqueApps.length})`;
       
-      // Calculate and update broadcasting counts
-      const broadcastingCount = racingApps.filter(client => 
+      // Calculate and update broadcasting counts for unique apps
+      const broadcastingCount = uniqueApps.filter(client => 
         client.broadcastingEnabled && client.isActiveBroadcaster).length;
-      const standbyCount = racingApps.filter(client => 
+      const standbyCount = uniqueApps.filter(client => 
         client.broadcastingEnabled && !client.isActiveBroadcaster).length;
-      const disabledCount = racingApps.filter(client => 
+      const disabledCount = uniqueApps.filter(client => 
         !client.broadcastingEnabled).length;
       
       broadcastingCountEl.textContent = broadcastingCount;
