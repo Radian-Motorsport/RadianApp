@@ -402,9 +402,15 @@ function updateFuelGauge(level) {
   elements.fuelValue.textContent = `${fuel}%`;
 }
 
-// Update weather data display
+// Update weather data display (only for non-weather pages)
 function updateWeatherData(values) {
   if (!values) return;
+
+  // Check if we're on the weather page - if so, let weather.js handle updates
+  if (typeof window.weatherPageUpdateWeatherData === 'function') {
+    window.weatherPageUpdateWeatherData(values);
+    return;
+  }
 
   // Temperature & Pressure
   if (elements.trackTemp) elements.trackTemp.textContent = values.TrackTemp ? `${values.TrackTemp.toFixed(1)}°C` : '--';

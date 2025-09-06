@@ -12,7 +12,6 @@ function safeUpdateElement(id, value) {
   const element = document.getElementById(id);
   if (element) {
     element.textContent = value;
-    console.log(`Updated ${id} with value: ${value}`); // Debug log
   } else {
     console.warn(`Element with ID '${id}' not found!`);
   }
@@ -63,30 +62,6 @@ function formatValue(value, type) {
 function updateWeatherData(values) {
   if (!values) return;
 
-  // Debug: Log function call
-  if (Math.random() < 0.05) { // 5% chance
-    console.log('updateWeatherData called with TrackWetness:', values.TrackWetness);
-  }
-
-  // Debug: Log track wetness value and related fields (occasionally to avoid spam)
-  if (Math.random() < 0.05) { // 5% chance
-    console.log('Full weather telemetry sample:', {
-      TrackWetness: values.TrackWetness,
-      TrackSurfaceTemp: values.TrackSurfaceTemp,
-      WeatherType: values.WeatherType,
-      SessionFlags: values.SessionFlags,
-      TrackTemp: values.TrackTemp,
-      Precipitation: values.Precipitation
-    });
-    
-    // Check for alternative wetness field names by looking for any field with "wet" in the name
-    Object.keys(values).forEach(key => {
-      if (key.toLowerCase().includes('wet') || key.toLowerCase().includes('moisture') || key.toLowerCase().includes('surface')) {
-        console.log(`Potential wetness field ${key}:`, values[key]);
-      }
-    });
-  }
-
   // Temperature & Pressure
   safeUpdateElement('TrackTemp', formatValue(values.TrackTemp, 'temperature'));
   safeUpdateElement('AirTemp', formatValue(values.AirTemp, 'temperature'));
@@ -101,18 +76,12 @@ function updateWeatherData(values) {
   // Track Conditions
   safeUpdateElement('RelativeHumidity', formatValue(values.RelativeHumidity, 'percentage'));
   safeUpdateElement('Precipitation', formatValue(values.Precipitation, 'percentage'));
-  
-  // Debug track wetness specifically
-  const wetnessValue = formatValue(values.TrackWetness, 'wetness');
-  console.log('Track wetness formatting:', {
-    rawValue: values.TrackWetness,
-    formattedValue: wetnessValue,
-    elementExists: !!document.getElementById('TrackWetness')
-  });
-  
-  safeUpdateElement('TrackWetness', wetnessValue);
+  safeUpdateElement('TrackWetness', formatValue(values.TrackWetness, 'wetness'));
   safeUpdateElement('FogLevel', formatValue(values.FogLevel, 'percentage'));
 }
+
+// Register this page's update function globally for telemetry.js delegation
+window.weatherPageUpdateWeatherData = updateWeatherData;
 
 // Socket connection for receiving telemetry data
 // Socket is already declared in telemetry.js, use the global socket variable
@@ -209,9 +178,9 @@ function setupTimeRangeSlider() {
     if (window.enviroTrace) {
       const newMaxPoints = Math.round(hours * 3600); // 3600 points per hour (1 point per second)
       window.enviroTrace.updateTimeRange(newMaxPoints);
-      console.log(`Updated trace time range to ${hours} hours (${newMaxPoints} points)`);
+      console.log(`Updated trace time range to ${hours} hours (${newMaxPoints} points, ${hours * 3600}s window)`);
       console.log(`Current buffer length: ${window.enviroTrace.buffer.length}`);
-      console.log(`Data collection rate: 1 point per second (sampleRate: ${window.enviroTrace.options.sampleRate} at 10Hz telemetry)`);
+      console.log(`Data collection rate: 1 point per second (${window.enviroTrace.options.sampleInterval}ms interval)`);
     }
   });
   
