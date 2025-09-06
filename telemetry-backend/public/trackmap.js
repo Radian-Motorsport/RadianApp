@@ -26,12 +26,14 @@ class TrackMap {
   }
 
   initializeSVGTrack() {
-    // Create SVG element
+    // Create SVG element with exact attributes from your original
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    this.svg.setAttribute('width', '100%');
-    this.svg.setAttribute('height', '400px');
+    this.svg.setAttribute('width', '1000');
+    this.svg.setAttribute('height', '1000');
     this.svg.setAttribute('viewBox', '0 0 264.58333 264.58333');
-    this.svg.style.background = '#000';
+    this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    this.svg.style.width = '100%';
+    this.svg.style.height = '400px';
     
     // Create track path
     this.trackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -60,12 +62,55 @@ class TrackMap {
     this.svg.appendChild(this.startFinishRect);
     this.svg.appendChild(this.carMarker);
     
+    // Add corner numbers
+    this.addCornerNumbers();
+    
     // Add SVG to container
     this.container.appendChild(this.svg);
     
     // Calculate path properties
     this.pathLength = this.trackPath.getTotalLength();
     this.calculateStartPosition();
+    
+    // Initialize car marker at start position
+    this.updateCarPosition(0);
+  }
+
+  addCornerNumbers() {
+    const corners = [
+      {x: "51.475407", y: "175.78003", text: "1"},
+      {x: "46.50354", y: "159.33336", text: "2"},
+      {x: "24.622015", y: "157.17836", text: "3"},
+      {x: "9.0397148", y: "126.51107", text: "4"},
+      {x: "40.374626", y: "134.79555", text: "5"},
+      {x: "48.824314", y: "116.56493", text: "6"},
+      {x: "178.95309", y: "125.6822", text: "7"},
+      {x: "169.01289", y: "98.489273", text: "8"},
+      {x: "192.54672", y: "93.854248", text: "9"},
+      {x: "182.44246", y: "62.85656", text: "10"},
+      {x: "238.46535", y: "87.389526", text: "11"},
+      {x: "242.28313", y: "126.34473", text: "12"},
+      {x: "218.08058", y: "133.30392", text: "13"},
+      {x: "234.31998", y: "170.27414", text: "14"}
+    ];
+
+    corners.forEach(corner => {
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('xml:space', 'preserve');
+      text.setAttribute('style', 'font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.85508px;line-height:3.59033px;font-family:\'Road Rage\';-inkscape-font-specification:\'Road Rage\';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.655815;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1');
+      text.setAttribute('x', corner.x);
+      text.setAttribute('y', corner.y);
+      
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.setAttribute('sodipodi:role', 'line');
+      tspan.setAttribute('style', 'font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.85508px;font-family:\'Road Rage\';-inkscape-font-specification:\'Road Rage\';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.655815;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1');
+      tspan.setAttribute('x', corner.x);
+      tspan.setAttribute('y', corner.y);
+      tspan.textContent = corner.text;
+      
+      text.appendChild(tspan);
+      this.svg.appendChild(text);
+    });
   }
 
   calculateStartPosition() {
