@@ -227,12 +227,18 @@ function handleSessionUpdate(sessionInfo) {
 }
 
 function handleTelemetryData(data) {
+  // Debug telemetry reception
+  console.log('Planner - handleTelemetryData called with data:', !!data, 'values:', !!data?.values);
+  
   // Update our page refresh rate display
   updateRefreshRate();
 
   // Extract the values we need from telemetry
   const values = data?.values;
-  if (!values) return;
+  if (!values) {
+    console.log('Planner - No values in telemetry data');
+    return;
+  }
   
   // Try to get data from telemetryDashboard first
   if (window.telemetryDashboard) {
@@ -272,11 +278,21 @@ function handleTelemetryData(data) {
   
   // Extract race time remaining directly from SessionTimeRemain
   if (values.SessionTimeRemain !== undefined && values.SessionTimeRemain !== null && !isNaN(values.SessionTimeRemain) && values.SessionTimeRemain > 0) {
+    console.log('Planner - SessionTimeRemain received:', values.SessionTimeRemain, 'type:', typeof values.SessionTimeRemain);
     raceTimeRemaining = values.SessionTimeRemain;
     
     // Update session time tracking for calculations
     sessionTimeRemainHistory.push(values.SessionTimeRemain);
     lastSessionTimeRemain = values.SessionTimeRemain;
+    console.log('Planner - raceTimeRemaining set to:', raceTimeRemaining);
+  } else {
+    console.log('Planner - SessionTimeRemain validation failed:', {
+      value: values.SessionTimeRemain,
+      undefined: values.SessionTimeRemain === undefined,
+      null: values.SessionTimeRemain === null,
+      isNaN: isNaN(values.SessionTimeRemain),
+      positive: values.SessionTimeRemain > 0
+    });
   }
   
   // Extract lap info directly if not available from telemetryDashboard
@@ -553,6 +569,9 @@ function calculateStintPlan() {
 
 // Update the UI with current values
 function updateUI() {
+  // Debug the countdown timer update
+  console.log('Planner updateUI - raceTimeRemaining:', raceTimeRemaining, 'formatted:', formatTime(raceTimeRemaining));
+  
   // Update race info
   document.getElementById('countdown-timer').textContent = formatTime(raceTimeRemaining);
   document.getElementById('next-pitstop-time').textContent = formatTime(nextPitStop);
