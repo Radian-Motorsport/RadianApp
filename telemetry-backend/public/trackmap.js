@@ -33,7 +33,7 @@ class TrackMap {
     this.svg.setAttribute('viewBox', '0 0 264.58333 264.58333');
     this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     this.svg.style.width = '100%';
-    this.svg.style.height = '600px';
+    this.svg.style.height = '800px';
     
     // Create track path
     this.trackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -153,7 +153,7 @@ class TrackMap {
 
   setupListeners() {
     if (this.socket) {
-      this.socket.on('telemetryData', (data) => {
+      this.socket.on('telemetry', (data) => {
         if (data.LapDistPct !== undefined) {
           this.updateCarPosition(data.LapDistPct);
           if (this.lapDistPctElement) {
