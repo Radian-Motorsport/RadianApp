@@ -33,7 +33,7 @@ class TrackMap {
     this.svg.setAttribute('viewBox', '0 0 264.58333 264.58333');
     this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     this.svg.style.width = '100%';
-    this.svg.style.height = '400px';
+    this.svg.style.height = '600px';
     
     // Create track path
     this.trackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -144,9 +144,10 @@ class TrackMap {
   }
 
   cacheInfoElements() {
-    this.fuelLevelElement = document.getElementById('fuel-level');
-    this.fuelPctElement = document.getElementById('fuel-pct');
-    this.estimatedLapsElement = document.getElementById('estimated-laps');
+    this.fuelLevelElement = document.getElementById('fuelLevelPercent');
+    this.estimatedLapsElement = document.getElementById('estimatedLaps');
+    this.carAheadElement = document.getElementById('carAheadDistance');
+    this.carBehindElement = document.getElementById('carBehindDistance');
   }
 
   setupListeners() {
@@ -170,11 +171,7 @@ class TrackMap {
 
   updateInfoBoxes() {
     if (this.fuelLevelElement) {
-      this.fuelLevelElement.textContent = this.fuelLevel.toFixed(1) + ' L';
-    }
-    
-    if (this.fuelPctElement) {
-      this.fuelPctElement.textContent = (this.fuelLevelPct * 100).toFixed(1) + '%';
+      this.fuelLevelElement.textContent = (this.fuelLevelPct * 100).toFixed(1) + '%';
     }
     
     if (this.estimatedLapsElement && this.avgFuelPerLap > 0) {
