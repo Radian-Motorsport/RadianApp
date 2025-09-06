@@ -36,6 +36,11 @@ let lastStintStartSessionTime = null; // Track when current stint started using 
 let actualStintDuration = 0; // Last completed stint duration in seconds
 let stintDurations = []; // History of actual stint durations
 
+// Stint lap count tracking (global for use across pages)
+let lastStintStartLap = null; // Track lap number when current stint started
+let actualStintLapCount = 0; // Last completed stint lap count
+let stintLapCounts = []; // History of actual stint lap counts
+
 // Previous value tracking for color coding
 let previousValues = {
   fuelPerLap: null,
@@ -85,7 +90,10 @@ function saveTelemetryState() {
     wasPitstopActive,
     lastStintStartSessionTime,
     actualStintDuration,
-    stintDurations
+    stintDurations,
+    lastStintStartLap,
+    actualStintLapCount,
+    stintLapCounts
   };
   
   window.storageManager.saveTelemetryState(stateToSave);
@@ -135,6 +143,9 @@ function loadTelemetryState() {
     lastStintStartSessionTime = savedState.lastStintStartSessionTime ?? null;
     actualStintDuration = savedState.actualStintDuration ?? 0;
     stintDurations = savedState.stintDurations ?? [];
+    lastStintStartLap = savedState.lastStintStartLap ?? null;
+    actualStintLapCount = savedState.actualStintLapCount ?? 0;
+    stintLapCounts = savedState.stintLapCounts ?? [];
     
     console.log('Telemetry: Restored state from storage');
     
@@ -313,6 +324,14 @@ function initDashboard() {
     stintAvgLapTime: document.getElementById('stintAvgLapTime'),
     lastPitStopTime: document.getElementById('lastPitStopTime'),
     stintIncidents: document.getElementById('stintIncidents'),
+    // Current stint progress elements
+    currentStintDuration: document.getElementById('currentStintDuration'),
+    averageStintDuration: document.getElementById('averageStintDuration'),
+    currentStintLapCount: document.getElementById('currentStintLapCount'),
+    averageStintLapCount: document.getElementById('averageStintLapCount'),
+    raceTimeRemaining: document.getElementById('raceTimeRemaining'),
+    totalStintCount: document.getElementById('totalStintCount'),
+    // Tire elements
     tireRF: document.getElementById('tireRF'),
     tireLF: document.getElementById('tireLF'),
     tireRR: document.getElementById('tireRR'),
@@ -349,6 +368,48 @@ function updateFuelGauge(level) {
   const fuel = Number(level).toFixed(1);
   elements.fuelGauge.value = fuel;
   elements.fuelValue.textContent = `${fuel}%`;
+}
+
+// Update stint progress display
+function updateStintProgress(values) {
+  if (!values) return;
+  
+  const stintData = window.telemetryDashboard?.getStintData?.() || {};
+  
+  // Current stint elapsed time
+  if (elements.currentStintDuration) {
+    const currentElapsed = stintData.currentStintElapsed || 0;
+    elements.currentStintDuration.textContent = currentElapsed > 0 ? formatTimeHMS(currentElapsed) : '--:--:--';
+  }
+  
+  // Average stint duration
+  if (elements.averageStintDuration) {
+    const avgDuration = stintData.averageStintDuration || 0;
+    elements.averageStintDuration.textContent = avgDuration > 0 ? formatTimeHMS(avgDuration) : '--:--:--';
+  }
+  
+  // Current stint lap count
+  if (elements.currentStintLapCount) {
+    const currentLapCount = stintData.currentStintLapCount || 0;
+    elements.currentStintLapCount.textContent = currentLapCount > 0 ? currentLapCount.toString() : '--';
+  }
+  
+  // Average stint lap count
+  if (elements.averageStintLapCount) {
+    const avgLapCount = stintData.averageStintLapCount || 0;
+    elements.averageStintLapCount.textContent = avgLapCount > 0 ? Math.round(avgLapCount).toString() : '--';
+  }
+  
+  // Race time remaining
+  if (elements.raceTimeRemaining && values.SessionTimeRemain) {
+    elements.raceTimeRemaining.textContent = formatTimeHMS(values.SessionTimeRemain);
+  }
+  
+  // Total stint count
+  if (elements.totalStintCount) {
+    const totalStints = stintData.stintDurations?.length || 0;
+    elements.totalStintCount.textContent = totalStints > 0 ? totalStints.toString() : '--';
+  }
 }
 
 // Update weather data display
@@ -507,9 +568,8 @@ function updateTireBandColor(elementId, wearPercentage) {
 function handlePitStopCompletion(values) {
   console.log('Pit stop completed - updating tire wear and stint summary data');
   
-  // Calculate stint summary values
-  const currentTeamLap = values?.CarIdxLapCompleted?.[values?.PlayerCarIdx];
-  const stintLapCount = lapEntryPoint !== null ? currentTeamLap - lapEntryPoint : 0;
+  // Use the actual stint lap count from global tracking (calculated via OnPitRoad)
+  const stintLapCount = actualStintLapCount > 0 ? actualStintLapCount : 0;
   
   // Calculate fuel averages from history
   const lastFuelUsed = fuelUsageHistory.at(-1);
@@ -517,9 +577,8 @@ function handlePitStopCompletion(values) {
     ? fuelUsageHistory.reduce((a, b) => a + b, 0) / fuelUsageHistory.length
     : null;
   
-  // Calculate stint time and average lap time
-  const stintEndTime = Date.now();
-  const stintTotalTimeSeconds = stintStartTime ? (stintEndTime - stintStartTime) / 1000 : null;
+  // Use the actual stint duration from global tracking (calculated via SessionTimeRemain)
+  const stintTotalTimeSeconds = actualStintDuration > 0 ? actualStintDuration : null;
   const stintAvgLapTimeSeconds = (stintLapCount > 0 && stintTotalTimeSeconds) 
     ? stintTotalTimeSeconds / stintLapCount 
     : null;
@@ -820,9 +879,10 @@ function setupSocketListeners() {
         }
       }
       
-      // Track stint duration using OnPitRoad and SessionTimeRemain
+      // Track stint duration and lap count using OnPitRoad and SessionTimeRemain
       const onPitRoad = values.OnPitRoad;
       const currentSessionTimeRemain = values.SessionTimeRemain;
+      const currentTeamLap = values?.CarIdxLapCompleted?.[values?.PlayerCarIdx];
       
       if (onPitRoad && !wasPitstopActive) {
         // Pit entry detected - end of stint
@@ -844,11 +904,28 @@ function setupSocketListeners() {
           }
         }
         
+        // Calculate actual stint lap count if we have a previous stint start lap
+        if (lastStintStartLap !== null && currentTeamLap !== null) {
+          const calculatedStintLapCount = currentTeamLap - lastStintStartLap;
+          if (calculatedStintLapCount > 0) {
+            actualStintLapCount = calculatedStintLapCount;
+            stintLapCounts.push(calculatedStintLapCount);
+            
+            // Keep only recent stint lap counts (last 10)
+            if (stintLapCounts.length > 10) {
+              stintLapCounts.shift();
+            }
+            
+            console.log(`Actual stint lap count: ${calculatedStintLapCount} laps`);
+          }
+        }
+        
       } else if (!onPitRoad && wasPitstopActive) {
         // Pit exit detected - new stint starts
         wasPitstopActive = false;
         lastStintStartSessionTime = currentSessionTimeRemain;
-        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s`);
+        lastStintStartLap = currentTeamLap;
+        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s, Lap: ${currentTeamLap}`);
       }
       
   // Coasting/overlap indicators moved to Inputs page
@@ -899,7 +976,10 @@ function setupSocketListeners() {
           elements.stintTotalTime.textContent = formatTimeHMS(currentStintTime);
         }
         
-        const currentStintLapCount = teamLap - lapEntryPoint;
+        // Calculate current stint lap count using new global tracking
+        const currentStintLapCount = (lastStintStartLap !== null && teamLap !== null) 
+          ? teamLap - lastStintStartLap 
+          : 0;
         if (currentStintLapCount > 0) {
           const currentAvgLapTime = currentStintTime / currentStintLapCount;
           if (elements.stintAvgLapTime) {
@@ -928,6 +1008,9 @@ function setupSocketListeners() {
 
       // Update weather data
       updateWeatherData(values);
+      
+      // Update stint progress
+      updateStintProgress(values);
 
       // Display Logic
       const safeValues = bufferedData?.values;
@@ -1113,6 +1196,15 @@ window.telemetryDashboard = {
       : 0,
     currentStintElapsed: lastStintStartSessionTime && bufferedData?.values?.SessionTimeRemain
       ? lastStintStartSessionTime - bufferedData.values.SessionTimeRemain
+      : 0,
+    lastStintStartLap,
+    actualStintLapCount,
+    stintLapCounts,
+    averageStintLapCount: stintLapCounts.length > 0 
+      ? stintLapCounts.reduce((a, b) => a + b, 0) / stintLapCounts.length 
+      : 0,
+    currentStintLapCount: lastStintStartLap && bufferedData?.values?.CarIdxLapCompleted?.[bufferedData?.values?.PlayerCarIdx]
+      ? bufferedData.values.CarIdxLapCompleted[bufferedData.values.PlayerCarIdx] - lastStintStartLap
       : 0
   }),
   // Export reset function for use in index.html
