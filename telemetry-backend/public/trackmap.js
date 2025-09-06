@@ -386,34 +386,41 @@ class TrackMap {
     const positionAhead = this.playerClassPosition - 1;
     this.carAheadIdx = null;
     if (positionAhead > 0) {
+      console.log(`🔍 Looking for car at position ${positionAhead}`);
       // Find car with position ahead
       for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
         if (this.carIdxClassPosition[carIdx] === positionAhead) {
           this.carAheadIdx = carIdx;
-          console.log(`✅ Found car ahead: carIdx ${carIdx} at position ${positionAhead}`);
+          console.log(`✅ Found car ahead: carIdx ${carIdx} at class position ${positionAhead}`);
           break;
         }
+        // Debug: show what we're checking
+        if (this.carIdxClassPosition[carIdx] > 0) {
+          console.log(`🔍 Checking carIdx ${carIdx}: class position ${this.carIdxClassPosition[carIdx]}`);
+        }
+      }
+      if (this.carAheadIdx === null) {
+        console.log(`❌ No car found at position ${positionAhead}`);
       }
     }
     
     // Find car behind (one position worse/higher number)
     const positionBehind = this.playerClassPosition + 1;
     this.carBehindIdx = null;
+    console.log(`🔍 Looking for car at position ${positionBehind}`);
     // Find car with position behind
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
       if (this.carIdxClassPosition[carIdx] === positionBehind) {
         this.carBehindIdx = carIdx;
-        console.log(`✅ Found car behind: carIdx ${carIdx} at position ${positionBehind}`);
+        console.log(`✅ Found car behind: carIdx ${carIdx} at class position ${positionBehind}`);
         break;
       }
+    }
+    if (this.carBehindIdx === null) {
+      console.log(`❌ No car found at position ${positionBehind}`);
     }
     
     console.log(`🏁 Final result - Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
-        break;
-      }
-    }
-    
-    console.log(`Player position: ${this.playerClassPosition}, Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
     
     // Update car info displays
     this.updateCarInfo(this.carAheadIdx, {
