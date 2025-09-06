@@ -356,11 +356,18 @@ app.post('/sessionInfo', (req, res) => {
   const userAgent = req.get('User-Agent') || 'Unknown';
 
   currentSessionId = data?.WeekendInfo?.SessionID;
-  currentUserName = data?.DriverInfo?.Drivers?.[0]?.UserName;
+  
+  // Get the correct driver using DriverCarIdx
+  const driverCarIdx = data?.DriverInfo?.DriverCarIdx;
+  if (driverCarIdx !== undefined && data?.DriverInfo?.Drivers?.[driverCarIdx]) {
+    currentUserName = data.DriverInfo.Drivers[driverCarIdx].UserName;
+  } else {
+    currentUserName = null;
+  }
   
   // Debug logging
   console.log(`📋 SessionInfo received from User-Agent: "${userAgent}"`);
-  console.log(`📋 Driver: ${currentUserName}, Session: ${currentSessionId}`);
+  console.log(`📋 DriverCarIdx: ${driverCarIdx}, Driver: ${currentUserName}, Session: ${currentSessionId}`);
   console.log(`📋 Is racing app: ${isRacingApp(userAgent)}`);
   
   // Get or create HTTP client info (for racing apps)
