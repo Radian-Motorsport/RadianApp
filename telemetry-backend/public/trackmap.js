@@ -78,24 +78,64 @@ class TrackMap {
   }
   // Convert SVG path to coordinate points for car positioning
   convertSVGPathToPoints(pathData) {
-    // Parse the actual SVG path data to get real track coordinates
-    // This creates points along the actual Indianapolis track shape
+    // Use Canvas to sample points along the actual SVG path
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = 1000;
+    tempCanvas.height = 1000;
     
-    // For now, let's sample points along the actual SVG path
-    // We'll extract coordinates from the path data
     const path = new Path2D(pathData);
     
-    // Sample points along the path - this is a simplified approach
-    // In reality, you'd want to use a proper SVG path parser
+    // Sample 200 points along the path by checking intersections
     this.trackPoints = [];
+    const numSamples = 200;
     
-    // Extract rough coordinates from the path data string
-    // The path starts around coordinates that we can estimate from the path data
-    const coords = this.extractCoordsFromPath(pathData);
+    for (let i = 0; i < numSamples; i++) {
+      const angle = (i / numSamples) * Math.PI * 2;
+      const centerX = 125;
+      const centerY = 125;
+      const radius = 200;
+      
+      // Cast rays from center to find path intersections
+      for (let r = 10; r < radius; r += 2) {
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+        
+        tempCtx.clearRect(0, 0, 1000, 1000);
+        tempCtx.fill(path);
+        
+        const imageData = tempCtx.getImageData(x, y, 1, 1);
+        if (imageData.data[3] > 0) { // Hit the path
+          this.trackPoints.push({ x, y });
+          break;
+        }
+      }
+    }
     
-    this.trackPoints = coords;
+    // If we didn't get enough points, add more manually around the track shape
+    if (this.trackPoints.length < 50) {
+      this.trackPoints = [
+        { x: 141.26521, y: 177.90924 }, // Start/finish
+        { x: 100, y: 178 },
+        { x: 60, y: 170 },
+        { x: 50, y: 160 },
+        { x: 25, y: 140 },
+        { x: 10, y: 120 },
+        { x: 20, y: 100 },
+        { x: 50, y: 90 },
+        { x: 100, y: 85 },
+        { x: 150, y: 80 },
+        { x: 200, y: 85 },
+        { x: 230, y: 100 },
+        { x: 240, y: 130 },
+        { x: 235, y: 160 },
+        { x: 200, y: 175 },
+        { x: 170, y: 178 },
+        { x: 141.26521, y: 177.90924 } // Back to start
+      ];
+    }
     
-    // Calculate bounds from actual coordinates
+    // Calculate bounds
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     this.trackPoints.forEach(point => {
       minX = Math.min(minX, point.x);
@@ -110,27 +150,6 @@ class TrackMap {
     console.log('Track points count:', this.trackPoints.length);
   }
   
-  extractCoordsFromPath(pathData) {
-    // Simple extraction of coordinates from SVG path
-    // This is a basic parser - for production you'd want something more robust
-    const coords = [];
-    
-    // Extract all number pairs from the path data
-    const numbers = pathData.match(/[-+]?\d*\.?\d+/g) || [];
-    
-    // Group numbers into x,y pairs
-    for (let i = 0; i < numbers.length - 1; i += 2) {
-      const x = parseFloat(numbers[i]);
-      const y = parseFloat(numbers[i + 1]);
-      
-      if (!isNaN(x) && !isNaN(y)) {
-        coords.push({ x, y });
-      }
-    }
-    
-    return coords;
-  }
-
   cacheInfoElements() {
     this.infoElements = {
       carAheadDistance: document.getElementById('carAheadDistance'),
@@ -388,47 +407,14 @@ class TrackMap {
   getPositionFromPercent(pct) {
     if (this.trackPoints.length === 0 || pct < 0 || pct > 1) return null;
     
-    // If we have a custom start/finish line position, use it to calibrate the track
-    if (this.startFinishCoords) {
-      // Find the closest track point to our start/finish line
-      let closestIndex = 0;
-      let minDistance = Infinity;
-      
-      for (let i = 0; i < this.trackPoints.length; i++) {
-        const point = this.trackPoints[i];
-        const distance = Math.hypot(
-          point.x - this.startFinishCoords.x,
-          point.y - this.startFinishCoords.y
-        );
-        
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestIndex = i;
-        }
-      }
-      
-      // Calculate position starting from the start/finish line
-      const totalPoints = this.trackPoints.length;
-      const targetIndex = (closestIndex + Math.floor(pct * totalPoints)) % totalPoints;
-      const nextIndex = (targetIndex + 1) % totalPoints;
-      const t = (pct * totalPoints) - Math.floor(pct * totalPoints);
-      
-      const currentPoint = this.trackPoints[targetIndex];
-      const nextPoint = this.trackPoints[nextIndex];
-      
-      return {
-        x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
-        y: currentPoint.y + (nextPoint.y - currentPoint.y) * t
-      };
-    }
+    // Simple: 0% = start/finish line, progress around track clockwise
+    const totalPoints = this.trackPoints.length;
+    const targetIndex = Math.floor(pct * totalPoints);
+    const nextIndex = (targetIndex + 1) % totalPoints;
+    const t = (pct * totalPoints) - targetIndex;
     
-    // Fallback to old method if no start/finish line defined
-    const idx = Math.floor(pct * this.trackPoints.length);
-    const nextIdx = (idx + 1) % this.trackPoints.length;
-    const t = (pct * this.trackPoints.length) - idx;
-    
-    const currentPoint = this.trackPoints[idx];
-    const nextPoint = this.trackPoints[nextIdx];
+    const currentPoint = this.trackPoints[targetIndex];
+    const nextPoint = this.trackPoints[nextIndex];
     
     return {
       x: currentPoint.x + (nextPoint.x - currentPoint.x) * t,
