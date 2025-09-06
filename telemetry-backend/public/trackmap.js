@@ -543,6 +543,7 @@ class TrackMap {
         const sessionLapsEl = document.getElementById('sessionLaps');
         const sessionTimeEl = document.getElementById('sessionTime');
         
+        // Use the correct data structure from sessiondata.json
         if (trackNameEl) trackNameEl.textContent = data?.WeekendInfo?.TrackDisplayName || '--';
         if (trackLengthEl) trackLengthEl.textContent = data?.WeekendInfo?.TrackLength || '--';
         if (sessionTypeEl) sessionTypeEl.textContent = data?.SessionInfo?.Sessions?.[0]?.SessionType || '--';

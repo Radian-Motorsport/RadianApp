@@ -914,6 +914,22 @@ function setupSocketListeners() {
     alert('Telemetry data has been reset by another team member.');
   });
 
+  // Session info processing
+  socket.on('sessionInfo', (data) => {
+    console.log('📋 Received sessionInfo in telemetry.js:', data);
+    
+    // Store session info in bufferedData for trackmap and other components
+    if (!bufferedData) {
+      bufferedData = { values: null, sessionInfo: null };
+    }
+    bufferedData.sessionInfo = data;
+    
+    // Save to storage for persistence
+    saveTelemetryState();
+    
+    console.log('📋 SessionInfo stored in bufferedData');
+  });
+
   // Main telemetry processing
   socket.on('telemetry', (data) => {
     try {
