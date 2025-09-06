@@ -24,7 +24,7 @@ let sessionTimeRemainHistory = [];
 // Fuel and lap time variables - will be populated from telemetry
 let fuelPerLap = 0;        // From index calculations
 let avgLapTime = 0;        // From index calculations
-let tankCapacity = 104;    // Default tank capacity in liters (changed from 0 to avoid calculation errors)
+// tankCapacity is already declared in telemetry.js - using global variable
 let currentFuelLevel = 0;  // From telemetry FuelLevel
 let raceDuration = 0;      // From SessionInfo.SessionTime
 let pitStopTime = 45;      // Default, will be updated based on actual pit times
@@ -53,7 +53,7 @@ function savePlannerState() {
     sessionTimeRemainHistory,
     fuelPerLap,
     avgLapTime,
-    tankCapacity,
+    // tankCapacity removed - using global from telemetry.js
     currentFuelLevel,
     raceDuration,
     pitStopTime
@@ -87,7 +87,7 @@ function loadPlannerState() {
     sessionTimeRemainHistory = savedState.sessionTimeRemainHistory ?? [];
     fuelPerLap = savedState.fuelPerLap ?? 0;
     avgLapTime = savedState.avgLapTime ?? 0;
-    tankCapacity = savedState.tankCapacity ?? 104;  // Use 104 as fallback instead of 0
+    // tankCapacity removed - using global from telemetry.js
     currentFuelLevel = savedState.currentFuelLevel ?? 0;
     raceDuration = savedState.raceDuration ?? 0;
     pitStopTime = savedState.pitStopTime ?? 45;
@@ -153,10 +153,6 @@ function initPlannerPage() {
     if (window.telemetryDashboard.getFuelData) {
       const fuelData = window.telemetryDashboard.getFuelData();
       
-      if (fuelData.maxFuel > 0) {
-        tankCapacity = fuelData.maxFuel;
-      }
-      
       if (fuelData.avgFuelUsed3 > 0) {
         fuelPerLap = fuelData.avgFuelUsed3;
       }
@@ -176,7 +172,7 @@ function initPlannerPage() {
     }
   } else {
     // Start with default values if no telemetry data is available
-    tankCapacity = 104;  // Default fuel tank capacity in liters
+    // tankCapacity = 104;  // Using global tankCapacity from telemetry.js
     fuelPerLap = 2.8;    // Default fuel consumption per lap
     avgLapTime = 90;     // Default lap time in seconds
     raceDuration = 3600; // Default race duration (1 hour)
@@ -227,11 +223,7 @@ function setupDataSharing() {
 }
 
 function handleSessionUpdate(sessionInfo) {
-  // Extract tank capacity from session info if available
-  if (sessionInfo && sessionInfo.DriverInfo && sessionInfo.DriverInfo.DriverCarFuelMaxLtr) {
-    tankCapacity = sessionInfo.DriverInfo.DriverCarFuelMaxLtr;
-    console.log(`Updated tank capacity: ${tankCapacity}L`);
-  }
+  // Extract tank capacity from session info if available - using global tankCapacity from telemetry.js
   
   // Extract race duration from session info
   if (sessionInfo && sessionInfo.SessionInfo && sessionInfo.SessionInfo.Sessions) {
@@ -287,10 +279,6 @@ function handleTelemetryData(data) {
     if (fuelData) {
       if (fuelData.currentFuelLevel > 0) {
         currentFuelLevel = fuelData.currentFuelLevel;
-      }
-      
-      if (fuelData.maxFuel > 0) {
-        tankCapacity = fuelData.maxFuel;
       }
       
       if (fuelData.avgFuelUsed3 > 0) {
@@ -468,7 +456,7 @@ function calculateStintPlan() {
     // Set some reasonable defaults if we don't have real data
     fuelPerLap = fuelPerLap || 2.8;
     avgLapTime = avgLapTime || 90;
-    tankCapacity = tankCapacity || 104;
+    // tankCapacity uses global from telemetry.js
   }
   
   // Clear previous stint data
@@ -666,18 +654,18 @@ function updateUI() {
 }
 
 // Update the refresh rate display (copied from other pages for consistency)
-let lastTelemetryTime = null;
+let plannerLastTelemetryTime = null;
 function updateRefreshRate() {
   const now = Date.now();
   const refreshRateDisplay = document.getElementById('refreshRate');
   
-  if (lastTelemetryTime && refreshRateDisplay) {
-    const interval = now - lastTelemetryTime;
+  if (plannerLastTelemetryTime && refreshRateDisplay) {
+    const interval = now - plannerLastTelemetryTime;
     const hz = (1000 / interval).toFixed(1);
     refreshRateDisplay.textContent = `Refresh Rate: ${hz} Hz (${interval} ms)`;
   }
   
-  lastTelemetryTime = now;
+  plannerLastTelemetryTime = now;
 }
 
 // Function to update trend indicators (up, down, stable)
