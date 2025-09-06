@@ -29,13 +29,13 @@ class EnviroTrace {
       precipitationColor: options.precipitationColor || '#87CEEB', // Light blue
       airPressureColor: options.airPressureColor || 'hotpink',
       tempScale: options.tempScale || 2, // Scale factor for temperature values
-      sampleRate: options.sampleRate || 10, // Take 1 sample every 10 telemetry updates (~1 second at 10Hz)
+      sampleInterval: options.sampleInterval || 1000, // Milliseconds between samples (1 second)
       ...options
     };
     
     // Data buffer
     this.buffer = [];
-    this.sampleCounter = 0; // Counter for sampling rate
+    this.lastSampleTime = 0; // Track last sample timestamp
     
     // Load any existing data from localStorage
     this.loadFromStorage();
@@ -58,10 +58,10 @@ class EnviroTrace {
       const values = data?.values;
       if (!values) return;
       
-      // Only sample data at the specified rate (e.g., every 60 updates = ~1 second)
-      this.sampleCounter++;
-      if (this.sampleCounter < this.options.sampleRate) return;
-      this.sampleCounter = 0;
+      // Use time-based sampling instead of count-based
+      const now = Date.now();
+      if (now - this.lastSampleTime < this.options.sampleInterval) return;
+      this.lastSampleTime = now;
       
       // Environment data buffer
       this.buffer.push({
@@ -69,12 +69,18 @@ class EnviroTrace {
         humidity: values.RelativeHumidity,
         precipitation: values.Precipitation, // Store precipitation instead of skies
         airPressure: values.AirPressure, // Store in Pa, will convert to mbar for display
-        timestamp: Date.now() // Add timestamp for persistence filtering
+        timestamp: now // Add timestamp for persistence filtering
       });
       
+      // Clean up old data that exceeds maxPoints
       if (this.buffer.length > this.options.maxPoints) {
         this.buffer.shift();
       }
+      
+      // Also clean up data older than the time window (maxPoints * sampleInterval)
+      const maxAge = this.options.maxPoints * this.options.sampleInterval;
+      const cutoffTime = now - maxAge;
+      this.buffer = this.buffer.filter(point => point.timestamp > cutoffTime);
     });
   }
   
@@ -101,16 +107,23 @@ class EnviroTrace {
       return;
     }
     
-    // Always scale to full maxPoints for consistent streaming display
-    const xScale = this.canvas.width / this.options.maxPoints;
+    // Time-based scaling: map the time window to canvas width
+    const timeWindow = this.options.maxPoints * this.options.sampleInterval; // Total time window in ms
+    const now = Date.now();
+    const startTime = now - timeWindow;
+    const xScale = this.canvas.width / timeWindow;
     const canvasHeight = this.canvas.height;
     
-    // Get the most recent data to display (last maxPoints entries)
-    const dataToDisplay = this.buffer.slice(-this.options.maxPoints);
+    // Filter data to only show points within the time window
+    const dataToDisplay = this.buffer.filter(point => point.timestamp >= startTime);
     
     // Debug logging (less frequent)
     if (Math.random() < 0.01) {
-      console.log(`Drawing ${dataToDisplay.length} of ${this.buffer.length} total points, maxPoints: ${this.options.maxPoints}, xScale: ${xScale.toFixed(3)}`);
+      const oldestPoint = dataToDisplay.length > 0 ? dataToDisplay[0] : null;
+      const newestPoint = dataToDisplay.length > 0 ? dataToDisplay[dataToDisplay.length - 1] : null;
+      const timeSpan = newestPoint && oldestPoint ? (newestPoint.timestamp - oldestPoint.timestamp) / 1000 : 0;
+      console.log(`Drawing ${dataToDisplay.length} of ${this.buffer.length} total points`);
+      console.log(`Time span: ${timeSpan.toFixed(1)}s (window: ${timeWindow/1000}s)`);
     }
     
     // Track Temperature (scale from typical range 10-60°C to full canvas height)
@@ -119,8 +132,8 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.trackTemp === null || point.trackTemp === undefined) return;
-      // Position based on maxPoints scale, with newer data on the right
-      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
+      // Position based on actual timestamp relative to time window
+      const x = (point.timestamp - startTime) * xScale;
       // Scale temperature: map 0-60°C to 0-canvas height
       const y = canvasHeight - ((point.trackTemp / 60) * canvasHeight);
       i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
@@ -133,7 +146,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.humidity === null || point.humidity === undefined) return;
-      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
+      const x = (point.timestamp - startTime) * xScale;
       // Humidity: handle both 0-1 decimal and 0-100 percentage formats
       const humidityPercent = point.humidity > 1 ? point.humidity : point.humidity * 100;
       const y = canvasHeight - ((humidityPercent / 100) * canvasHeight);
@@ -147,7 +160,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.precipitation === null || point.precipitation === undefined) return;
-      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
+      const x = (point.timestamp - startTime) * xScale;
       // Precipitation: handle both 0-1 decimal and 0-100 percentage formats
       const precipitationPercent = point.precipitation > 1 ? point.precipitation : point.precipitation * 100;
       const y = canvasHeight - ((precipitationPercent / 100) * canvasHeight);
@@ -161,7 +174,7 @@ class EnviroTrace {
     this.ctx.lineWidth = 1.5;
     dataToDisplay.forEach((point, i) => {
       if (point.airPressure === null || point.airPressure === undefined) return;
-      const x = (this.options.maxPoints - dataToDisplay.length + i) * xScale;
+      const x = (point.timestamp - startTime) * xScale;
       // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
       const pressureMbar = point.airPressure * 0.01;
       const y = canvasHeight - (((pressureMbar - 950) / 100) * canvasHeight);
@@ -216,13 +229,13 @@ class EnviroTrace {
   updateTimeRange(newMaxPoints) {
     this.options.maxPoints = newMaxPoints;
     
-    // Trim existing data if necessary
-    if (this.buffer.length > newMaxPoints) {
-      const pointsToRemove = this.buffer.length - newMaxPoints;
-      this.buffer.splice(0, pointsToRemove);
-    }
+    // Clean up data older than the new time window
+    const maxAge = newMaxPoints * this.options.sampleInterval;
+    const cutoffTime = Date.now() - maxAge;
+    this.buffer = this.buffer.filter(point => point.timestamp > cutoffTime);
     
-    console.log(`EnviroTrace: Updated time range to ${newMaxPoints} points`);
+    console.log(`EnviroTrace: Updated time range to ${newMaxPoints} points (${maxAge/1000}s window)`);
+    console.log(`EnviroTrace: Buffer now has ${this.buffer.length} points`);
   }
   
   /**
