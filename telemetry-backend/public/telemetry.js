@@ -6,6 +6,25 @@ const socket = io('https://radianapp.onrender.com');
 // Make socket globally accessible immediately
 window.socket = socket;
 
+// Add immediate socket connection debugging
+socket.on('connect', () => {
+  console.log('🔗 SOCKET CONNECTED to server!');
+  console.log('🔗 Socket ID:', socket.id);
+});
+
+socket.on('disconnect', () => {
+  console.log('❌ SOCKET DISCONNECTED from server!');
+});
+
+socket.on('connect_error', (error) => {
+  console.error('❌ SOCKET CONNECTION ERROR:', error);
+});
+
+// Test if we're receiving ANY events from server
+socket.onAny((eventName, ...args) => {
+  console.log(`📡 RECEIVED EVENT: ${eventName}`, args);
+});
+
 // Make elements globally accessible and ensure it's always an object
 window.elements = window.elements || {};
 let elements = window.elements;

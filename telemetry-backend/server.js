@@ -419,7 +419,32 @@ app.post('/sessionInfo', (req, res) => {
 
   io.emit('sessionInfo', data); // Broadcast to planner
   console.log('📋 Session info received:', data);
+  console.log('📋 Broadcasting sessionInfo to all connected clients...');
+  console.log('📋 Connected clients count:', connectedClients.size);
   res.sendStatus(200);
+});
+
+// Test endpoint to manually trigger sessionInfo event
+app.get('/test/sessioninfo', (req, res) => {
+  console.log('🧪 TEST: Manual sessionInfo trigger requested');
+  
+  const testData = {
+    WeekendInfo: {
+      TrackDisplayName: "TEST TRACK",
+      TrackLength: "3.5 km"
+    },
+    SessionInfo: {
+      Sessions: [{
+        SessionType: "TEST SESSION",
+        SessionLaps: "25",
+        SessionTime: "30 min"
+      }]
+    }
+  };
+  
+  io.emit('sessionInfo', testData);
+  console.log('🧪 TEST: Broadcasted test sessionInfo to all clients');
+  res.json({ success: true, message: 'Test sessionInfo sent', connectedClients: connectedClients.size });
 });
 
 
