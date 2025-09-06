@@ -28,6 +28,9 @@ class TrackMap {
     this.carBehindImg = new Image();
     this.carBehindImg.src = '/assets/icon-standby.png';
     
+    // Setup responsive canvas
+    this.setupResponsiveCanvas();
+    
     // Cache info box elements
     this.cacheInfoElements();
     
@@ -39,6 +42,37 @@ class TrackMap {
     
     // Start animation
     this.startAnimation();
+  }
+  
+  setupResponsiveCanvas() {
+    // Style the canvas for responsive behavior
+    this.trackCanvas.style.width = '100%';
+    this.trackCanvas.style.height = '400px';
+    this.trackCanvas.style.maxWidth = '600px';
+    this.trackCanvas.style.display = 'block';
+    this.trackCanvas.style.margin = '0 auto';
+    
+    // Set initial canvas dimensions
+    this.handleResize();
+    
+    // Add resize listener
+    window.addEventListener('resize', () => this.handleResize());
+  }
+  
+  handleResize() {
+    const rect = this.trackCanvas.getBoundingClientRect();
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    // Set canvas internal dimensions for crisp rendering
+    this.trackCanvas.width = rect.width * devicePixelRatio;
+    this.trackCanvas.height = rect.height * devicePixelRatio;
+    
+    // Scale context to match device pixel ratio
+    this.trackCtx.scale(devicePixelRatio, devicePixelRatio);
+    
+    // Set CSS size
+    this.trackCanvas.style.width = rect.width + 'px';
+    this.trackCanvas.style.height = rect.height + 'px';
   }
   
   initializeSVGTrack() {
@@ -313,19 +347,24 @@ class TrackMap {
       return;
     }
     
-    // Use the known SVG coordinate system: 1000x1000
+    // Use CSS dimensions for layout calculations
+    const rect = this.trackCanvas.getBoundingClientRect();
+    const canvasWidth = rect.width;
+    const canvasHeight = rect.height;
+    
+    // Use the actual SVG coordinate system: 1000x1000 (where the track data exists)
     const svgWidth = 1000;
     const svgHeight = 1000;
     const padding = 20;
     
     // Scale to fit canvas with padding
-    const scaleX = (this.trackCanvas.width - padding * 2) / svgWidth;
-    const scaleY = (this.trackCanvas.height - padding * 2) / svgHeight;
+    const scaleX = (canvasWidth - padding * 2) / svgWidth;
+    const scaleY = (canvasHeight - padding * 2) / svgHeight;
     const scale = Math.min(scaleX, scaleY);
     
     // Center the scaled SVG in the canvas
-    const offsetX = (this.trackCanvas.width - svgWidth * scale) / 2;
-    const offsetY = (this.trackCanvas.height - svgHeight * scale) / 2;
+    const offsetX = (canvasWidth - svgWidth * scale) / 2;
+    const offsetY = (canvasHeight - svgHeight * scale) / 2;
     
     // Transform and draw the SVG path
     this.trackCtx.save();
@@ -339,22 +378,55 @@ class TrackMap {
     
     this.trackCtx.restore();
     
-    // Draw start/finish line
-    if (this.startFinishCoords) {
+    // Draw start/finish line perpendicular to track direction
+    if (this.startFinishCoords && this.trackPoints.length > 1) {
       const startX = this.startFinishCoords.x * scale + offsetX;
       const startY = this.startFinishCoords.y * scale + offsetY;
+      
+      // Get track direction at start/finish by looking at next point
+      const nextPoint = this.trackPoints[1];
+      const dx = nextPoint.x - this.startFinishCoords.x;
+      const dy = nextPoint.y - this.startFinishCoords.y;
+      const length = Math.hypot(dx, dy);
+      
+      // Create perpendicular vector
+      const perpX = -dy / length;
+      const perpY = dx / length;
+      const lineLength = 15;
       
       this.trackCtx.strokeStyle = 'red';
       this.trackCtx.lineWidth = 3;
       this.trackCtx.beginPath();
-      this.trackCtx.moveTo(startX - 10, startY);
-      this.trackCtx.lineTo(startX + 10, startY);
+      this.trackCtx.moveTo(
+        startX + perpX * lineLength * scale, 
+        startY + perpY * lineLength * scale
+      );
+      this.trackCtx.lineTo(
+        startX - perpX * lineLength * scale, 
+        startY - perpY * lineLength * scale
+      );
       this.trackCtx.stroke();
-      
-      this.trackCtx.fillStyle = 'red';
-      this.trackCtx.font = '12px Arial';
-      this.trackCtx.textAlign = 'center';
-      this.trackCtx.fillText('S/F', startX, startY - 15);
+    }
+    
+    // Draw corner numbers
+    if (this.cornerMarkers) {
+      this.cornerMarkers.forEach(marker => {
+        const markerX = marker.coords.x * scale + offsetX;
+        const markerY = marker.coords.y * scale + offsetY;
+        
+        // Draw corner number circle
+        this.trackCtx.fillStyle = 'yellow';
+        this.trackCtx.beginPath();
+        this.trackCtx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
+        this.trackCtx.fill();
+        
+        // Draw corner number text
+        this.trackCtx.fillStyle = 'black';
+        this.trackCtx.font = 'bold 10px Arial';
+        this.trackCtx.textAlign = 'center';
+        this.trackCtx.textBaseline = 'middle';
+        this.trackCtx.fillText(marker.text, markerX, markerY);
+      });
     }
     
     // Draw car position
