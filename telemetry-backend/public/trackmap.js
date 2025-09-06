@@ -289,15 +289,26 @@ class TrackMap {
   }
   
   getDriverInfo(carIdx) {
+    console.log(`🚗 Getting driver info for carIdx: ${carIdx}`);
+    console.log(`🚗 driverInfo exists: ${!!this.driverInfo}`);
+    console.log(`🚗 driverInfo.Drivers exists: ${!!this.driverInfo?.Drivers}`);
+    console.log(`🚗 driverInfo.Drivers length: ${this.driverInfo?.Drivers?.length}`);
+    
     if (!this.driverInfo || !this.driverInfo.Drivers || !this.driverInfo.Drivers[carIdx]) {
+      console.log(`❌ No driver info found for carIdx: ${carIdx}`);
       return { driverName: '--', carName: '--' };
     }
     
     const driver = this.driverInfo.Drivers[carIdx];
-    return {
+    console.log(`✅ Driver found for carIdx ${carIdx}:`, driver);
+    
+    const result = {
       driverName: driver.UserName || '--',
       carName: driver.CarScreenName || '--'
     };
+    
+    console.log(`🏁 Returning driver info:`, result);
+    return result;
   }
   
   formatLapTime(timeInSeconds) {
@@ -361,7 +372,11 @@ class TrackMap {
   }
   
   findCarsAheadAndBehind() {
+    console.log(`🏎️ Finding cars ahead/behind - Player class position: ${this.playerClassPosition}`);
+    console.log(`🏎️ CarIdxClassPosition array:`, this.carIdxClassPosition);
+    
     if (!this.carIdxClassPosition || !this.playerCarIdx || this.playerClassPosition === null) {
+      console.log(`❌ Missing data - carIdxClassPosition: ${!!this.carIdxClassPosition}, playerCarIdx: ${this.playerCarIdx}, playerClassPosition: ${this.playerClassPosition}`);
       this.carAheadIdx = null;
       this.carBehindIdx = null;
       return;
@@ -375,6 +390,7 @@ class TrackMap {
       for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
         if (this.carIdxClassPosition[carIdx] === positionAhead) {
           this.carAheadIdx = carIdx;
+          console.log(`✅ Found car ahead: carIdx ${carIdx} at position ${positionAhead}`);
           break;
         }
       }
@@ -387,6 +403,12 @@ class TrackMap {
     for (let carIdx = 0; carIdx < this.carIdxClassPosition.length; carIdx++) {
       if (this.carIdxClassPosition[carIdx] === positionBehind) {
         this.carBehindIdx = carIdx;
+        console.log(`✅ Found car behind: carIdx ${carIdx} at position ${positionBehind}`);
+        break;
+      }
+    }
+    
+    console.log(`🏁 Final result - Car ahead idx: ${this.carAheadIdx}, Car behind idx: ${this.carBehindIdx}`);
         break;
       }
     }
@@ -465,6 +487,8 @@ class TrackMap {
     if (this.socket) {
       // Listen for session info to get official track length and driver info
       this.socket.on('sessionInfo', (data) => {
+        console.log('📋 TrackMap received sessionInfo:', data);
+        
         if (data?.WeekendInfo?.TrackLength) {
           this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
           console.log('Track length set from session data:', this.trackLength, 'meters');
@@ -473,7 +497,10 @@ class TrackMap {
         // Store driver info for car/driver names
         if (data?.DriverInfo) {
           this.driverInfo = data.DriverInfo;
-          console.log('Driver info updated:', this.driverInfo);
+          console.log('🏁 Driver info updated:', this.driverInfo);
+          console.log('🏁 Number of drivers:', this.driverInfo.Drivers?.length);
+        } else {
+          console.warn('❌ No DriverInfo found in session data');
         }
       });
       
@@ -489,10 +516,12 @@ class TrackMap {
         // Update class position arrays
         if (values.CarIdxClassPosition !== undefined) {
           this.carIdxClassPosition = values.CarIdxClassPosition;
+          console.log(`🏎️ CarIdxClassPosition updated:`, this.carIdxClassPosition);
           
           // Get player's current class position
           if (this.playerCarIdx !== null && this.carIdxClassPosition[this.playerCarIdx] !== undefined) {
             this.playerClassPosition = this.carIdxClassPosition[this.playerCarIdx];
+            console.log(`🏁 Player class position: ${this.playerClassPosition} (carIdx: ${this.playerCarIdx})`);
             
             // Update class position display
             if (this.classPositionElement) {
