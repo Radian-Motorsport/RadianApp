@@ -292,6 +292,7 @@ app.post('/telemetry', (req, res) => {
   // Debug logging
   console.log(`📡 Telemetry received from User-Agent: "${userAgent}"`);
   console.log(`📡 Is racing app: ${isRacingApp(userAgent)}`);
+  console.log(`📡 IsOnTrack: ${isOnTrack} (type: ${typeof isOnTrack})`);
   if (telemetryDriverName) {
     console.log(`📡 Driver name from telemetry: ${telemetryDriverName}`);
   }
@@ -333,17 +334,22 @@ app.post('/telemetry', (req, res) => {
   let broadcasterName;
   let shouldEmit = false;
   
+  console.log(`📡 Broadcaster logic - isOnTrack: ${isOnTrack}, currentUserName: ${currentUserName}, lastBroadcastedDriver: ${lastBroadcastedDriver}`);
+  
   if (isOnTrack === true && currentUserName) {
     // Driver is on track - use iRacing name only
     broadcasterName = currentUserName;
     shouldEmit = (broadcasterName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession);
-  } else if (isOnTrack === false) {
-    // Driver is off track - show "Seat Empty"
+    console.log(`📡 Driver on track - will emit: ${shouldEmit}, broadcaster: ${broadcasterName}`);
+  } else {
+    // Driver is off track (isOnTrack === false) - show "Seat Empty"
     broadcasterName = "Seat Empty";
     shouldEmit = (lastBroadcastedDriver !== "Seat Empty");
+    console.log(`📡 Driver off track (isOnTrack: ${isOnTrack}) - will emit: ${shouldEmit}, broadcaster: ${broadcasterName}`);
   }
   
-  if (shouldEmit && broadcasterName) {
+  if (shouldEmit) {
+    console.log(`📡 Emitting currentBroadcaster: ${broadcasterName}`);
     io.emit('currentBroadcaster', {
       driver: broadcasterName,
       sessionId: currentSessionId
