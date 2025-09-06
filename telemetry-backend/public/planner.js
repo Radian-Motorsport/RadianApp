@@ -270,8 +270,8 @@ function handleTelemetryData(data) {
     }
   }
   
-  // Extract race time remaining directly if not available from telemetryDashboard
-  if (raceTimeRemaining <= 0 && values.SessionTimeRemain > 0) {
+  // Extract race time remaining directly from SessionTimeRemain
+  if (values.SessionTimeRemain > 0) {
     raceTimeRemaining = values.SessionTimeRemain;
   }
   
@@ -550,26 +550,6 @@ function updateUI() {
   document.getElementById('current-fuel').textContent = currentFuelLevel.toFixed(1) + " L";
   document.getElementById('pit-stop-time').textContent = formatTime(pitStopTime);
   document.getElementById('safety-margin-display').textContent = "5% (" + (tankCapacity * 0.05).toFixed(1) + " L)";
-  
-  // Update additional info if available from telemetryDashboard
-  if (window.telemetryDashboard) {
-    if (window.telemetryDashboard.getRaceData) {
-      const raceData = window.telemetryDashboard.getRaceData();
-      if (raceData.sessionType) {
-        document.getElementById('session-type').textContent = raceData.sessionType;
-      }
-      if (raceData.trackName) {
-        document.getElementById('track-name').textContent = raceData.trackName;
-      }
-    }
-    
-    if (window.telemetryDashboard.getDriverData) {
-      const driverData = window.telemetryDashboard.getDriverData();
-      if (driverData.driverName) {
-        document.getElementById('driver-name').textContent = driverData.driverName;
-      }
-    }
-  }
   
   // Update trend indicators for fuel and lap time
   updateTrendIndicator('fuel-trend', window.lastFuelPerLap, fuelPerLap);
