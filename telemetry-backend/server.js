@@ -285,10 +285,16 @@ app.post('/telemetry', (req, res) => {
   const userAgent = req.get('User-Agent') || 'Unknown';
 
   const isOnTrack = data?.values?.IsOnTrack;
+  
+  // Extract driver name from telemetry data if provided
+  const telemetryDriverName = data?.driverName;
 
   // Debug logging
   console.log(`📡 Telemetry received from User-Agent: "${userAgent}"`);
   console.log(`📡 Is racing app: ${isRacingApp(userAgent)}`);
+  if (telemetryDriverName) {
+    console.log(`📡 Driver name from telemetry: ${telemetryDriverName}`);
+  }
 
   // Get or create HTTP client info (for racing apps)
   const httpClient = getOrCreateHttpClient(req);
@@ -298,12 +304,18 @@ app.post('/telemetry', (req, res) => {
     httpClient.isActiveBroadcaster = true;
     httpClient.broadcastingEnabled = true; // App is sending telemetry, so broadcasting is enabled
     httpClient.lastTelemetryTime = Date.now();
-    if (currentUserName) {
+    
+    // Use driver name from telemetry data if available, otherwise fall back to session info
+    if (telemetryDriverName) {
+      httpClient.driverName = telemetryDriverName;
+      currentUserName = telemetryDriverName; // Update global current user name
+    } else if (currentUserName) {
       httpClient.driverName = currentUserName;
     }
+    
     httpClients.set(httpClient.id, httpClient);
     
-    console.log(`📡 Racing app "${userAgent}" broadcasting telemetry from ${currentUserName || 'Unknown Driver'}`);
+    console.log(`📡 Racing app "${userAgent}" broadcasting telemetry from ${httpClient.driverName || 'Unknown Driver'}`);
     console.log(`📡 HTTP clients count: ${httpClients.size}`);
   } else {
     console.log(`⚠️ Non-racing app sending telemetry: "${userAgent}"`);
@@ -318,15 +330,16 @@ app.post('/telemetry', (req, res) => {
   }
 
   // Only emit broadcaster info if driver is on track AND (driver or session changed)
-  if (isOnTrack === true && currentUserName && 
-      (currentUserName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession)) {
+  const currentDriverName = httpClient.driverName || currentUserName;
+  if (isOnTrack === true && currentDriverName && 
+      (currentDriverName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession)) {
     io.emit('currentBroadcaster', {
-      driver: currentUserName,
+      driver: currentDriverName,
       sessionId: currentSessionId
     });
     
     // Update last broadcasted values
-    lastBroadcastedDriver = currentUserName;
+    lastBroadcastedDriver = currentDriverName;
     lastBroadcastedSession = currentSessionId;
   }
 
