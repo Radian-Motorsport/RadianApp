@@ -41,6 +41,10 @@ let lastStintStartLap = null; // Track lap number when current stint started
 let actualStintLapCount = 0; // Last completed stint lap count
 let stintLapCounts = []; // History of actual stint lap counts
 
+// Stint fuel tracking
+let fuelAtStintStart = null; // Fuel level when stint started
+let actualStintFuelUsed = 0; // Last completed stint fuel usage
+
 // Previous value tracking for color coding
 let previousValues = {
   fuelPerLap: null,
@@ -94,7 +98,9 @@ function saveTelemetryState() {
     stintDurations,
     lastStintStartLap,
     actualStintLapCount,
-    stintLapCounts
+    stintLapCounts,
+    fuelAtStintStart,
+    actualStintFuelUsed
   };
   
   window.storageManager.saveTelemetryState(stateToSave);
@@ -148,6 +154,8 @@ function loadTelemetryState() {
     lastStintStartLap = savedState.lastStintStartLap ?? null;
     actualStintLapCount = savedState.actualStintLapCount ?? 0;
     stintLapCounts = savedState.stintLapCounts ?? [];
+    fuelAtStintStart = savedState.fuelAtStintStart ?? null;
+    actualStintFuelUsed = savedState.actualStintFuelUsed ?? 0;
     
     console.log('Telemetry: Restored state from storage');
     
@@ -224,6 +232,17 @@ function applyServerState(serverState) {
   lastSessionId = serverState.lastSessionId;
   lastSessionDate = serverState.lastSessionDate;
   
+  // Global stint tracking variables
+  if (serverState.wasPitstopActive !== undefined) wasPitstopActive = serverState.wasPitstopActive;
+  if (serverState.lastStintStartSessionTime !== undefined) lastStintStartSessionTime = serverState.lastStintStartSessionTime;
+  if (serverState.actualStintDuration !== undefined) actualStintDuration = serverState.actualStintDuration;
+  if (serverState.stintDurations !== undefined) stintDurations = serverState.stintDurations;
+  if (serverState.lastStintStartLap !== undefined) lastStintStartLap = serverState.lastStintStartLap;
+  if (serverState.actualStintLapCount !== undefined) actualStintLapCount = serverState.actualStintLapCount;
+  if (serverState.stintLapCounts !== undefined) stintLapCounts = serverState.stintLapCounts;
+  if (serverState.fuelAtStintStart !== undefined) fuelAtStintStart = serverState.fuelAtStintStart;
+  if (serverState.actualStintFuelUsed !== undefined) actualStintFuelUsed = serverState.actualStintFuelUsed;
+  
   // Update UI with new state
   updateUIFromState();
   
@@ -273,23 +292,28 @@ function updateUIFromState() {
   // Update stint values
   if (elements.stintLapCount && previousValues.stintLapCount !== null && previousValues.stintLapCount !== undefined) {
     elements.stintLapCount.textContent = previousValues.stintLapCount?.toString() ?? '--';
+    console.log('Updated stintLapCount:', previousValues.stintLapCount);
   }
   
   if (elements.stintFuelAvg && previousValues.stintFuelAvg !== null && previousValues.stintFuelAvg !== undefined) {
     elements.stintFuelAvg.textContent = `${previousValues.stintFuelAvg?.toFixed(2) ?? '--'} L`;
+    console.log('Updated stintFuelAvg:', previousValues.stintFuelAvg);
   }
   
   if (elements.stintTotalTime && previousValues.stintTotalTime !== null && previousValues.stintTotalTime !== undefined) {
     elements.stintTotalTime.textContent = formatTimeHMS(previousValues.stintTotalTime);
+    console.log('Updated stintTotalTime:', previousValues.stintTotalTime);
   }
   
   if (elements.stintAvgLapTime && previousValues.stintAvgLapTime !== null && previousValues.stintAvgLapTime !== undefined) {
     elements.stintAvgLapTime.textContent = formatTimeMS(previousValues.stintAvgLapTime);
+    console.log('Updated stintAvgLapTime:', previousValues.stintAvgLapTime);
   }
   
   // Update tire wear from last stint
   if (previousValues.lastStintTireWear !== null && previousValues.lastStintTireWear !== undefined) {
     updateTireWear(previousValues.lastStintTireWear);
+    console.log('Updated tire wear from last stint');
   }
   
   // Update last pit stop time
@@ -534,8 +558,10 @@ function handlePitStopCompletion(values) {
   // Use the actual stint lap count from global tracking (calculated via OnPitRoad)
   const stintLapCount = actualStintLapCount > 0 ? actualStintLapCount : 0;
   
-  // Calculate stint average fuel usage: tankCapacity / stint lap count
-  const avgFuelUsed = stintLapCount > 0 ? tankCapacity / stintLapCount : null;
+  // Calculate stint average fuel usage using actual fuel consumed during stint
+  const avgFuelUsed = (stintLapCount > 0 && actualStintFuelUsed > 0) 
+    ? actualStintFuelUsed / stintLapCount 
+    : null;
   
   // Use the actual stint duration from global tracking (calculated via SessionTimeRemain)
   const stintTotalTimeSeconds = actualStintDuration > 0 ? actualStintDuration : null;
@@ -548,6 +574,15 @@ function handlePitStopCompletion(values) {
   previousValues.stintFuelAvg = avgFuelUsed;
   previousValues.stintTotalTime = stintTotalTimeSeconds;
   previousValues.stintAvgLapTime = stintAvgLapTimeSeconds;
+  
+  console.log('Stint summary calculations:', {
+    stintLapCount,
+    avgFuelUsed,
+    stintTotalTimeSeconds,
+    stintAvgLapTimeSeconds,
+    actualStintDuration,
+    actualStintFuelUsed
+  });
   
   // Update stint summary UI
   if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
@@ -683,6 +718,14 @@ function handleDriverEntry(teamLap) {
   driverWasOnTrack = true;
   stintStartTime = Date.now();
   stintIncidentCount = 0;
+  
+  // Initialize first stint if not already tracking
+  if (lastStintStartSessionTime === null && bufferedData?.values?.SessionTimeRemain) {
+    lastStintStartSessionTime = bufferedData.values.SessionTimeRemain;
+    lastStintStartLap = teamLap;
+    fuelAtStintStart = bufferedData.values.FuelLevel;
+    console.log(`First stint started - SessionTimeRemain: ${lastStintStartSessionTime}s, Lap: ${teamLap}, Fuel: ${fuelAtStintStart?.toFixed(2)}L`);
+  }
   
   // Sync state to server after driver entry
   syncToServer();
@@ -904,6 +947,15 @@ function setupSocketListeners() {
           }
         }
         
+        // Calculate actual stint fuel usage if we have a previous stint start fuel level
+        if (fuelAtStintStart !== null && values.FuelLevel !== null) {
+          const calculatedStintFuelUsed = fuelAtStintStart - values.FuelLevel;
+          if (calculatedStintFuelUsed > 0) {
+            actualStintFuelUsed = calculatedStintFuelUsed;
+            console.log(`Actual stint fuel used: ${calculatedStintFuelUsed.toFixed(2)}L`);
+          }
+        }
+        
         // Capture tire wear at end of stint (before pit entry)
         const lastStintTireWear = {
           RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
@@ -921,7 +973,8 @@ function setupSocketListeners() {
         wasPitstopActive = false;
         lastStintStartSessionTime = currentSessionTimeRemain;
         lastStintStartLap = currentTeamLap;
-        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s, Lap: ${currentTeamLap}`);
+        fuelAtStintStart = values.FuelLevel; // Track fuel level at stint start
+        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s, Lap: ${currentTeamLap}, Fuel: ${values.FuelLevel?.toFixed(2)}L`);
       }
       
   // Coasting/overlap indicators moved to Inputs page
