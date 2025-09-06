@@ -31,6 +31,11 @@ let tankCapacity = 104; // Default tank capacity in liters
 let avgFuelPerLap = 0; // Average fuel used per lap
 let wasPitstopActive = false; // Track previous pit stop state
 
+// Stint duration tracking (global for use across pages)
+let lastStintStartSessionTime = null; // Track when current stint started using SessionTimeRemain
+let actualStintDuration = 0; // Last completed stint duration in seconds
+let stintDurations = []; // History of actual stint durations
+
 // Previous value tracking for color coding
 let previousValues = {
   fuelPerLap: null,
@@ -77,7 +82,10 @@ function saveTelemetryState() {
     lastSessionDate,
     previousValues,
     stintIncidentCount,
-    wasPitstopActive
+    wasPitstopActive,
+    lastStintStartSessionTime,
+    actualStintDuration,
+    stintDurations
   };
   
   window.storageManager.saveTelemetryState(stateToSave);
@@ -124,6 +132,9 @@ function loadTelemetryState() {
     };
     stintIncidentCount = savedState.stintIncidentCount ?? 0;
     wasPitstopActive = savedState.wasPitstopActive ?? false;
+    lastStintStartSessionTime = savedState.lastStintStartSessionTime ?? null;
+    actualStintDuration = savedState.actualStintDuration ?? 0;
+    stintDurations = savedState.stintDurations ?? [];
     
     console.log('Telemetry: Restored state from storage');
     
@@ -809,6 +820,37 @@ function setupSocketListeners() {
         }
       }
       
+      // Track stint duration using OnPitRoad and SessionTimeRemain
+      const onPitRoad = values.OnPitRoad;
+      const currentSessionTimeRemain = values.SessionTimeRemain;
+      
+      if (onPitRoad && !wasPitstopActive) {
+        // Pit entry detected - end of stint
+        wasPitstopActive = true;
+        
+        // Calculate actual stint duration if we have a previous stint start time
+        if (lastStintStartSessionTime !== null && currentSessionTimeRemain !== null) {
+          const calculatedStintDuration = lastStintStartSessionTime - currentSessionTimeRemain;
+          if (calculatedStintDuration > 0) {
+            actualStintDuration = calculatedStintDuration;
+            stintDurations.push(calculatedStintDuration);
+            
+            // Keep only recent stint durations (last 10)
+            if (stintDurations.length > 10) {
+              stintDurations.shift();
+            }
+            
+            console.log(`Actual stint duration: ${calculatedStintDuration}s (${formatTimeMS(calculatedStintDuration * 1000)})`);
+          }
+        }
+        
+      } else if (!onPitRoad && wasPitstopActive) {
+        // Pit exit detected - new stint starts
+        wasPitstopActive = false;
+        lastStintStartSessionTime = currentSessionTimeRemain;
+        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s`);
+      }
+      
   // Coasting/overlap indicators moved to Inputs page
       
       if (elements.teamLapDisplay) {
@@ -1060,6 +1102,18 @@ window.telemetryDashboard = {
     trackName: bufferedData?.sessionInfo?.WeekendInfo?.TrackDisplayName || '',
     sessionLaps: bufferedData?.sessionInfo?.SessionInfo?.Sessions?.[0]?.SessionLaps || 0,
     sessionTime: bufferedData?.sessionInfo?.SessionInfo?.Sessions?.[0]?.SessionTime || 0
+  }),
+  // Stint duration data for endurance planning
+  getStintData: () => ({
+    lastStintStartSessionTime,
+    actualStintDuration,
+    stintDurations,
+    averageStintDuration: stintDurations.length > 0 
+      ? stintDurations.reduce((a, b) => a + b, 0) / stintDurations.length 
+      : 0,
+    currentStintElapsed: lastStintStartSessionTime && bufferedData?.values?.SessionTimeRemain
+      ? lastStintStartSessionTime - bufferedData.values.SessionTimeRemain
+      : 0
   }),
   // Export reset function for use in index.html
   resetTelemetryData

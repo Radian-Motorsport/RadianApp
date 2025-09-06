@@ -20,6 +20,7 @@ let pitDurations = [];
 let lastPitTimeChecked = Date.now();
 let lastSessionTimeRemain = null;
 let sessionTimeRemainHistory = [];
+// lastStintStartSessionTime now using global from telemetry.js
 
 // Fuel and lap time variables - will be populated from telemetry
 let fuelPerLap = 0;        // From index calculations
@@ -328,9 +329,16 @@ function handleTelemetryData(data) {
     totalLapsCompleted = values.LapCompleted;
   }
   
-  // Extract pit road status
-  const playerCarIdx = values.PlayerCarIdx;
-  const onPitRoad = values.CarIdxOnPitRoad && values.CarIdxOnPitRoad[playerCarIdx];
+  // Extract pit road status - use OnPitRoad which indicates if player car is between pit road cones
+  const onPitRoad = values.OnPitRoad;
+  
+  // Use global stint duration data from telemetry.js
+  if (window.telemetryDashboard && window.telemetryDashboard.getStintData) {
+    const stintData = window.telemetryDashboard.getStintData();
+    if (stintData.actualStintDuration > 0) {
+      stintDuration = stintData.actualStintDuration;
+    }
+  }
   
   // Track pit stop duration
   const now = Date.now();
@@ -342,6 +350,10 @@ function handleTelemetryData(data) {
     // Pit exit detected
     isPitting = false;
     const pitDuration = (now - pitStartTime) / 1000; // convert to seconds
+    
+    // Stint start time is now tracked globally in telemetry.js
+    lastStintStartSessionTime = currentSessionTimeRemain;
+    console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s`);
     
     // Only consider reasonable pit times (between 10 seconds and 5 minutes)
     if (pitDuration > 10 && pitDuration < 300) {
