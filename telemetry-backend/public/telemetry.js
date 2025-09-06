@@ -689,14 +689,45 @@ function handleDriverEntry(teamLap) {
 }
 
 // Process lap completion data
-function processLapCompletion(lapCompleted, fuel) {
+function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   const now = Date.now();
 
-  // Lap Time Tracking
-  if (lastLapStartTime !== null) {
-    const lapTime = (now - lastLapStartTime) / 1000; // seconds
+  // Lap Time Tracking - use actual iRacing lap time if available
+  if (lapTime !== null && lapTime > 0) {
+    // Use actual iRacing lap time data
     lapTimeHistory.push(lapTime);
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
+
+    // Store and display last lap time
+    previousValues.lastLapTime = lapTime;
+    if (elements.lastLapTime) {
+      updateValueWithColor(elements.lastLapTime, formatTimeMS(lapTime), lapTime, 'lapTime', 'lastLapTime');
+    }
+
+    // 3-Lap Time Average
+    previousValues.lapAvg3 = lapTimeHistory.length >= 3
+      ? lapTimeHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
+      : null;
+
+    updateValueWithColor(elements.lapAvg3, previousValues.lapAvg3 ? formatTimeMS(previousValues.lapAvg3) : '--:--', previousValues.lapAvg3, 'lapTime', 'lapAvg3');
+
+    // 5-Lap Time Average
+    const lapAvg5 = lapTimeHistory.length === 5
+      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+      : null;
+
+    updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
+  } else if (lastLapStartTime !== null) {
+    // Fallback to wall-clock time if no iRacing lap time available
+    const wallClockLapTime = (now - lastLapStartTime) / 1000; // seconds
+    lapTimeHistory.push(wallClockLapTime);
+    if (lapTimeHistory.length > 5) lapTimeHistory.shift();
+
+    // Store and display last lap time
+    previousValues.lastLapTime = wallClockLapTime;
+    if (elements.lastLapTime) {
+      updateValueWithColor(elements.lastLapTime, formatTimeMS(wallClockLapTime), wallClockLapTime, 'lapTime', 'lastLapTime');
+    }
 
     // 3-Lap Time Average
     previousValues.lapAvg3 = lapTimeHistory.length >= 3
@@ -822,11 +853,6 @@ function setupSocketListeners() {
       const carIdx = values?.PlayerCarIdx;
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
       const isOnTrack = values?.IsOnTrack;
-      
-      // Update last lap time if available
-      if (values?.LapLastLapTime !== undefined && values.LapLastLapTime > 0 && elements.lastLapTime) {
-        updateValueWithColor(elements.lastLapTime, formatTimeMS(values.LapLastLapTime), values.LapLastLapTime, 'lapTime', 'lastLapTime');
-      }
       
       // Track incidents if available in telemetry
       if (driverWasOnTrack && values.PlayerCarMyIncidentCount !== undefined) {
@@ -997,7 +1023,8 @@ function setupSocketListeners() {
 
       // Lap Completion Logic
       if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
-        processLapCompletion(lapCompleted, fuel);
+        const lapTime = safeValues?.LapLastLapTime; // Get actual iRacing lap time
+        processLapCompletion(lapCompleted, fuel, lapTime);
       }
     } catch (error) {
       console.error('Error processing telemetry data:', error);
