@@ -329,17 +329,28 @@ app.post('/telemetry', (req, res) => {
     }
   }
 
-  // Only emit broadcaster info if driver is on track AND (driver or session changed)
-  const currentDriverName = httpClient.driverName || currentUserName;
-  if (isOnTrack === true && currentDriverName && 
-      (currentDriverName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession)) {
+  // Handle broadcaster info based on track status
+  let broadcasterName;
+  let shouldEmit = false;
+  
+  if (isOnTrack === true && currentUserName) {
+    // Driver is on track - use iRacing name only
+    broadcasterName = currentUserName;
+    shouldEmit = (broadcasterName !== lastBroadcastedDriver || currentSessionId !== lastBroadcastedSession);
+  } else if (isOnTrack === false) {
+    // Driver is off track - show "Seat Empty"
+    broadcasterName = "Seat Empty";
+    shouldEmit = (lastBroadcastedDriver !== "Seat Empty");
+  }
+  
+  if (shouldEmit && broadcasterName) {
     io.emit('currentBroadcaster', {
-      driver: currentDriverName,
+      driver: broadcasterName,
       sessionId: currentSessionId
     });
     
     // Update last broadcasted values
-    lastBroadcastedDriver = currentDriverName;
+    lastBroadcastedDriver = broadcasterName;
     lastBroadcastedSession = currentSessionId;
   }
 
