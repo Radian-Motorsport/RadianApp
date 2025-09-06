@@ -15,6 +15,11 @@ class TrackMap {
     this.tankCapacity = 104;
     this.avgFuelPerLap = 0;
     
+    // Car distance data
+    this.carDistAhead = null;
+    this.carDistBehind = null;
+    this.trackLength = 0; // Will be calculated from track data
+    
     // Cache info box elements
     this.cacheInfoElements();
     
@@ -57,10 +62,38 @@ class TrackMap {
     this.carMarker.setAttribute('stroke', '#ffffff');
     this.carMarker.setAttribute('stroke-width', '0.5');
     
+    // Create car ahead marker
+    this.carAheadMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    this.carAheadMarker.setAttribute('r', '1.5');
+    this.carAheadMarker.setAttribute('fill', '#ff6600');
+    this.carAheadMarker.setAttribute('stroke', '#ffffff');
+    this.carAheadMarker.setAttribute('stroke-width', '0.3');
+    this.carAheadMarker.style.display = 'none'; // Hidden by default
+    
+    // Add title for tooltip
+    const aheadTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    aheadTitle.textContent = 'Car Ahead';
+    this.carAheadMarker.appendChild(aheadTitle);
+    
+    // Create car behind marker
+    this.carBehindMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    this.carBehindMarker.setAttribute('r', '1.5');
+    this.carBehindMarker.setAttribute('fill', '#0066ff');
+    this.carBehindMarker.setAttribute('stroke', '#ffffff');
+    this.carBehindMarker.setAttribute('stroke-width', '0.3');
+    this.carBehindMarker.style.display = 'none'; // Hidden by default
+    
+    // Add title for tooltip
+    const behindTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    behindTitle.textContent = 'Car Behind';
+    this.carBehindMarker.appendChild(behindTitle);
+    
     // Add elements to SVG
     this.svg.appendChild(this.trackPath);
     this.svg.appendChild(this.startFinishRect);
     this.svg.appendChild(this.carMarker);
+    this.svg.appendChild(this.carAheadMarker);
+    this.svg.appendChild(this.carBehindMarker);
     
     // Add corner numbers
     this.addCornerNumbers();
@@ -71,6 +104,10 @@ class TrackMap {
     // Calculate path properties
     this.pathLength = this.trackPath.getTotalLength();
     this.calculateStartPosition();
+    
+    // Initialize track length - will be set from official session data
+    // Default estimate used until sessionInfo arrives with official TrackLength
+    this.trackLength = 3000; // Default estimate in meters
     
     // Initialize car marker at start position
     this.updateCarPosition(0);
@@ -141,6 +178,57 @@ class TrackMap {
     // Update car marker position
     this.carMarker.setAttribute('cx', point.x);
     this.carMarker.setAttribute('cy', point.y);
+    
+    // Update ahead/behind car positions if distance data is available
+    this.updateRelativeCarPositions();
+  }
+  
+  updateRelativeCarPositions() {
+    // Update car ahead position
+    if (this.carDistAhead !== null && this.carDistAhead > 0 && this.trackLength > 0) {
+      const aheadLapPct = this.calculateRelativeLapPct(this.carDistAhead, true);
+      const aheadPositionAlongPath = (this.startPosition + (this.pathLength * aheadLapPct)) % this.pathLength;
+      const aheadPoint = this.trackPath.getPointAtLength(aheadPositionAlongPath);
+      
+      this.carAheadMarker.setAttribute('cx', aheadPoint.x);
+      this.carAheadMarker.setAttribute('cy', aheadPoint.y);
+      this.carAheadMarker.style.display = 'block';
+    } else {
+      this.carAheadMarker.style.display = 'none';
+    }
+    
+    // Update car behind position
+    if (this.carDistBehind !== null && this.carDistBehind > 0 && this.trackLength > 0) {
+      const behindLapPct = this.calculateRelativeLapPct(this.carDistBehind, false);
+      const behindPositionAlongPath = (this.startPosition + (this.pathLength * behindLapPct)) % this.pathLength;
+      const behindPoint = this.trackPath.getPointAtLength(behindPositionAlongPath);
+      
+      this.carBehindMarker.setAttribute('cx', behindPoint.x);
+      this.carBehindMarker.setAttribute('cy', behindPoint.y);
+      this.carBehindMarker.style.display = 'block';
+    } else {
+      this.carBehindMarker.style.display = 'none';
+    }
+  }
+  
+  calculateRelativeLapPct(distance, isAhead) {
+    // Convert distance in meters to lap percentage
+    // Assume trackLength is in meters (will need to be set from telemetry data)
+    if (this.trackLength <= 0) return this.liveLapPct;
+    
+    const distancePct = distance / this.trackLength;
+    
+    if (isAhead) {
+      // Car ahead is further along the track
+      let aheadPct = this.liveLapPct + distancePct;
+      if (aheadPct > 1.0) aheadPct -= 1.0; // Wrap around
+      return aheadPct;
+    } else {
+      // Car behind is further back on the track
+      let behindPct = this.liveLapPct - distancePct;
+      if (behindPct < 0) behindPct += 1.0; // Wrap around
+      return behindPct;
+    }
   }
 
   cacheInfoElements() {
@@ -153,6 +241,14 @@ class TrackMap {
 
   setupListeners() {
     if (this.socket) {
+      // Listen for session info to get official track length
+      this.socket.on('sessionInfo', (data) => {
+        if (data?.WeekendInfo?.TrackLength) {
+          this.trackLength = parseFloat(data.WeekendInfo.TrackLength.replace(' km', '')) * 1000; // Convert km to meters
+          console.log('Track length set from session data:', this.trackLength, 'meters');
+        }
+      });
+      
       this.socket.on('telemetry', (data) => {
         const values = data?.values;
         if (!values) return;
@@ -175,14 +271,16 @@ class TrackMap {
         }
         
         if (values.CarDistAhead !== undefined) {
+          this.carDistAhead = values.CarDistAhead;
           if (this.carAheadElement) {
-            this.carAheadElement.textContent = values.CarDistAhead + ' m';
+            this.carAheadElement.textContent = values.CarDistAhead.toFixed(2) + ' m';
           }
         }
         
         if (values.CarDistBehind !== undefined) {
+          this.carDistBehind = values.CarDistBehind;
           if (this.carBehindElement) {
-            this.carBehindElement.textContent = values.CarDistBehind + ' m';
+            this.carBehindElement.textContent = values.CarDistBehind.toFixed(2) + ' m';
           }
         }
       });

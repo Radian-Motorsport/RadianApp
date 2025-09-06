@@ -156,8 +156,8 @@ function updateStatusElements(values) {
   safeUpdateElement('PlayerCarDriverIncidentCount', values.PlayerCarDriverIncidentCount);
   safeUpdateElement('LapDistPct', values.LapDistPct?.toFixed(3));
   safeUpdateElement('RaceLaps', values.RaceLaps);
-  safeUpdateElement('CarDistAhead', values.CarDistAhead);
-  safeUpdateElement('CarDistBehind', values.CarDistBehind);
+  safeUpdateElement('CarDistAhead', values.CarDistAhead?.toFixed(2));
+  safeUpdateElement('CarDistBehind', values.CarDistBehind?.toFixed(2));
 }
 
 // Update driver input elements
