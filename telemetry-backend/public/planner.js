@@ -24,7 +24,7 @@ let sessionTimeRemainHistory = [];
 // Fuel and lap time variables - will be populated from telemetry
 let fuelPerLap = 0;        // From index calculations
 let avgLapTime = 0;        // From index calculations
-let tankCapacity = 0;      // From SessionInfo.DriverCarFuelMaxLtr
+let tankCapacity = 104;    // Default tank capacity in liters (changed from 0 to avoid calculation errors)
 let currentFuelLevel = 0;  // From telemetry FuelLevel
 let raceDuration = 0;      // From SessionInfo.SessionTime
 let pitStopTime = 45;      // Default, will be updated based on actual pit times
@@ -87,7 +87,7 @@ function loadPlannerState() {
     sessionTimeRemainHistory = savedState.sessionTimeRemainHistory ?? [];
     fuelPerLap = savedState.fuelPerLap ?? 0;
     avgLapTime = savedState.avgLapTime ?? 0;
-    tankCapacity = savedState.tankCapacity ?? 0;
+    tankCapacity = savedState.tankCapacity ?? 104;  // Use 104 as fallback instead of 0
     currentFuelLevel = savedState.currentFuelLevel ?? 0;
     raceDuration = savedState.raceDuration ?? 0;
     pitStopTime = savedState.pitStopTime ?? 45;
@@ -121,8 +121,16 @@ function initPlannerPage() {
   // Set up auto-save
   setupPlannerAutoSave();
   
-  // Set up event listeners (will retry if socket not available)
-  setupEventListeners();
+  // Check if socket is available before setting up event listeners (same pattern as inputs page)
+  if (typeof socket !== 'undefined' && socket) {
+    // Set up event listeners
+    setupEventListeners();
+  } else {
+    // Retry initialization after a delay if socket not ready
+    console.warn('Planner: Socket not ready, retrying initialization...');
+    setTimeout(initPlannerPage, 500);
+    return;
+  }
   
   setupDataSharing();
   
@@ -183,31 +191,20 @@ function initPlannerPage() {
 }
 
 function setupEventListeners() {
-  // Use the global socket from telemetry.js
-  if (window.socket) {
-    // Test socket connectivity
-    window.socket.emit('test', 'planner-connection-test');
-    
-    // Listen for telemetry data
-    window.socket.on('telemetry', handleTelemetryData);
-    
-    // Listen for session info updates
-    window.socket.on('sessionUpdate', handleSessionUpdate);
-    
-    // Test connection by listening for any event
-    window.socket.on('connect', () => {
-      console.log('Planner: Socket connected successfully');
-    });
-    
-    window.socket.on('disconnect', () => {
-      console.log('Planner: Socket disconnected');
-    });
-    
-    console.log('Planner: Event listeners set up, socket state:', window.socket.connected);
-  } else {
-    console.warn('Planner: Global socket not available, retrying in 1 second');
+  // Use the same socket check pattern as inputs page
+  if (typeof socket === 'undefined' || !socket) {
+    console.warn('Planner: Socket not available, retrying in 1 second');
     setTimeout(setupEventListeners, 1000);
+    return;
   }
+  
+  // Listen for telemetry data
+  socket.on('telemetry', handleTelemetryData);
+  
+  // Listen for session info updates
+  socket.on('sessionUpdate', handleSessionUpdate);
+  
+  console.log('Planner: Event listeners set up successfully');
 }
 
 function setupDataSharing() {
