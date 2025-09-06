@@ -51,8 +51,8 @@ class TrackMap {
     // Convert path to points for position calculations
     this.convertSVGPathToPoints(svgPathData);
     
-    // Set your clean start/finish line position (red rectangle from the new SVG)
-    this.startFinishCoords = { x: 141.26521, y: 177.90924 };
+    // Set your clean start/finish line position (this should match the first point of the path)
+    this.startFinishCoords = { x: 124.93136, y: 181.2191 };
     
     // Set your corner markers from the new clean SVG
     this.cornerMarkers = [
@@ -78,61 +78,72 @@ class TrackMap {
   }
   // Convert SVG path to coordinate points for car positioning
   convertSVGPathToPoints(pathData) {
-    // Use Canvas to sample points along the actual SVG path
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCanvas.width = 1000;
-    tempCanvas.height = 1000;
-    
-    const path = new Path2D(pathData);
-    
-    // Sample 200 points along the path by checking intersections
+    // Parse the SVG path commands to get actual points along the path
     this.trackPoints = [];
-    const numSamples = 200;
     
-    for (let i = 0; i < numSamples; i++) {
-      const angle = (i / numSamples) * Math.PI * 2;
-      const centerX = 125;
-      const centerY = 125;
-      const radius = 200;
-      
-      // Cast rays from center to find path intersections
-      for (let r = 10; r < radius; r += 2) {
-        const x = centerX + Math.cos(angle) * r;
-        const y = centerY + Math.sin(angle) * r;
-        
-        tempCtx.clearRect(0, 0, 1000, 1000);
-        tempCtx.fill(path);
-        
-        const imageData = tempCtx.getImageData(x, y, 1, 1);
-        if (imageData.data[3] > 0) { // Hit the path
-          this.trackPoints.push({ x, y });
-          break;
+    // The path starts at the moveto command coordinates
+    let currentX = 124.93136;
+    let currentY = 181.2191;
+    
+    // Add the starting point (this is our start/finish line)
+    this.trackPoints.push({ x: currentX, y: currentY });
+    
+    // Parse the path data to extract curve points
+    // The SVG uses relative coordinates (m = moveto, c = curveto)
+    const pathCommands = pathData.match(/[mc][^mc]*/gi);
+    
+    if (pathCommands) {
+      pathCommands.forEach((command, index) => {
+        if (command.startsWith('c')) {
+          // This is a cubic bezier curve command
+          const coords = command.slice(1).trim().split(/[\s,]+/).map(Number);
+          
+          // Sample points along each curve segment
+          for (let i = 0; i < coords.length; i += 6) {
+            const cp1x = currentX + coords[i];
+            const cp1y = currentY + coords[i + 1];
+            const cp2x = currentX + coords[i + 2]; 
+            const cp2y = currentY + coords[i + 3];
+            const endX = currentX + coords[i + 4];
+            const endY = currentY + coords[i + 5];
+            
+            // Sample 10 points along this bezier curve
+            for (let t = 0.1; t <= 1; t += 0.1) {
+              const x = Math.pow(1-t, 3) * currentX + 
+                       3 * Math.pow(1-t, 2) * t * cp1x + 
+                       3 * (1-t) * Math.pow(t, 2) * cp2x + 
+                       Math.pow(t, 3) * endX;
+              const y = Math.pow(1-t, 3) * currentY + 
+                       3 * Math.pow(1-t, 2) * t * cp1y + 
+                       3 * (1-t) * Math.pow(t, 2) * cp2y + 
+                       Math.pow(t, 3) * endY;
+              
+              this.trackPoints.push({ x, y });
+            }
+            
+            // Update current position
+            currentX = endX;
+            currentY = endY;
+          }
         }
-      }
+      });
     }
     
-    // If we didn't get enough points, add more manually around the track shape
-    if (this.trackPoints.length < 50) {
-      this.trackPoints = [
-        { x: 141.26521, y: 177.90924 }, // Start/finish
-        { x: 100, y: 178 },
-        { x: 60, y: 170 },
-        { x: 50, y: 160 },
-        { x: 25, y: 140 },
-        { x: 10, y: 120 },
-        { x: 20, y: 100 },
-        { x: 50, y: 90 },
-        { x: 100, y: 85 },
-        { x: 150, y: 80 },
-        { x: 200, y: 85 },
-        { x: 230, y: 100 },
-        { x: 240, y: 130 },
-        { x: 235, y: 160 },
-        { x: 200, y: 175 },
-        { x: 170, y: 178 },
-        { x: 141.26521, y: 177.90924 } // Back to start
-      ];
+    // If we didn't get enough points from parsing, create a fallback oval
+    if (this.trackPoints.length < 20) {
+      console.log('Path parsing failed, using fallback oval');
+      this.trackPoints = [];
+      const centerX = 124.93136;
+      const centerY = 150;
+      const radiusX = 100;
+      const radiusY = 30;
+      
+      for (let i = 0; i < 100; i++) {
+        const angle = (i / 100) * Math.PI * 2;
+        const x = centerX + radiusX * Math.cos(angle);
+        const y = centerY + radiusY * Math.sin(angle);
+        this.trackPoints.push({ x, y });
+      }
     }
     
     // Calculate bounds
@@ -148,6 +159,7 @@ class TrackMap {
     
     console.log('Track bounds:', this.trackBounds);
     console.log('Track points count:', this.trackPoints.length);
+    console.log('First few points:', this.trackPoints.slice(0, 5));
   }
   
   cacheInfoElements() {
@@ -301,16 +313,19 @@ class TrackMap {
       return;
     }
     
-    // Calculate scaling to fit canvas with proper padding
-    const padding = 50; // Good padding for clean coordinate system
-    const trackWidth = this.trackBounds.maxX - this.trackBounds.minX;
-    const trackHeight = this.trackBounds.maxY - this.trackBounds.minY;
-    const scaleX = (this.trackCanvas.width - padding * 2) / trackWidth;
-    const scaleY = (this.trackCanvas.height - padding * 2) / trackHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // Good scale for new coordinate system
+    // Use the known SVG coordinate system: 1000x1000
+    const svgWidth = 1000;
+    const svgHeight = 1000;
+    const padding = 20;
     
-    const offsetX = (this.trackCanvas.width - trackWidth * scale) / 2 - this.trackBounds.minX * scale;
-    const offsetY = (this.trackCanvas.height - trackHeight * scale) / 2 - this.trackBounds.minY * scale;
+    // Scale to fit canvas with padding
+    const scaleX = (this.trackCanvas.width - padding * 2) / svgWidth;
+    const scaleY = (this.trackCanvas.height - padding * 2) / svgHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Center the scaled SVG in the canvas
+    const offsetX = (this.trackCanvas.width - svgWidth * scale) / 2;
+    const offsetY = (this.trackCanvas.height - svgHeight * scale) / 2;
     
     // Transform and draw the SVG path
     this.trackCtx.save();
@@ -319,43 +334,27 @@ class TrackMap {
     
     // Draw track outline
     this.trackCtx.strokeStyle = 'white';
-    this.trackCtx.lineWidth = 3 / scale; // Slightly thicker line for better visibility
+    this.trackCtx.lineWidth = 2 / scale;
     this.trackCtx.stroke(this.trackSVGPath);
     
     this.trackCtx.restore();
     
-    // Draw custom start/finish line if available
+    // Draw start/finish line
     if (this.startFinishCoords) {
       const startX = this.startFinishCoords.x * scale + offsetX;
       const startY = this.startFinishCoords.y * scale + offsetY;
       
-      // Draw a red line across the track (like the SVG rectangle)
       this.trackCtx.strokeStyle = 'red';
       this.trackCtx.lineWidth = 3;
       this.trackCtx.beginPath();
-      this.trackCtx.moveTo(startX - 8, startY);
-      this.trackCtx.lineTo(startX + 8, startY);
+      this.trackCtx.moveTo(startX - 10, startY);
+      this.trackCtx.lineTo(startX + 10, startY);
       this.trackCtx.stroke();
       
-      // Add S/F label
       this.trackCtx.fillStyle = 'red';
-      this.trackCtx.font = '10px Arial';
+      this.trackCtx.font = '12px Arial';
       this.trackCtx.textAlign = 'center';
-      this.trackCtx.fillText('S/F', startX, startY - 10);
-    }
-    
-    // Draw corner markers if available
-    if (this.cornerMarkers && this.cornerMarkers.length > 0) {
-      this.cornerMarkers.forEach(marker => {
-        const markerX = marker.coords.x * scale + offsetX;
-        const markerY = marker.coords.y * scale + offsetY;
-        
-        this.trackCtx.fillStyle = 'white';
-        this.trackCtx.font = 'bold 12px "Road Rage", Arial';
-        this.trackCtx.textAlign = 'center';
-        this.trackCtx.textBaseline = 'middle';
-        this.trackCtx.fillText(marker.text, markerX, markerY);
-      });
+      this.trackCtx.fillText('S/F', startX, startY - 15);
     }
     
     // Draw car position
@@ -365,10 +364,13 @@ class TrackMap {
   }
   
   drawCarPosition(scale, offsetX, offsetY) {
-    if (this.liveLapPct <= 0 || this.liveLapPct > 1 || this.trackPoints.length === 0) return;
+    // For testing, use a fixed position if no telemetry
+    const testPct = this.liveLapPct > 0 ? this.liveLapPct : 0.25; // Test at 25% around track
+    
+    if (testPct <= 0 || testPct > 1 || this.trackPoints.length === 0) return;
     
     // Get position along track
-    const position = this.getPositionFromPercent(this.liveLapPct);
+    const position = this.getPositionFromPercent(testPct);
     if (!position) return;
     
     const markerX = position.x * scale + offsetX;
@@ -376,10 +378,12 @@ class TrackMap {
     const circleRadius = 12;
     
     // Draw player car - Pink circle with white text
-    this.drawCarCircle(markerX, markerY, circleRadius, '#ff69b4', 'white', this.playerPosition);
+    this.drawCarCircle(markerX, markerY, circleRadius, '#ff69b4', 'white', this.playerPosition || 1);
     
-    // Draw cars ahead and behind
-    this.drawOtherCars(scale, offsetX, offsetY, circleRadius);
+    // Draw cars ahead and behind only if we have real telemetry
+    if (this.liveLapPct > 0) {
+      this.drawOtherCars(scale, offsetX, offsetY, circleRadius);
+    }
   }
   
   drawCarCircle(x, y, radius, fillColor, textColor, positionNumber) {
