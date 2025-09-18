@@ -168,7 +168,7 @@ class EnviroTrace {
     });
     this.ctx.stroke();
     
-    // Air Pressure (950-1050 mbar range maps to full canvas height)
+    // Air Pressure (900-1100 mbar range maps to full canvas height)
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.airPressureColor;
     this.ctx.lineWidth = 1.5;
@@ -182,7 +182,7 @@ class EnviroTrace {
       }
       
       // Convert Pa to mbar: 1 Pa = 0.01 mbar
-      // But check if it's already in mbar (typical range 950-1050)
+      // But check if it's already in mbar (typical range 900-1100)
       let pressureMbar;
       if (point.airPressure > 10000) {
         // Likely in Pa, convert to mbar
@@ -197,12 +197,13 @@ class EnviroTrace {
         console.log(`Air pressure: ${pressureMbar.toFixed(2)} mbar`);
       }
       
-      // Scale 950-1050 mbar range to canvas height
-      const y = canvasHeight - (((pressureMbar - 950) / 100) * canvasHeight);
+      // Scale 900-1100 mbar range (200 mbar total range) to canvas height
+      // This gives better resolution for typical pressure variations
+      const y = canvasHeight - (((pressureMbar - 900) / 200) * canvasHeight);
       
       // Debug Y position
       if (i === 0 || i === dataToDisplay.length - 1) {
-        console.log(`Y position: ${y.toFixed(1)} (canvas height: ${canvasHeight})`);
+        console.log(`Y position: ${y.toFixed(1)} (canvas height: ${canvasHeight}) - Range: 900-1100 mbar`);
       }
       
       // Clamp Y to canvas bounds to make it visible even if out of expected range
