@@ -37,59 +37,59 @@
 
     .environment-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
       margin-top: 20px;
     }
 
     .status-group {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 8px;
-      padding: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(34, 34, 34, 0.95);
+      border: 1.5px solid #333;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
 
     .status-group h3 {
-      color: #4CAF50;
-      margin: 0 0 15px 0;
-      font-size: 14px;
+      margin: 0 0 8px 0;
+      font-size: 1.1em;
+      color: #ffc800;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     .status-grid {
       display: grid;
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 6px;
     }
 
     .status-grid div {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .status-grid div:last-child {
-      border-bottom: none;
+      padding: 8px 12px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      border-left: 3px solid #4ecdc4;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .status-grid label {
-      color: #ccc;
-      font-size: 12px;
+      color: #4ecdc4;
+      font-weight: bold;
+      margin-right: 6px;
       flex-shrink: 0;
-      margin-right: 10px;
     }
 
     .status-grid span {
       color: #fff;
-      font-weight: bold;
-      font-size: 12px;
+      font-size: 1em;
       text-align: right;
       word-break: break-word;
       overflow-wrap: break-word;
-      max-width: 100px;
-      line-height: 1.2;
     }
   </style>
 </head>
