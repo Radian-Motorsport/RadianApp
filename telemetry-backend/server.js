@@ -384,12 +384,8 @@ app.post('/sessionInfo', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress;
   const userAgent = req.get('User-Agent') || 'Unknown';
 
-  // Ignore all session info if IsOnTrack is false
-  const isOnTrack = data?.IsOnTrack;
-  if (isOnTrack === false) {
-    console.log(`📋 SessionInfo ignored (driver not on track - IsOnTrack: ${isOnTrack})`);
-    return res.sendStatus(200);
-  }
+  // NOTE: SessionInfo data structure doesn't have IsOnTrack - that's telemetry data
+  // Removed incorrect IsOnTrack filter that was blocking all sessionInfo
 
   currentSessionId = data?.WeekendInfo?.SessionID;
   

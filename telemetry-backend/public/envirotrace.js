@@ -175,10 +175,40 @@ class EnviroTrace {
     dataToDisplay.forEach((point, i) => {
       if (point.airPressure === null || point.airPressure === undefined) return;
       const x = (point.timestamp - startTime) * xScale;
-      // Convert Pa to mbar: 1 Pa = 0.01 mbar, then scale 950-1050 mbar range
-      const pressureMbar = point.airPressure * 0.01;
+      
+      // Debug air pressure values
+      if (i === 0 || i === dataToDisplay.length - 1) {
+        console.log(`Air pressure debug - Raw: ${point.airPressure}, Unit check: ${typeof point.airPressure}`);
+      }
+      
+      // Convert Pa to mbar: 1 Pa = 0.01 mbar
+      // But check if it's already in mbar (typical range 950-1050)
+      let pressureMbar;
+      if (point.airPressure > 10000) {
+        // Likely in Pa, convert to mbar
+        pressureMbar = point.airPressure * 0.01;
+      } else {
+        // Likely already in mbar
+        pressureMbar = point.airPressure;
+      }
+      
+      // Debug converted value and Y position
+      if (i === 0 || i === dataToDisplay.length - 1) {
+        console.log(`Air pressure: ${pressureMbar.toFixed(2)} mbar`);
+      }
+      
+      // Scale 950-1050 mbar range to canvas height
       const y = canvasHeight - (((pressureMbar - 950) / 100) * canvasHeight);
-      i === 0 ? this.ctx.moveTo(x, y) : this.ctx.lineTo(x, y);
+      
+      // Debug Y position
+      if (i === 0 || i === dataToDisplay.length - 1) {
+        console.log(`Y position: ${y.toFixed(1)} (canvas height: ${canvasHeight})`);
+      }
+      
+      // Clamp Y to canvas bounds to make it visible even if out of expected range
+      const clampedY = Math.max(0, Math.min(canvasHeight, y));
+      
+      i === 0 ? this.ctx.moveTo(x, clampedY) : this.ctx.lineTo(x, clampedY);
     });
     this.ctx.stroke();
     

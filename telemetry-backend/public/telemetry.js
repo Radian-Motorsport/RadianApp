@@ -972,6 +972,49 @@ function setupSocketListeners() {
       if (!data || !data.values) return;
       
       const values = data.values;
+      
+      // 🔧 WORKAROUND: Extract session data from telemetry since sessionInfo isn't working
+      if (values && !bufferedData?.sessionInfo) {
+        console.log('🔧 WORKAROUND: Attempting to extract session data from telemetry');
+        
+        // Create mock session data from available telemetry fields
+        const mockSessionData = {
+          WeekendInfo: {
+            TrackDisplayName: values.TrackDisplayName || values.TrackName || "Unknown Track",
+            TrackLength: values.TrackLength || "Unknown",
+            TrackDisplayShortName: values.TrackDisplayShortName || "UNK"
+          },
+          SessionInfo: {
+            Sessions: [{
+              SessionType: values.SessionType || "Practice",
+              SessionLaps: values.SessionLaps || "Unlimited", 
+              SessionTime: values.SessionTime || "Unlimited",
+              SessionName: values.SessionName || "Session"
+            }]
+          },
+          DriverInfo: {
+            DriverCarIdx: values.PlayerCarIdx || 0
+          }
+        };
+        
+        console.log('🔧 WORKAROUND: Created mock session data:', mockSessionData);
+        
+        // Store in bufferedData
+        if (!bufferedData) {
+          bufferedData = { values: null, sessionInfo: null };
+        }
+        bufferedData.sessionInfo = mockSessionData;
+        window.bufferedData = bufferedData;
+        
+        // Trigger trackmap update directly
+        if (window.trackMap && window.trackMap.updateSessionDisplay) {
+          console.log('🔧 WORKAROUND: Triggering trackMap update with mock data');
+          window.trackMap.updateSessionDisplay(mockSessionData);
+        }
+        
+        console.log('🔧 WORKAROUND: Session data extraction complete');
+      }
+      
       const carIdx = values?.PlayerCarIdx;
       const teamLap = values?.CarIdxLapCompleted?.[carIdx];
       const isOnTrack = values?.IsOnTrack;
