@@ -123,7 +123,7 @@
         </div>
         
         <div class="svg-container">
-            <div class="coordinate-display" id="coordinates">
+            <div class="coordinate-display" id="coordinates" style="display: block;">
                 X: 0, Y: 0 | SVG: (0, 0) | Transform: (0, 0)
             </div>
             <svg class="track-map" id="trackSvg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -206,6 +206,13 @@
 	c-0.1,1.2,0.1,2.2,0.8,3c1.1,1.3,3.2,1.7,3.5,1.7l0,0c0.7,0,3.9,0.2,5.9,0.4c2.5,0.2,4.3,1,5.3,2.4c1.4,1.9,0.9,4.3,0.7,5.6
 	c0,0.2-0.1,0.3-0.1,0.4c-0.2,1-2.1,11.1-3.6,19.3c-1,5.1-1.8,9.5-1.9,10.4c-0.3,1.8-1.7,5.5-2.8,8.5c-0.5,1.2-0.8,2.3-1,2.9
 	c-0.1,0.3-0.3,1-0.6,1.9l-1.9,5.5c-1.1,3.2-2.6,5.6-4.1,6.5C668.1,1000.2,666.6,1000.6,665.1,1000.6z" transform="translate(-400,-100) scale(0.6)"/>
+                
+                <!-- Start/Finish Position Marker -->
+                <circle style="fill:#ff0000;stroke:#ff0000;stroke-width:2" 
+                        r="3" 
+                        cx="665.1" 
+                        cy="1000.6" 
+                        transform="translate(-400,-100) scale(0.6)" />
             </g>
         </svg>
         </div>
@@ -232,13 +239,39 @@
         const trackGroup = document.getElementById('trackGroup');
         const svg = document.getElementById('trackSvg');
         const zoomLevelSpan = document.getElementById('zoomLevel');
-    // const coordinatesDisplay = document.getElementById('coordinates');
+        const coordinatesDisplay = document.getElementById('coordinates');
         
         // Initial positioning - center and scale the track
         resetView();
         
+        // Start/Finish line is now at the 0% reference point (previously 93% of track)
+        const START_FINISH_OFFSET = 0.93; // Original position becomes new 0%
+        
+        function positionStartFinishMarker() {
+            const trackPath = document.querySelector('.track-surface');
+            const totalLength = trackPath.getTotalLength();
+            const startFinishPosition = trackPath.getPointAtLength(totalLength * START_FINISH_OFFSET);
+            
+            const startFinishMarker = document.querySelector('circle[style*="fill:#ff0000"]');
+            startFinishMarker.setAttribute('cx', startFinishPosition.x);
+            startFinishMarker.setAttribute('cy', startFinishPosition.y);
+        }
+        
+        // Function to get position at any percentage from start/finish line
+        function getTrackPositionFromStartFinish(percentage) {
+            const trackPath = document.querySelector('.track-surface');
+            const totalLength = trackPath.getTotalLength();
+            
+            // Adjust percentage to account for start/finish line being the new 0%
+            let adjustedPercentage = (START_FINISH_OFFSET + (percentage / 100)) % 1;
+            
+            return trackPath.getPointAtLength(totalLength * adjustedPercentage);
+        }
+        
+        // Position the start/finish marker after the page loads
+        setTimeout(positionStartFinishMarker, 100);
+        
         function updateCoordinates(e) {
-            /*
             const rect = svg.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -252,7 +285,6 @@
             const trackY = (svgCoords.y - currentTranslateY) / currentZoom;
             coordinatesDisplay.textContent = 
                 `Screen: (${Math.round(x)}, ${Math.round(y)}) | SVG: (${Math.round(svgCoords.x)}, ${Math.round(svgCoords.y)}) | Track: (${Math.round(trackX)}, ${Math.round(trackY)})`;
-            */
         }
         
         function updateTransform() {
@@ -308,12 +340,10 @@
         });
         
         document.addEventListener('mousemove', function(e) {
-            /*
             // Update coordinates display when over SVG
             if (e.target === svg || svg.contains(e.target)) {
                 updateCoordinates(e);
             }
-            */
             
             if (!isDragging) return;
             
