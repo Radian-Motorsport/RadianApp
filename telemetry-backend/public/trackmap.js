@@ -572,7 +572,15 @@ class TrackMap {
   }
 
   calculateStartPosition() {
-    // Find closest point on path to start/finish rectangle
+    // For Ring VLN, use adjusted start/finish position at 93% of track
+    if (this.currentTrackId === 'ring-vln') {
+      // Use 93% position as the new 0% reference point (adjusted start/finish line)
+      this.startPosition = Math.round(this.pathLength * 0.93);
+      console.log(`Ring VLN: Set start position to 93% (${this.startPosition}/${this.pathLength})`);
+      return;
+    }
+    
+    // For other tracks, find closest point to start/finish rectangle
     const rectCenterX = 141.26521 + (1.1603841 / 2);
     const rectCenterY = 177.90924 + (6.796535 / 2);
     
