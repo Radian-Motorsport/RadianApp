@@ -311,6 +311,7 @@ class TrackMapOverlay {
   // Convert SVG coordinates to CSS pixel positions - SIMPLIFIED 1:1 mapping
   svgToPixelPosition(svgX, svgY) {
     // Since both SVG and overlay are now 800x600, coordinates map directly
+    // NO CONVERSION NEEDED - DIRECT MAPPING
     return {
       x: svgX,
       y: svgY
@@ -342,17 +343,14 @@ class TrackMapOverlay {
     // Get SVG track position
     const trackPos = this.getTrackPosition(lapPercent);
     
-    // Convert to pixel position with proper transforms
-    const pixelPos = this.svgToPixelPosition(trackPos.x, trackPos.y);
-    
-    // Position the car with absolute positioning
-    carElement.style.left = pixelPos.x + 'px';
-    carElement.style.top = pixelPos.y + 'px';
+    // DIRECT positioning - no transforms
+    carElement.style.left = trackPos.x + 'px';
+    carElement.style.top = trackPos.y + 'px';
     carElement.style.display = 'block';
     
     // Show position for player car
     if (carType === 'player') {
-      console.log(`🚗 Player car: ${lapPercent.toFixed(1)}% -> (${pixelPos.x.toFixed(0)}, ${pixelPos.y.toFixed(0)})`);
+      console.log(`🚗 Player car RAW SVG: ${lapPercent.toFixed(1)}% -> (${trackPos.x.toFixed(0)}, ${trackPos.y.toFixed(0)})`);
     }
   }
 
