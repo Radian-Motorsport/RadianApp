@@ -16,6 +16,17 @@
   <!-- Track Map -->
   <div class="telemetry-block">
     <h2>Track Map</h2>
+    
+    <!-- Track Selector -->
+    <div class="track-selector-container" style="margin-bottom: 15px;">
+      <label for="trackSelector" style="color: #ffffff; margin-right: 10px; font-weight: bold;">Track:</label>
+      <select id="trackSelector" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #555; background-color: #333; color: #ffffff; font-size: 14px;">
+        <option value="ring-vln">Ring VLN (Nürburgring)</option>
+        <option value="indianapolis-road">Indy Road</option>
+      </select>
+      <button id="switchTrackBtn" style="margin-left: 10px; padding: 5px 15px; border-radius: 4px; border: 1px solid #555; background-color: #444; color: #ffffff; cursor: pointer;">Switch Track</button>
+    </div>
+    
     <div id="trackContainer"></div>
 
     <!-- Track Info Boxes (Weather-style grid) -->
@@ -79,25 +90,68 @@
   <!-- JavaScript Resources -->
   <script src="storage-manager.js"></script>
   <script src="telemetry.js"></script>
+  <script src="track-data.js"></script>
   <script src="trackmap.js"></script>
   <script src="nav.js"></script>
   
   <script>
     // Initialize Track Map when page loads
     document.addEventListener('DOMContentLoaded', function() {
+      let currentTrackId = 'ring-vln'; // Default track
+      
       // Wait for socket to be available from telemetry.js
-      function initTrackMap() {
+      function initTrackMap(trackId = currentTrackId) {
         if (typeof socket !== 'undefined' && socket) {
-          window.trackMap = new TrackMap(socket, 'trackContainer');
-          console.log('TrackMap initialized successfully');
+          // If trackMap already exists, we're switching tracks
+          if (window.trackMap) {
+            window.trackMap.switchTrack(trackId);
+            console.log(`TrackMap switched to: ${trackId}`);
+          } else {
+            // Initial initialization
+            window.trackMap = new TrackMap(socket, 'trackContainer', trackId);
+            console.log('TrackMap initialized successfully');
+          }
+          currentTrackId = trackId;
         } else {
           console.warn('Socket not ready, retrying track map initialization...');
-          setTimeout(initTrackMap, 500);
+          setTimeout(() => initTrackMap(trackId), 500);
         }
       }
       
-      // Start initialization
-      initTrackMap();
+      // Set up track selector event listeners
+      const trackSelector = document.getElementById('trackSelector');
+      const switchTrackBtn = document.getElementById('switchTrackBtn');
+      
+      // Load saved track preference
+      const savedTrackId = localStorage.getItem('selectedTrack');
+      if (savedTrackId && savedTrackId !== currentTrackId) {
+        trackSelector.value = savedTrackId;
+        currentTrackId = savedTrackId;
+      }
+      
+      // Handle track switching
+      function switchTrack() {
+        const selectedTrackId = trackSelector.value;
+        if (selectedTrackId !== currentTrackId) {
+          console.log(`🏁 User switching track from ${currentTrackId} to ${selectedTrackId}`);
+          initTrackMap(selectedTrackId);
+          
+          // Save track preference
+          localStorage.setItem('selectedTrack', selectedTrackId);
+        }
+      }
+      
+      switchTrackBtn.addEventListener('click', switchTrack);
+      
+      // Also allow switching on dropdown change (for convenience)
+      trackSelector.addEventListener('change', function() {
+        if (this.value !== currentTrackId) {
+          switchTrack();
+        }
+      });
+      
+      // Start initialization with current/saved track
+      initTrackMap(currentTrackId);
     });
   </script>
 </body>
