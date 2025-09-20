@@ -241,25 +241,42 @@
         const zoomLevelSpan = document.getElementById('zoomLevel');
         const coordinatesDisplay = document.getElementById('coordinates');
         
-        // Initial positioning - center and scale the track
-        resetView();
-        
         // Start/Finish line is now at the 0% reference point (previously 93% of track)
         const START_FINISH_OFFSET = 0.93; // Original position becomes new 0%
         
+        function resetView() {
+            currentZoom = 0.96;
+            // Center track coordinates)
+            currentTranslateX = 240;
+            currentTranslateY = 90;
+            updateTransform();
+        }
+        
+        function updateTransform() {
+            trackGroup.setAttribute('transform', 
+                `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentZoom})`);
+            zoomLevelSpan.textContent = Math.round(currentZoom * 100) + '%';
+        }
+        
         function positionStartFinishMarker() {
             const trackPath = document.querySelector('.track-surface');
+            if (!trackPath) return;
+            
             const totalLength = trackPath.getTotalLength();
             const startFinishPosition = trackPath.getPointAtLength(totalLength * START_FINISH_OFFSET);
             
             const startFinishMarker = document.querySelector('circle[style*="fill:#ff0000"]');
-            startFinishMarker.setAttribute('cx', startFinishPosition.x);
-            startFinishMarker.setAttribute('cy', startFinishPosition.y);
+            if (startFinishMarker) {
+                startFinishMarker.setAttribute('cx', startFinishPosition.x);
+                startFinishMarker.setAttribute('cy', startFinishPosition.y);
+            }
         }
         
         // Function to get position at any percentage from start/finish line
         function getTrackPositionFromStartFinish(percentage) {
             const trackPath = document.querySelector('.track-surface');
+            if (!trackPath) return null;
+            
             const totalLength = trackPath.getTotalLength();
             
             // Adjust percentage to account for start/finish line being the new 0%
@@ -268,8 +285,11 @@
             return trackPath.getPointAtLength(totalLength * adjustedPercentage);
         }
         
-        // Position the start/finish marker after the page loads
-        setTimeout(positionStartFinishMarker, 100);
+        // Initialize after page loads
+        window.addEventListener('load', function() {
+            resetView();
+            setTimeout(positionStartFinishMarker, 100);
+        });
         
         function updateCoordinates(e) {
             const rect = svg.getBoundingClientRect();
@@ -287,12 +307,6 @@
                 `Screen: (${Math.round(x)}, ${Math.round(y)}) | SVG: (${Math.round(svgCoords.x)}, ${Math.round(svgCoords.y)}) | Track: (${Math.round(trackX)}, ${Math.round(trackY)})`;
         }
         
-        function updateTransform() {
-            trackGroup.setAttribute('transform', 
-                `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentZoom})`);
-            zoomLevelSpan.textContent = Math.round(currentZoom * 100) + '%';
-        }
-        
         function zoomIn() {
             currentZoom = Math.min(currentZoom * 1.5, 10);
             updateTransform();
@@ -300,14 +314,6 @@
         
         function zoomOut() {
             currentZoom = Math.max(currentZoom / 1.5, 0.1);
-            updateTransform();
-        }
-        
-        function resetView() {
-            currentZoom = 0.96;
-            // Center track coordinates)
-            currentTranslateX = 240;
-            currentTranslateY = 90;
             updateTransform();
         }
         
