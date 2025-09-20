@@ -400,19 +400,40 @@ class TrackMapOverlay {
     this.carBehindIdx = null;     // Index of car behind
     this.playerCarIdx = null;     // Player's car index
     
-    this.socket.on('telemetryData', (data) => {
+    this.socket.on('telemetry', (data) => {
       // Update car position arrays and player car position
       if (data.values) {
         const values = data.values;
+        console.log('📡 Received telemetry data:', {
+          LapDistPct: values.LapDistPct,
+          CarIdxLapDistPct: values.CarIdxLapDistPct, 
+          PlayerCarIdx: values.PlayerCarIdx,
+          allKeys: Object.keys(values).filter(k => k.includes('Dist') || k.includes('Pct')).slice(0, 10)
+        });
         
-        // Store all car positions
+        // Store all car positions - try different possible field names
         if (values.CarIdxLapDistPct !== undefined) {
           this.carIdxLapDistPct = values.CarIdxLapDistPct;
+          console.log('🏁 Found CarIdxLapDistPct array with', values.CarIdxLapDistPct.length, 'cars');
+        } else if (values.CarIdxLapDistance !== undefined) {
+          this.carIdxLapDistPct = values.CarIdxLapDistance;
+          console.log('🏁 Using CarIdxLapDistance as position array');
         }
         
-        // Update player car position
+        // Update player car position - try different field names  
+        let playerLapPct = null;
         if (values.LapDistPct !== undefined) {
-          const lapPercent = values.LapDistPct * 100; // Convert 0-1 to 0-100
+          playerLapPct = values.LapDistPct;
+        } else if (values.LapDistance !== undefined) {
+          playerLapPct = values.LapDistance;  
+        } else if (values.PlayerCarDistance !== undefined) {
+          playerLapPct = values.PlayerCarDistance;
+        }
+        
+        if (playerLapPct !== null) {
+          // Convert to 0-100 range if needed
+          const lapPercent = playerLapPct > 1 ? playerLapPct : playerLapPct * 100;
+          console.log('🚗 Updating player car at', lapPercent + '%');
           this.updateCarPosition(lapPercent, 'player');
         }
         
@@ -441,11 +462,52 @@ class TrackMapOverlay {
 
   // Update positions of cars ahead and behind based on telemetry arrays
   updateOtherCarPositions() {
-    if (!this.carIdxLapDistPct) return;
+    // Try to get data from global window if socket data not available
+    if (!this.carIdxLapDistPct && window.currentTelemetryData?.values) {
+      const values = window.currentTelemetryData.values;
+      if (values.CarIdxLapDistPct) {
+        this.carIdxLapDistPct = values.CarIdxLapDistPct;
+        console.log('📡 Retrieved CarIdxLapDistPct from global data:', values.CarIdxLapDistPct.length, 'cars');
+      }
+    }
+    
+    if (!this.carIdxLapDistPct) {
+      console.log('❌ No car position data available');
+      return;
+    }
+    
+    console.log('🏁 Processing car positions. PlayerCarIdx:', this.playerCarIdx);
+    console.log('🏁 CarIdxLapDistPct array:', this.carIdxLapDistPct.slice(0, 10)); // Show first 10 entries
+    
+    // If we don't have specific ahead/behind car indices, let's show some nearby cars for testing
+    if (this.carAheadIdx === null || this.carBehindIdx === null) {
+      // Find cars that are actually racing (have valid position data)
+      for (let i = 0; i < this.carIdxLapDistPct.length; i++) {
+        if (i === this.playerCarIdx) continue; // Skip player car
+        
+        const carPosition = this.carIdxLapDistPct[i];
+        if (carPosition !== undefined && carPosition >= 0 && carPosition <= 1) {
+          console.log(`🏁 Found active car at index ${i} with position ${(carPosition * 100).toFixed(1)}%`);
+          
+          // Use this car as "ahead" car for testing
+          if (this.carAheadIdx === null) {
+            this.carAheadIdx = i;
+            console.log(`🏁 Using car ${i} as ahead car (${(carPosition * 100).toFixed(1)}%)`);
+          }
+          // Use different car as "behind" car for testing  
+          else if (this.carBehindIdx === null && i !== this.carAheadIdx) {
+            this.carBehindIdx = i;
+            console.log(`🏁 Using car ${i} as behind car (${(carPosition * 100).toFixed(1)}%)`);
+            break; // We have both cars now
+          }
+        }
+      }
+    }
     
     // Update car ahead
     if (this.carAheadIdx !== null && this.carIdxLapDistPct[this.carAheadIdx] !== undefined) {
       const aheadLapPct = this.carIdxLapDistPct[this.carAheadIdx] * 100; // Convert to percentage
+      console.log(`🚗 Updating ahead car (${this.carAheadIdx}) at ${aheadLapPct.toFixed(1)}%`);
       this.updateCarPosition(aheadLapPct, 'ahead');
     } else {
       this.hideCarMarker('ahead');
@@ -454,6 +516,7 @@ class TrackMapOverlay {
     // Update car behind  
     if (this.carBehindIdx !== null && this.carIdxLapDistPct[this.carBehindIdx] !== undefined) {
       const behindLapPct = this.carIdxLapDistPct[this.carBehindIdx] * 100; // Convert to percentage
+      console.log(`🚗 Updating behind car (${this.carBehindIdx}) at ${behindLapPct.toFixed(1)}%`);
       this.updateCarPosition(behindLapPct, 'behind');
     } else {
       this.hideCarMarker('behind');
@@ -470,7 +533,7 @@ class TrackMapOverlay {
   // Cleanup method
   destroy() {
     if (this.socket) {
-      this.socket.off('telemetryData');
+      this.socket.off('telemetry');
       this.socket.off('sessionData');
     }
     
