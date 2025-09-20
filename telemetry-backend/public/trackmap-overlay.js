@@ -258,8 +258,10 @@ class TrackMapOverlay {
   // Convert lap percentage to SVG coordinates
   getTrackPosition(lapPercent) {
     if (!this.trackPath || !this.pathLength) {
+      console.log('❌ getTrackPosition FAILED: trackPath:', !!this.trackPath, 'pathLength:', this.pathLength);
       return { x: 0, y: 0 };
     }
+    console.log('✅ getTrackPosition OK: trackPath exists, pathLength:', this.pathLength);
     
     // TRACK CONFIGURATION 4: Start/Finish line offsets (must match configuration 3)
     // This MUST be identical to the trackOffsets in positionStartFinishMarker()
