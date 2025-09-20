@@ -1,0 +1,180 @@
+/**
+ * TrackMap Overlay Styles
+ * CSS for HTML-based car positioning system
+ */
+
+/* Track container styling */
+.track-overlay-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+}
+
+/* Car overlay container */
+.car-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Base car dot styling */
+.driverdot {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  z-index: 20;
+}
+
+/* Player car - bright green */
+.car-player {
+  width: 10px;
+  height: 10px;
+  background-color: #00ff00;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.6);
+  z-index: 25; /* Highest priority */
+}
+
+/* Car ahead - orange */
+.car-ahead {
+  width: 8px;
+  height: 8px;
+  background-color: #ff8800;
+  border: 1px solid #ffffff;
+  opacity: 0.9;
+  animation: pulse-ahead 2s infinite;
+}
+
+/* Car behind - blue */
+.car-behind {
+  width: 8px;
+  height: 8px;
+  background-color: #0088ff;
+  border: 1px solid #ffffff;
+  opacity: 0.9;
+  animation: pulse-behind 2s infinite;
+}
+
+/* Pulsing animations for other cars */
+@keyframes pulse-ahead {
+  0%, 100% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+@keyframes pulse-behind {
+  0%, 100% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* Hover effects for better interaction */
+.driverdot:hover {
+  transform: translate(-50%, -50%) scale(1.5) !important;
+  z-index: 30;
+  transition: transform 0.2s ease;
+}
+
+/* Different states for car markers */
+.car-player.active {
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+  animation: player-active 1s infinite;
+}
+
+@keyframes player-active {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(0, 255, 0, 1);
+  }
+}
+
+/* Lap leader styling */
+.car-ahead.lap-ahead {
+  border: 2px solid #ffaa00;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
+}
+
+.car-behind.lap-behind {
+  border: 2px solid #0099ff;
+  box-shadow: 0 0 6px rgba(0, 153, 255, 0.6);
+}
+
+/* Track SVG styling adjustments */
+#trackSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .driverdot {
+    width: 6px !important;
+    height: 6px !important;
+  }
+  
+  .car-player {
+    width: 8px !important;
+    height: 8px !important;
+  }
+}
+
+/* High DPI display adjustments */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .driverdot {
+    border-width: 0.5px;
+  }
+  
+  .car-player {
+    border-width: 1px;
+  }
+}
+
+/* Loading states */
+.track-overlay-container.loading::after {
+  content: "Loading track...";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 18px;
+  font-family: 'Orbitron', monospace;
+  z-index: 100;
+}
+
+/* Error states */
+.track-overlay-container.error::after {
+  content: "Failed to load track";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff4444;
+  font-size: 16px;
+  font-family: 'Orbitron', monospace;
+  z-index: 100;
+}
