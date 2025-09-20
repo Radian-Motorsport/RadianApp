@@ -284,22 +284,11 @@ class TrackMapOverlay {
   svgToPixelPosition(svgX, svgY) {
     if (!this.svg) return { x: 0, y: 0 };
     
-    const rect = this.svg.getBoundingClientRect();
-    const svgElement = this.svg;
-    const viewBox = svgElement.viewBox.baseVal;
-    
-    // Create an SVG point and transform it using the current transform matrix
-    const svgPoint = svgElement.createSVGPoint();
-    svgPoint.x = svgX;
-    svgPoint.y = svgY;
-    
-    // Get the screen coordinates after all transforms
-    const screenPoint = svgPoint.matrixTransform(svgElement.getScreenCTM());
-    
-    // Convert to container-relative coordinates
+    // Simply return SVG coordinates - cars are positioned within the same transformed container
+    // The car overlay has the same transform as the SVG, so SVG coords work directly
     return {
-      x: screenPoint.x - rect.left,
-      y: screenPoint.y - rect.top
+      x: svgX,
+      y: svgY
     };
   }
 
