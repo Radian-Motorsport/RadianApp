@@ -129,6 +129,19 @@
   height: 100%;
 }
 
+/* Track surface styling - matches Ring VLN Interactive.html */
+.track-surface {
+  fill: none;
+  stroke-miterlimit: 10;
+  stroke: #f4f4f5;
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.track-surface:active {
+  cursor: grabbing;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .driverdot {
