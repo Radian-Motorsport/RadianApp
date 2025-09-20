@@ -126,6 +126,41 @@ class TrackMap {
         defaultTranslateY = parseFloat(resetViewMatch[3]);
       }
       
+      // Extract the actual start/finish marker from the SVG
+      let startFinishMarker = null;
+      const circleElement = doc.querySelector('circle[style*="ff0000"]');
+      
+      if (circleElement) {
+        // Extract circle properties
+        const cx = parseFloat(circleElement.getAttribute('cx')) || 0;
+        const cy = parseFloat(circleElement.getAttribute('cy')) || 0;
+        const r = parseFloat(circleElement.getAttribute('r')) || 3;
+        const transform = circleElement.getAttribute('transform') || '';
+        const style = circleElement.getAttribute('style') || '';
+        
+        startFinishMarker = {
+          type: 'circle',
+          cx: cx,
+          cy: cy,
+          r: r,
+          transform: transform,
+          style: style,
+          fill: '#ff0000'
+        };
+        
+        console.log('🎯 Extracted start/finish circle:', startFinishMarker);
+      } else {
+        console.warn('⚠️ No start/finish circle found, using default rectangle');
+        startFinishMarker = {
+          type: 'rect',
+          x: 400,
+          y: 300,
+          width: 4,
+          height: 20,
+          fill: '#ff0000'
+        };
+      }
+      
       return {
         id: trackId,
         displayName: trackId === 'ring-vln' ? 'Nürburgring Nordschleife' : 'Indianapolis Road Course',
@@ -135,12 +170,7 @@ class TrackMap {
           height: viewBoxValues[3] || 600,
           viewBox: viewBox,
           trackPath: pathElement.getAttribute('d'),
-          startFinish: {
-            x: 400, // Default center positions
-            y: 300,
-            width: 4,
-            height: 20
-          }
+          startFinish: startFinishMarker
         },
         zoom: {
           defaultZoom: defaultZoom,
@@ -204,13 +234,33 @@ class TrackMap {
     this.trackPath.setAttribute('stroke', '#ffffff');
     this.trackPath.setAttribute('stroke-width', '1.14643');
     
-    // Create start/finish line with track-specific position
-    this.startFinishRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    this.startFinishRect.setAttribute('x', this.currentTrackData.svg.startFinish.x.toString());
-    this.startFinishRect.setAttribute('y', this.currentTrackData.svg.startFinish.y.toString());
-    this.startFinishRect.setAttribute('width', this.currentTrackData.svg.startFinish.width.toString());
-    this.startFinishRect.setAttribute('height', this.currentTrackData.svg.startFinish.height.toString());
-    this.startFinishRect.setAttribute('fill', '#ff0000');
+    // Create start/finish marker with actual data from track file
+    const startFinishData = this.currentTrackData.svg.startFinish;
+    
+    if (startFinishData.type === 'circle') {
+      // Create circle element using extracted data
+      this.startFinishMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      this.startFinishMarker.setAttribute('cx', startFinishData.cx.toString());
+      this.startFinishMarker.setAttribute('cy', startFinishData.cy.toString());
+      this.startFinishMarker.setAttribute('r', startFinishData.r.toString());
+      this.startFinishMarker.setAttribute('fill', startFinishData.fill);
+      
+      if (startFinishData.transform) {
+        this.startFinishMarker.setAttribute('transform', startFinishData.transform);
+      }
+      
+      console.log('🎯 Created start/finish circle marker at:', startFinishData);
+    } else {
+      // Fallback to rectangle for other tracks
+      this.startFinishMarker = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      this.startFinishMarker.setAttribute('x', startFinishData.x.toString());
+      this.startFinishMarker.setAttribute('y', startFinishData.y.toString());
+      this.startFinishMarker.setAttribute('width', startFinishData.width.toString());
+      this.startFinishMarker.setAttribute('height', startFinishData.height.toString());
+      this.startFinishMarker.setAttribute('fill', startFinishData.fill);
+      
+      console.log('🎯 Created start/finish rectangle marker at:', startFinishData);
+    }
     
     // Create car marker
     this.carMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -265,7 +315,7 @@ class TrackMap {
     
     // Add elements to transform group
     this.trackGroup.appendChild(this.trackPath);
-    this.trackGroup.appendChild(this.startFinishRect);
+    this.trackGroup.appendChild(this.startFinishMarker);
     this.trackGroup.appendChild(this.carMarker);
     this.trackGroup.appendChild(this.carAheadRing);
     this.trackGroup.appendChild(this.carAheadMarker);
