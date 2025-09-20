@@ -87,8 +87,8 @@ class TrackMapOverlay {
       this.trackContainer.className = 'track-overlay-container';
       this.trackContainer.style.cssText = `
         position: relative;
-        width: 800px;
-        height: 600px;
+        width: 1600px;
+        height: 1200px;
         overflow: hidden;
         margin: 0 auto;
       `;
@@ -105,8 +105,8 @@ class TrackMapOverlay {
           position: absolute;
           top: 0;
           left: 0;
-          width: 800px;
-          height: 600px;
+          width: 1600px;
+          height: 1200px;
           z-index: 1;
         `;
         
@@ -162,8 +162,8 @@ class TrackMapOverlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 800px;
-        height: 600px;
+        width: 1600px;
+        height: 1200px;
         pointer-events: none;
         z-index: 10;
         border: 5px solid #00ff00;
@@ -308,34 +308,12 @@ class TrackMapOverlay {
     };
   }
 
-  // Convert SVG coordinates to CSS pixel positions - ACCOUNT FOR TRANSFORM
+  // Convert SVG coordinates to CSS pixel positions - SIMPLE DIRECT MAPPING
   svgToPixelPosition(svgX, svgY) {
-    if (!this.svg || !this.trackPath) {
-      return { x: 400, y: 300 }; // Center fallback
-    }
-    
-    // Account for the track group transform: translate(240, 90) scale(0.96)
-    // The SVG coordinates are already in the transformed space
-    // We need to map them to the 800x600 container
-    
-    // Ring VLN track with transform="translate(240, 90) scale(0.96)" 
-    // means the track is positioned at offset (240,90) and scaled down by 4%
-    
-    // Simple direct mapping - the transform positions the track within the SVG viewBox
-    // Just ensure coordinates stay within container bounds
-    const containerWidth = 800;
-    const containerHeight = 600;
-    
-    // Clamp coordinates to container bounds with small padding
-    const padding = 20;
-    const clampedX = Math.max(padding, Math.min(containerWidth - padding, svgX));
-    const clampedY = Math.max(padding, Math.min(containerHeight - padding, svgY));
-    
-    console.log(`🎯 Coordinate mapping: SVG(${svgX.toFixed(1)}, ${svgY.toFixed(1)}) -> Clamped(${clampedX.toFixed(1)}, ${clampedY.toFixed(1)})`);
-    
+    // Direct 1:1 mapping - no scaling, no transforms
     return {
-      x: clampedX,
-      y: clampedY
+      x: svgX,
+      y: svgY
     };
   }
 
