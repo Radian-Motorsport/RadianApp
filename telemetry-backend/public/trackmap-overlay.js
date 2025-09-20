@@ -131,12 +131,24 @@ class TrackMapOverlay {
         
         // Find track path for coordinate calculations
         this.trackPath = this.svg.querySelector('.track-surface');
+        if (!this.trackPath) {
+          // Try alternative selectors
+          this.trackPath = this.svg.querySelector('path.track-surface') || 
+                          this.svg.querySelector('path[class*="track"]') ||
+                          this.svg.querySelector('path');
+          console.log('🔍 Trying alternative path selectors...');
+        }
+        
         if (this.trackPath) {
           this.pathLength = this.trackPath.getTotalLength();
           console.log(`✅ Track path loaded, length: ${this.pathLength.toFixed(0)} units`);
           
           // Position the start/finish marker at 93% offset (Ring VLN configuration)
           this.positionStartFinishMarker();
+        } else {
+          console.error('❌ Track path not found in SVG - checking all paths:');
+          const allPaths = this.svg.querySelectorAll('path');
+          console.log(`Found ${allPaths.length} path elements:`, Array.from(allPaths).map(p => p.className.baseVal || p.getAttribute('class')));
         }
       } else {
         throw new Error('Could not find track SVG in source file');
@@ -167,6 +179,11 @@ class TrackMapOverlay {
       this.createCarMarkers();
       
       // Default fallback positions when no telemetry data
+      console.log('🔥 Setting fallback positions...');
+      console.log('playerCar element:', this.playerCar);
+      console.log('carAhead element:', this.carAhead);
+      console.log('carBehind element:', this.carBehind);
+      
       this.updateCarPosition(5, 'player');   // Player at 5%
       this.updateCarPosition(5, 'ahead');    // Car ahead at 5%  
       this.updateCarPosition(5, 'behind');   // Car behind at 5%
@@ -264,7 +281,7 @@ class TrackMapOverlay {
   getTrackPosition(lapPercent) {
     if (!this.trackPath || !this.pathLength) {
       console.log('❌ getTrackPosition FAILED: trackPath:', !!this.trackPath, 'pathLength:', this.pathLength);
-      return { x: 0, y: 0 };
+      return { x: 100, y: 100 }; // Return visible position instead of 0,0
     }
     console.log('✅ getTrackPosition OK: trackPath exists, pathLength:', this.pathLength);
     
