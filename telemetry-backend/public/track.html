@@ -2,17 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial      // Handle track switching
-      async function switchTrack() {
-        const selectedTrackId = trackSelector.value;
-        if (selectedTrackId !== currentTrackId) {
-          console.log(`🏁 User switching track from ${currentTrackId} to ${selectedTrackId}`);
-          await initTrackMap(selectedTrackId);
-          
-          // Save track preference
-          localStorage.setItem('selectedTrack', selectedTrackId);
-        }
-      } />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Track Map - Radian</title>
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
