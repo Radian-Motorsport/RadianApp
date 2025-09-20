@@ -166,6 +166,8 @@ class TrackMapOverlay {
         height: 600px;
         pointer-events: none;
         z-index: 10;
+        border: 5px solid #00ff00;
+        box-sizing: border-box;
       `;
       
       // Assemble the track display
