@@ -1,58 +1,34 @@
 // telemetry.js - Handles all telemetry data processing and display updates
 
 // Socket.io connection to production server
-let socket = null;
+const socket = io('https://radianapp.onrender.com');
 
-// Initialize socket when io is available
-function initializeSocket() {
-  if (typeof io !== 'undefined') {
-    socket = io('https://radianapp.onrender.com');
-    window.socket = socket;
-    
-    // Add immediate socket connection debugging
-    socket.on('connect', () => {
-      console.log('🔗 SOCKET CONNECTED to server!');
-      console.log('🔗 Socket ID:', socket.id);
-    });
+// Make socket globally accessible immediately
+window.socket = socket;
 
-    socket.on('disconnect', () => {
-      console.log('❌ SOCKET DISCONNECTED from server!');
-    });
+// Add immediate socket connection debugging
+socket.on('connect', () => {
+  console.log('🔗 SOCKET CONNECTED to server!');
+  console.log('🔗 Socket ID:', socket.id);
+});
 
-    socket.on('connect_error', (error) => {
-      console.error('❌ SOCKET CONNECTION ERROR:', error);
-    });
-    
-    // Setup event handlers
-    setupSocketEventHandlers();
-  } else {
-    console.warn('Socket.io not loaded yet, retrying...');
-    setTimeout(initializeSocket, 100);
-  }
-}
+socket.on('disconnect', () => {
+  console.log('❌ SOCKET DISCONNECTED from server!');
+});
 
-// Try to initialize immediately or wait for io to be available
-if (typeof io !== 'undefined') {
-  initializeSocket();
-} else {
-  // Wait for io to be loaded from socket.io script
-  document.addEventListener('DOMContentLoaded', initializeSocket);
-}
+socket.on('connect_error', (error) => {
+  console.error('❌ SOCKET CONNECTION ERROR:', error);
+});
 
-// Initialize socket event handlers after socket is created
-function setupSocketEventHandlers() {
-  if (!socket) return;
-  
-  // Test if we're receiving ANY events from server
-  socket.onAny((eventName, ...args) => {
-    console.log(`📡 RECEIVED EVENT: ${eventName}`, args);
-  });
+// Test if we're receiving ANY events from server
+socket.onAny((eventName, ...args) => {
+  console.log(`📡 RECEIVED EVENT: ${eventName}`, args);
+});
 
-  // Add a simple test listener
-  socket.on('sessionInfo', (data) => {
-    console.log('🚨 BASIC sessionInfo listener triggered!', data);
-  });
-}
+// Add a simple test listener
+socket.on('sessionInfo', (data) => {
+  console.log('🚨 BASIC sessionInfo listener triggered!', data);
+});
 
 // Make elements globally accessible and ensure it's always an object
 window.elements = window.elements || {};

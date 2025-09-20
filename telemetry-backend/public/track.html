@@ -16,12 +16,6 @@
   <title>Track Map - Radian</title>
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // Fallback to CDN if socket.io didn't load
-    if (typeof io === 'undefined') {
-      document.write('<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"><\/script>');
-    }
-  </script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -43,7 +37,7 @@
       <button id="switchTrackBtn" style="margin-left: 10px; padding: 5px 15px; border-radius: 4px; border: 1px solid #555; background-color: #444; color: #ffffff; cursor: pointer;">Switch Track</button>
     </div>
     
-    <div id="trackContainer"></div>
+    <div id="trackContainer" style="width: 100%; height: 600px; border: 2px solid #444; border-radius: 8px; background-color: #1a1a1a; overflow: hidden;"></div>
 
     <!-- Track Info Boxes (Weather-style grid) -->
     <div class="track-info-grid weather-style-grid">
@@ -117,18 +111,14 @@
       
       // Wait for socket to be available from telemetry.js
       async function initTrackMap(trackId = currentTrackId) {
-        // Check if socket is available from telemetry.js or window
-        const socketToUse = (typeof socket !== 'undefined' && socket) ? socket : 
-                           (typeof window.socket !== 'undefined' && window.socket) ? window.socket : null;
-        
-        if (socketToUse) {
+        if (typeof socket !== 'undefined' && socket) {
           // If trackMap already exists, we're switching tracks
           if (window.trackMap) {
             await window.trackMap.switchTrack(trackId);
             console.log(`TrackMap switched to: ${trackId}`);
           } else {
             // Initial initialization
-            window.trackMap = new TrackMap(socketToUse, 'trackContainer', trackId);
+            window.trackMap = new TrackMap(socket, 'trackContainer', trackId);
             console.log('TrackMap initialized successfully');
           }
           currentTrackId = trackId;
