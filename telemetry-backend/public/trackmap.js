@@ -91,7 +91,8 @@ class TrackMap {
     
     try {
       console.log(`🏁 Loading track data from ${fileName}`);
-      const response = await fetch(fileName);
+      const encodedFileName = encodeURIComponent(fileName);
+      const response = await fetch(encodedFileName);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }

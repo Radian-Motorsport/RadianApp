@@ -16,6 +16,12 @@
   <title>Track Map - Radian</title>
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Fallback to CDN if socket.io didn't load
+    if (typeof io === 'undefined') {
+      document.write('<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"><\/script>');
+    }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -111,14 +117,18 @@
       
       // Wait for socket to be available from telemetry.js
       async function initTrackMap(trackId = currentTrackId) {
-        if (typeof socket !== 'undefined' && socket) {
+        // Check if socket is available from telemetry.js or window
+        const socketToUse = (typeof socket !== 'undefined' && socket) ? socket : 
+                           (typeof window.socket !== 'undefined' && window.socket) ? window.socket : null;
+        
+        if (socketToUse) {
           // If trackMap already exists, we're switching tracks
           if (window.trackMap) {
             await window.trackMap.switchTrack(trackId);
             console.log(`TrackMap switched to: ${trackId}`);
           } else {
             // Initial initialization
-            window.trackMap = new TrackMap(socket, 'trackContainer', trackId);
+            window.trackMap = new TrackMap(socketToUse, 'trackContainer', trackId);
             console.log('TrackMap initialized successfully');
           }
           currentTrackId = trackId;
