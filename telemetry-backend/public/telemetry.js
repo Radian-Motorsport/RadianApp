@@ -1020,11 +1020,11 @@ function setupSocketListeners() {
       const isOnTrack = values?.IsOnTrack;
       
       // Track incidents if available in telemetry
-      if (driverWasOnTrack && values.PlayerCarMyIncidentCount !== undefined) {
+      if (driverWasOnTrack && values.PlayerCarDriverIncidentCount !== undefined) {
         // Check if incident count increased
-        const currentIncidents = values.PlayerCarMyIncidentCount;
-        if (bufferedData && currentIncidents > bufferedData.values.PlayerCarMyIncidentCount) {
-          stintIncidentCount += (currentIncidents - bufferedData.values.PlayerCarMyIncidentCount);
+        const currentIncidents = values.PlayerCarDriverIncidentCount;
+        if (bufferedData && currentIncidents > bufferedData.values.PlayerCarDriverIncidentCount) {
+          stintIncidentCount += (currentIncidents - bufferedData.values.PlayerCarDriverIncidentCount);
         }
       }
       
