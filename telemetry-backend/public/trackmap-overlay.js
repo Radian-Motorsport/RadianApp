@@ -359,30 +359,69 @@ class TrackMapOverlay {
   setupSocketListeners() {
     if (!this.socket) return;
     
+    // Store car data
+    this.carIdxLapDistPct = null; // Array of all car lap distances
+    this.carAheadIdx = null;      // Index of car ahead
+    this.carBehindIdx = null;     // Index of car behind
+    this.playerCarIdx = null;     // Player's car index
+    
     this.socket.on('telemetryData', (data) => {
-      // Update player car position
-      if (data.LapDistPct !== undefined) {
-        const lapPercent = data.LapDistPct * 100; // Convert 0-1 to 0-100
-        this.updateCarPosition(lapPercent, 'player');
+      // Update car position arrays and player car position
+      if (data.values) {
+        const values = data.values;
+        
+        // Store all car positions
+        if (values.CarIdxLapDistPct !== undefined) {
+          this.carIdxLapDistPct = values.CarIdxLapDistPct;
+        }
+        
+        // Update player car position
+        if (values.LapDistPct !== undefined) {
+          const lapPercent = values.LapDistPct * 100; // Convert 0-1 to 0-100
+          this.updateCarPosition(lapPercent, 'player');
+        }
+        
+        // Store player car index for reference
+        if (values.PlayerCarIdx !== undefined) {
+          this.playerCarIdx = values.PlayerCarIdx;
+        }
       }
+      
+      // Update other cars based on car indices and position data
+      this.updateOtherCarPositions();
     });
     
     this.socket.on('sessionData', (data) => {
-      // Handle car ahead/behind positioning
-      if (data.CarAhead && data.CarAhead.LapDistPct !== undefined) {
-        const aheadLapPercent = data.CarAhead.LapDistPct * 100;
-        this.updateCarPosition(aheadLapPercent, 'ahead');
-      } else {
-        this.hideCarMarker('ahead');
+      // Handle car ahead/behind indices if available in session data
+      if (data && data.CarAhead) {
+        this.carAheadIdx = data.CarAhead.CarIdx;
       }
       
-      if (data.CarBehind && data.CarBehind.LapDistPct !== undefined) {
-        const behindLapPercent = data.CarBehind.LapDistPct * 100;
-        this.updateCarPosition(behindLapPercent, 'behind');
-      } else {
-        this.hideCarMarker('behind');
+      if (data && data.CarBehind) {
+        this.carBehindIdx = data.CarBehind.CarIdx;
       }
     });
+  }
+
+  // Update positions of cars ahead and behind based on telemetry arrays
+  updateOtherCarPositions() {
+    if (!this.carIdxLapDistPct) return;
+    
+    // Update car ahead
+    if (this.carAheadIdx !== null && this.carIdxLapDistPct[this.carAheadIdx] !== undefined) {
+      const aheadLapPct = this.carIdxLapDistPct[this.carAheadIdx] * 100; // Convert to percentage
+      this.updateCarPosition(aheadLapPct, 'ahead');
+    } else {
+      this.hideCarMarker('ahead');
+    }
+    
+    // Update car behind  
+    if (this.carBehindIdx !== null && this.carIdxLapDistPct[this.carBehindIdx] !== undefined) {
+      const behindLapPct = this.carIdxLapDistPct[this.carBehindIdx] * 100; // Convert to percentage
+      this.updateCarPosition(behindLapPct, 'behind');
+    } else {
+      this.hideCarMarker('behind');
+    }
   }
 
   // Switch to different track
@@ -398,6 +437,12 @@ class TrackMapOverlay {
       this.socket.off('telemetryData');
       this.socket.off('sessionData');
     }
+    
+    // Clear car data
+    this.carIdxLapDistPct = null;
+    this.carAheadIdx = null;
+    this.carBehindIdx = null;
+    this.playerCarIdx = null;
     
     if (this.container) {
       this.container.innerHTML = '';
