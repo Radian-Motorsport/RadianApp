@@ -166,6 +166,15 @@ class TrackMapOverlay {
       // Create car markers
       this.createCarMarkers();
       
+      // FORCE TEST CAR TO SHOW
+      setTimeout(() => {
+        if (this.playerCar) {
+          this.playerCar.style.transform = 'translate(200px, 200px)';
+          this.playerCar.style.display = 'block';
+          console.log('🔴 FORCED TEST CAR AT 200,200');
+        }
+      }, 1000);
+      
       console.log('✅ Track loaded with HTML overlay system');
       
     } catch (error) {
