@@ -246,13 +246,15 @@
         
         function resetView() {
             currentZoom = 0.96;
-            // Center track coordinates)
+            // Center track coordinates
             currentTranslateX = 240;
             currentTranslateY = 90;
             updateTransform();
         }
         
         function updateTransform() {
+            if (!trackGroup || !zoomLevelSpan) return;
+            
             trackGroup.setAttribute('transform', 
                 `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentZoom})`);
             zoomLevelSpan.textContent = Math.round(currentZoom * 100) + '%';
@@ -292,6 +294,8 @@
         });
         
         function updateCoordinates(e) {
+            if (!coordinatesDisplay) return;
+            
             const rect = svg.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
