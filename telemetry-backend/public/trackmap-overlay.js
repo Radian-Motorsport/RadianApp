@@ -87,9 +87,10 @@ class TrackMapOverlay {
       this.trackContainer.className = 'track-overlay-container';
       this.trackContainer.style.cssText = `
         position: relative;
-        width: 100%;
-        height: 100%;
+        width: 800px;
+        height: 600px;
         overflow: hidden;
+        margin: 0 auto;
       `;
       
       // Parse HTML and extract SVG
@@ -104,8 +105,8 @@ class TrackMapOverlay {
           position: absolute;
           top: 0;
           left: 0;
-          width: 100%;
-          height: 100%;
+          width: 800px;
+          height: 600px;
           z-index: 1;
         `;
         
@@ -161,8 +162,8 @@ class TrackMapOverlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        width: 800px;
+        height: 600px;
         pointer-events: none;
         z-index: 10;
       `;
@@ -307,30 +308,12 @@ class TrackMapOverlay {
     };
   }
 
-  // Convert SVG coordinates to CSS pixel positions
+  // Convert SVG coordinates to CSS pixel positions - SIMPLIFIED 1:1 mapping
   svgToPixelPosition(svgX, svgY) {
-    if (!this.svg) return { x: 0, y: 0 };
-    
-    // Get the actual rendered size of the container
-    const containerRect = this.container.getBoundingClientRect();
-    const svgRect = this.svg.getBoundingClientRect();
-    
-    // Calculate the scale factor from SVG viewBox to actual rendered size
-    const viewBox = this.svg.viewBox.baseVal;
-    const scaleX = svgRect.width / viewBox.width;
-    const scaleY = svgRect.height / viewBox.height;
-    
-    // Convert SVG coordinates to screen coordinates
-    const screenX = (svgX - viewBox.x) * scaleX;
-    const screenY = (svgY - viewBox.y) * scaleY;
-    
-    // Add the offset of the SVG within the container
-    const offsetX = svgRect.left - containerRect.left;
-    const offsetY = svgRect.top - containerRect.top;
-    
+    // Since both SVG and overlay are now 800x600, coordinates map directly
     return {
-      x: screenX + offsetX,
-      y: screenY + offsetY
+      x: svgX,
+      y: svgY
     };
   }
 
