@@ -194,17 +194,22 @@ class TrackMapOverlay {
     dot.className = `driverdot car-${type}`;
     dot.style.cssText = `
       position: absolute;
-      width: 8px;
-      height: 8px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background-color: ${color};
-      border: 1px solid #ffffff;
-      opacity: 0.9;
-      transform: translate(-50%, -50%);
+      border: 2px solid #000000;
+      font-size: 8px;
+      text-align: center;
+      line-height: 10px;
+      color: #000000;
+      margin-left: -7px;
+      margin-top: -7px;
       display: none;
       z-index: 20;
     `;
     dot.title = title;
+    dot.textContent = type === 'player' ? 'P' : (type === 'ahead' ? 'A' : 'B');
     
     return dot;
   }
@@ -324,9 +329,8 @@ class TrackMapOverlay {
     // Convert to pixel position
     const pixelPos = this.svgToPixelPosition(trackPos.x, trackPos.y);
     
-    // Apply position and show
-    carElement.style.left = `${pixelPos.x}px`;
-    carElement.style.top = `${pixelPos.y}px`;
+    // Apply position using transform translate (same as Ring VLN source)
+    carElement.style.transform = `translate(${pixelPos.x}px, ${pixelPos.y}px)`;
     carElement.style.display = 'block';
     
     // Debug logging for player car
@@ -373,17 +377,20 @@ class TrackMapOverlay {
         // Store all car positions
         if (values.CarIdxLapDistPct !== undefined) {
           this.carIdxLapDistPct = values.CarIdxLapDistPct;
+          console.log('🏁 CarIdxLapDistPct received:', values.CarIdxLapDistPct);
         }
         
         // Update player car position
         if (values.LapDistPct !== undefined) {
           const lapPercent = values.LapDistPct * 100; // Convert 0-1 to 0-100
+          console.log('🚗 Player LapDistPct:', values.LapDistPct, '-> lapPercent:', lapPercent);
           this.updateCarPosition(lapPercent, 'player');
         }
         
         // Store player car index for reference
         if (values.PlayerCarIdx !== undefined) {
           this.playerCarIdx = values.PlayerCarIdx;
+          console.log('👤 PlayerCarIdx:', values.PlayerCarIdx);
         }
       }
       
