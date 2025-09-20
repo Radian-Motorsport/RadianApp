@@ -214,7 +214,7 @@ class TrackMapOverlay {
       color: #000000;
       margin-left: -7px;
       margin-top: -7px;
-      display: none;
+      display: block;
       z-index: 20;
     `;
     dot.title = title;
