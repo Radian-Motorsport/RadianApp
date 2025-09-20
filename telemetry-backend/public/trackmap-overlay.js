@@ -178,6 +178,9 @@ class TrackMapOverlay {
       // Create car markers
       this.createCarMarkers();
       
+      // Position test car at known location
+      this.updateCarPosition(7, 'player');
+      
       // Default fallback positions when no telemetry data
       console.log('🔥 Setting fallback positions...');
       console.log('playerCar element:', this.playerCar);
@@ -280,22 +283,13 @@ class TrackMapOverlay {
   // Convert lap percentage to SVG coordinates
   getTrackPosition(lapPercent) {
     if (!this.trackPath || !this.pathLength) {
-      console.log('❌ getTrackPosition FAILED: trackPath:', !!this.trackPath, 'pathLength:', this.pathLength);
-      return { x: 100, y: 100 }; // Return visible position instead of 0,0
+      return { x: 400, y: 300 }; // Return center position
     }
-    console.log('✅ getTrackPosition OK: trackPath exists, pathLength:', this.pathLength);
     
-    // TRACK CONFIGURATION 4: Start/Finish line offsets (must match configuration 3)
-    // This MUST be identical to the trackOffsets in positionStartFinishMarker()
-    // to ensure cars position correctly relative to the start/finish marker
+    // Track start/finish offsets
     const trackOffsets = {
-      'ring-vln': 0.93,        // Nürburgring VLN - 93% around the raw path
-      'indianapolis-road': 0.0  // Indianapolis - start of path is start/finish
-      // TODO: Add future track offsets here (COPY from positionStartFinishMarker), e.g.:
-      // 'spa-francorchamps': 0.0,  // Most tracks use 0.0
-      // 'monza': 0.0,
-      // 'silverstone': 0.0,
-      // 'watkins-glen': 0.15       // Example: 15% offset if needed
+      'ring-vln': 0.93,
+      'indianapolis-road': 0.0
     };
     
     const startFinishOffset = trackOffsets[this.currentTrackId] || 0.0;
@@ -317,11 +311,26 @@ class TrackMapOverlay {
   svgToPixelPosition(svgX, svgY) {
     if (!this.svg) return { x: 0, y: 0 };
     
-    // Simply return SVG coordinates - cars are positioned within the same transformed container
-    // The car overlay has the same transform as the SVG, so SVG coords work directly
+    // Get the actual rendered size of the container
+    const containerRect = this.container.getBoundingClientRect();
+    const svgRect = this.svg.getBoundingClientRect();
+    
+    // Calculate the scale factor from SVG viewBox to actual rendered size
+    const viewBox = this.svg.viewBox.baseVal;
+    const scaleX = svgRect.width / viewBox.width;
+    const scaleY = svgRect.height / viewBox.height;
+    
+    // Convert SVG coordinates to screen coordinates
+    const screenX = (svgX - viewBox.x) * scaleX;
+    const screenY = (svgY - viewBox.y) * scaleY;
+    
+    // Add the offset of the SVG within the container
+    const offsetX = svgRect.left - containerRect.left;
+    const offsetY = svgRect.top - containerRect.top;
+    
     return {
-      x: svgX,
-      y: svgY
+      x: screenX + offsetX,
+      y: screenY + offsetY
     };
   }
 
@@ -343,30 +352,24 @@ class TrackMapOverlay {
         return;
     }
     
-    console.log(`🔥 updateCarPosition called: ${carType}, lapPercent: ${lapPercent}, carElement:`, carElement);
-    
     if (!carElement) {
-      console.log(`❌ No car element for ${carType}`);
       return;
     }
     
     // Get SVG track position
     const trackPos = this.getTrackPosition(lapPercent);
-    console.log(`🔥 trackPos:`, trackPos);
     
-    // Convert to pixel position
+    // Convert to pixel position with proper transforms
     const pixelPos = this.svgToPixelPosition(trackPos.x, trackPos.y);
-    console.log(`🔥 pixelPos:`, pixelPos);
     
-    // Apply position using transform translate (same as Ring VLN source)
-    carElement.style.transform = `translate(${pixelPos.x}px, ${pixelPos.y}px)`;
+    // Position the car with absolute positioning
+    carElement.style.left = pixelPos.x + 'px';
+    carElement.style.top = pixelPos.y + 'px';
     carElement.style.display = 'block';
     
-    console.log(`🔥 Car ${carType} positioned at transform: translate(${pixelPos.x}px, ${pixelPos.y}px)`);
-    
-    // Debug logging for player car
+    // Show position for player car
     if (carType === 'player') {
-      console.log(`🚗 Car position: ${lapPercent.toFixed(1)}% -> SVG(${trackPos.x.toFixed(1)}, ${trackPos.y.toFixed(1)}) -> Pixel(${pixelPos.x.toFixed(1)}, ${pixelPos.y.toFixed(1)})`);
+      console.log(`🚗 Player car: ${lapPercent.toFixed(1)}% -> (${pixelPos.x.toFixed(0)}, ${pixelPos.y.toFixed(0)})`);
     }
   }
 
