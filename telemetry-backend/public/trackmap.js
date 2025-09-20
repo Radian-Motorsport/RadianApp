@@ -793,53 +793,53 @@ class TrackMap {
   
   updateCarInfo(carIdx, elements) {
     if (carIdx === null) {
-      // Clear all elements
-      elements.driver.textContent = '--';
-      elements.car.textContent = '--';
-      elements.position.textContent = '--';
-      elements.classPos.textContent = '--';
-      elements.laps.textContent = '--';
-      elements.lastLap.textContent = '--:--';
-      elements.bestLap.textContent = '--:--';
+      // Clear all elements (with null checks)
+      if (elements.driver) elements.driver.textContent = '--';
+      if (elements.car) elements.car.textContent = '--';
+      if (elements.position) elements.position.textContent = '--';
+      if (elements.classPos) elements.classPos.textContent = '--';
+      if (elements.laps) elements.laps.textContent = '--';
+      if (elements.lastLap) elements.lastLap.textContent = '--:--';
+      if (elements.bestLap) elements.bestLap.textContent = '--:--';
       return;
     }
     
     // Get driver and car info
     const driverInfo = this.getDriverInfo(carIdx);
-    elements.driver.textContent = driverInfo.driverName;
-    elements.car.textContent = driverInfo.carName;
+    if (elements.driver) elements.driver.textContent = driverInfo.driverName;
+    if (elements.car) elements.car.textContent = driverInfo.carName;
     
     // Position info
     if (this.carIdxPosition && this.carIdxPosition[carIdx] !== undefined) {
-      elements.position.textContent = this.carIdxPosition[carIdx].toString();
+      if (elements.position) elements.position.textContent = this.carIdxPosition[carIdx].toString();
     } else {
-      elements.position.textContent = '--';
+      if (elements.position) elements.position.textContent = '--';
     }
     
     if (this.carIdxClassPosition && this.carIdxClassPosition[carIdx] !== undefined) {
-      elements.classPos.textContent = this.carIdxClassPosition[carIdx].toString();
+      if (elements.classPos) elements.classPos.textContent = this.carIdxClassPosition[carIdx].toString();
     } else {
-      elements.classPos.textContent = '--';
+      if (elements.classPos) elements.classPos.textContent = '--';
     }
     
     // Lap info
     if (this.carIdxLapCompleted && this.carIdxLapCompleted[carIdx] !== undefined) {
-      elements.laps.textContent = this.carIdxLapCompleted[carIdx].toString();
+      if (elements.laps) elements.laps.textContent = this.carIdxLapCompleted[carIdx].toString();
     } else {
-      elements.laps.textContent = '--';
+      if (elements.laps) elements.laps.textContent = '--';
     }
     
     // Lap times
     if (this.carIdxLastLapTime && this.carIdxLastLapTime[carIdx] !== undefined) {
-      elements.lastLap.textContent = this.formatLapTime(this.carIdxLastLapTime[carIdx]);
+      if (elements.lastLap) elements.lastLap.textContent = this.formatLapTime(this.carIdxLastLapTime[carIdx]);
     } else {
-      elements.lastLap.textContent = '--:--';
+      if (elements.lastLap) elements.lastLap.textContent = '--:--';
     }
     
     if (this.carIdxBestLapTime && this.carIdxBestLapTime[carIdx] !== undefined) {
-      elements.bestLap.textContent = this.formatLapTime(this.carIdxBestLapTime[carIdx]);
+      if (elements.bestLap) elements.bestLap.textContent = this.formatLapTime(this.carIdxBestLapTime[carIdx]);
     } else {
-      elements.bestLap.textContent = '--:--';
+      if (elements.bestLap) elements.bestLap.textContent = '--:--';
     }
   }
   
@@ -915,7 +915,7 @@ class TrackMap {
   }
 
   cacheInfoElements() {
-    // Car ahead elements
+    // Car ahead elements (with null checks)
     this.carAheadDriver = document.getElementById('carAheadDriver');
     this.carAheadCar = document.getElementById('carAheadCar');
     this.carAheadPosition = document.getElementById('carAheadPosition');
@@ -924,7 +924,7 @@ class TrackMap {
     this.carAheadLastLap = document.getElementById('carAheadLastLap');
     this.carAheadBestLap = document.getElementById('carAheadBestLap');
     
-    // Car behind elements
+    // Car behind elements (with null checks)
     this.carBehindDriver = document.getElementById('carBehindDriver');
     this.carBehindCar = document.getElementById('carBehindCar');
     this.carBehindPosition = document.getElementById('carBehindPosition');
@@ -933,7 +933,7 @@ class TrackMap {
     this.carBehindLastLap = document.getElementById('carBehindLastLap');
     this.carBehindBestLap = document.getElementById('carBehindBestLap');
     
-    // Player elements
+    // Player elements (with null checks)
     this.playerPositionElement = document.getElementById('playerPosition');
     this.classPositionElement = document.getElementById('classPosition');
     this.playerLapsElement = document.getElementById('playerLaps');
