@@ -166,6 +166,11 @@ class TrackMapOverlay {
       // Create car markers
       this.createCarMarkers();
       
+      // Default fallback positions when no telemetry data
+      this.updateCarPosition(5, 'player');   // Player at 5%
+      this.updateCarPosition(5, 'ahead');    // Car ahead at 5%  
+      this.updateCarPosition(5, 'behind');   // Car behind at 5%
+      
       // FORCE TEST CAR TO SHOW
       setTimeout(() => {
         if (this.playerCar) {
@@ -321,17 +326,26 @@ class TrackMapOverlay {
         return;
     }
     
-    if (!carElement) return;
+    console.log(`🔥 updateCarPosition called: ${carType}, lapPercent: ${lapPercent}, carElement:`, carElement);
+    
+    if (!carElement) {
+      console.log(`❌ No car element for ${carType}`);
+      return;
+    }
     
     // Get SVG track position
     const trackPos = this.getTrackPosition(lapPercent);
+    console.log(`🔥 trackPos:`, trackPos);
     
     // Convert to pixel position
     const pixelPos = this.svgToPixelPosition(trackPos.x, trackPos.y);
+    console.log(`🔥 pixelPos:`, pixelPos);
     
     // Apply position using transform translate (same as Ring VLN source)
     carElement.style.transform = `translate(${pixelPos.x}px, ${pixelPos.y}px)`;
     carElement.style.display = 'block';
+    
+    console.log(`🔥 Car ${carType} positioned at transform: translate(${pixelPos.x}px, ${pixelPos.y}px)`);
     
     // Debug logging for player car
     if (carType === 'player') {
@@ -377,13 +391,11 @@ class TrackMapOverlay {
         // Store all car positions
         if (values.CarIdxLapDistPct !== undefined) {
           this.carIdxLapDistPct = values.CarIdxLapDistPct;
-          console.log('🏁 CarIdxLapDistPct received:', values.CarIdxLapDistPct);
         }
         
         // Update player car position
         if (values.LapDistPct !== undefined) {
           const lapPercent = values.LapDistPct * 100; // Convert 0-1 to 0-100
-          console.log('🚗 Player LapDistPct:', values.LapDistPct, '-> lapPercent:', lapPercent);
           this.updateCarPosition(lapPercent, 'player');
         }
         
