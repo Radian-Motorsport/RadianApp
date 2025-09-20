@@ -1023,7 +1023,7 @@ function setupSocketListeners() {
       if (driverWasOnTrack && values.PlayerCarDriverIncidentCount !== undefined) {
         // Check if incident count increased
         const currentIncidents = values.PlayerCarDriverIncidentCount;
-        if (bufferedData && currentIncidents > bufferedData.values.PlayerCarDriverIncidentCount) {
+        if (bufferedData && bufferedData.values && currentIncidents > bufferedData.values.PlayerCarDriverIncidentCount) {
           stintIncidentCount += (currentIncidents - bufferedData.values.PlayerCarDriverIncidentCount);
         }
       }
@@ -1373,7 +1373,7 @@ window.telemetryDashboard = {
       ? stintLapCounts.reduce((a, b) => a + b, 0) / stintLapCounts.length 
       : 0,
     currentStintLapCount: lastStintStartLap && bufferedData?.values?.CarIdxLapCompleted?.[bufferedData?.values?.PlayerCarIdx]
-      ? bufferedData.values.CarIdxLapCompleted[bufferedData.values.PlayerCarIdx] - lastStintStartLap
+      ? bufferedData?.values?.CarIdxLapCompleted?.[bufferedData?.values?.PlayerCarIdx] - lastStintStartLap
       : 0
   }),
   // Export reset function for use in index.html
