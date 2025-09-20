@@ -240,8 +240,6 @@ class TrackMapOverlay {
       text-align: center;
       line-height: 10px;
       color: #000000;
-      margin-left: -7px;
-      margin-top: -7px;
       display: block;
       z-index: 20;
     `;
@@ -310,13 +308,31 @@ class TrackMapOverlay {
     };
   }
 
-  // Convert SVG coordinates to CSS pixel positions - SIMPLIFIED 1:1 mapping
+  // Convert SVG coordinates to CSS pixel positions - PROPER SCALING
   svgToPixelPosition(svgX, svgY) {
-    // Since both SVG and overlay are now 800x600, coordinates map directly
-    // NO CONVERSION NEEDED - DIRECT MAPPING
+    if (!this.svg || !this.trackPath) {
+      return { x: 400, y: 300 }; // Center fallback
+    }
+    
+    // Get the actual bounds of the SVG content
+    const bbox = this.trackPath.getBBox();
+    
+    // Scale and translate to fit within 800x600 container with padding
+    const padding = 50; // Leave 50px border
+    const availableWidth = 800 - (padding * 2);
+    const availableHeight = 600 - (padding * 2);
+    
+    const scaleX = availableWidth / bbox.width;
+    const scaleY = availableHeight / bbox.height;
+    const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
+    
+    // Transform coordinates
+    const scaledX = (svgX - bbox.x) * scale + padding;
+    const scaledY = (svgY - bbox.y) * scale + padding;
+    
     return {
-      x: svgX,
-      y: svgY
+      x: scaledX,
+      y: scaledY
     };
   }
 
@@ -345,14 +361,17 @@ class TrackMapOverlay {
     // Get SVG track position
     const trackPos = this.getTrackPosition(lapPercent);
     
-    // DIRECT positioning - no transforms
-    carElement.style.left = trackPos.x + 'px';
-    carElement.style.top = trackPos.y + 'px';
+    // Scale SVG coordinates to container pixel coordinates
+    const pixelPos = this.svgToPixelPosition(trackPos.x, trackPos.y);
+    
+    // Position the car element
+    carElement.style.left = pixelPos.x + 'px';
+    carElement.style.top = pixelPos.y + 'px';
     carElement.style.display = 'block';
     
     // Show position for player car
     if (carType === 'player') {
-      console.log(`🚗 Player car RAW SVG: ${lapPercent.toFixed(1)}% -> (${trackPos.x.toFixed(0)}, ${trackPos.y.toFixed(0)})`);
+      console.log(`🚗 Player car: ${lapPercent.toFixed(1)}% -> SVG(${trackPos.x.toFixed(0)}, ${trackPos.y.toFixed(0)}) -> Pixel(${pixelPos.x.toFixed(0)}, ${pixelPos.y.toFixed(0)})`);
     }
   }
 
