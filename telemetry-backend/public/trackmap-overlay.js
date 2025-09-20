@@ -308,31 +308,34 @@ class TrackMapOverlay {
     };
   }
 
-  // Convert SVG coordinates to CSS pixel positions - PROPER SCALING
+  // Convert SVG coordinates to CSS pixel positions - ACCOUNT FOR TRANSFORM
   svgToPixelPosition(svgX, svgY) {
     if (!this.svg || !this.trackPath) {
       return { x: 400, y: 300 }; // Center fallback
     }
     
-    // Get the actual bounds of the SVG content
-    const bbox = this.trackPath.getBBox();
+    // Account for the track group transform: translate(240, 90) scale(0.96)
+    // The SVG coordinates are already in the transformed space
+    // We need to map them to the 800x600 container
     
-    // Scale and translate to fit within 800x600 container with padding
-    const padding = 50; // Leave 50px border
-    const availableWidth = 800 - (padding * 2);
-    const availableHeight = 600 - (padding * 2);
+    // Ring VLN track with transform="translate(240, 90) scale(0.96)" 
+    // means the track is positioned at offset (240,90) and scaled down by 4%
     
-    const scaleX = availableWidth / bbox.width;
-    const scaleY = availableHeight / bbox.height;
-    const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
+    // Simple direct mapping - the transform positions the track within the SVG viewBox
+    // Just ensure coordinates stay within container bounds
+    const containerWidth = 800;
+    const containerHeight = 600;
     
-    // Transform coordinates
-    const scaledX = (svgX - bbox.x) * scale + padding;
-    const scaledY = (svgY - bbox.y) * scale + padding;
+    // Clamp coordinates to container bounds with small padding
+    const padding = 20;
+    const clampedX = Math.max(padding, Math.min(containerWidth - padding, svgX));
+    const clampedY = Math.max(padding, Math.min(containerHeight - padding, svgY));
+    
+    console.log(`🎯 Coordinate mapping: SVG(${svgX.toFixed(1)}, ${svgY.toFixed(1)}) -> Clamped(${clampedX.toFixed(1)}, ${clampedY.toFixed(1)})`);
     
     return {
-      x: scaledX,
-      y: scaledY
+      x: clampedX,
+      y: clampedY
     };
   }
 
