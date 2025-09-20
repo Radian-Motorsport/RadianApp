@@ -105,8 +105,8 @@ class TrackMapOverlay {
           position: absolute;
           top: 0;
           left: 0;
-          width: 1600px;
-          height: 1200px;
+          width: 400px;
+          height: 300px;
           z-index: 1;
         `;
         
@@ -162,8 +162,8 @@ class TrackMapOverlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 1600px;
-        height: 1200px;
+        width: 400px;
+        height: 300px;
         pointer-events: none;
         z-index: 10;
         border: 5px solid #00ff00;
