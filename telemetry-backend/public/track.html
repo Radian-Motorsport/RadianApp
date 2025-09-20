@@ -2,7 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial      // Handle track switching
+      async function switchTrack() {
+        const selectedTrackId = trackSelector.value;
+        if (selectedTrackId !== currentTrackId) {
+          console.log(`🏁 User switching track from ${currentTrackId} to ${selectedTrackId}`);
+          await initTrackMap(selectedTrackId);
+          
+          // Save track preference
+          localStorage.setItem('selectedTrack', selectedTrackId);
+        }
+      } />
   <title>Track Map - Radian</title>
   <!-- External Dependencies -->
   <script src="/socket.io/socket.io.js"></script>
@@ -100,11 +110,11 @@
       let currentTrackId = 'ring-vln'; // Default track
       
       // Wait for socket to be available from telemetry.js
-      function initTrackMap(trackId = currentTrackId) {
+      async function initTrackMap(trackId = currentTrackId) {
         if (typeof socket !== 'undefined' && socket) {
           // If trackMap already exists, we're switching tracks
           if (window.trackMap) {
-            window.trackMap.switchTrack(trackId);
+            await window.trackMap.switchTrack(trackId);
             console.log(`TrackMap switched to: ${trackId}`);
           } else {
             // Initial initialization

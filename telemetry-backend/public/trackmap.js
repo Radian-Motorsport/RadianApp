@@ -16,6 +16,14 @@ class TrackMap {
     this.carDistBehind = null;
     this.trackLength = 0; // Will be calculated from track data
     
+    // Zoom and pan variables
+    this.currentZoom = 1.0;
+    this.currentTranslateX = 0;
+    this.currentTranslateY = 0;
+    this.isDragging = false;
+    this.lastMouseX = 0;
+    this.lastMouseY = 0;
+    
     // Class position tracking
     this.playerCarIdx = null;
     this.playerClassPosition = null;
@@ -36,8 +44,10 @@ class TrackMap {
     // Cache info box elements
     this.cacheInfoElements();
     
-    // Initialize SVG track
-    this.initializeSVGTrack();
+    // Initialize SVG track (async)
+    this.initializeSVGTrack().catch(error => {
+      console.error('Failed to initialize SVG track:', error);
+    });
     
     // Initialize car tracking system
     this.initializeCarTrackingSystem();
@@ -66,16 +76,88 @@ class TrackMap {
     }, 30000);
   }
 
-  // Load track data from track-data.js
-  loadTrackData(trackId) {
-    // Import the track data from the external file
-    return TRACK_DATA[trackId] || null;
+  // Load track data from individual track files
+  async loadTrackData(trackId) {
+    const trackFiles = {
+      'ring-vln': 'Ring VLN Interactive.html',
+      'indianapolis-road': 'Indy Road Interactive.html'
+    };
+    
+    const fileName = trackFiles[trackId];
+    if (!fileName) {
+      console.error(`Track file not found for ID: ${trackId}`);
+      return null;
+    }
+    
+    try {
+      console.log(`🏁 Loading track data from ${fileName}`);
+      const response = await fetch(fileName);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const htmlContent = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      
+      // Extract track data from the HTML
+      const svgElement = doc.querySelector('#trackSvg');
+      const pathElement = doc.querySelector('.track-surface');
+      
+      if (!svgElement || !pathElement) {
+        throw new Error('Could not find track SVG or path elements');
+      }
+      
+      const viewBox = svgElement.getAttribute('viewBox') || '0 0 800 600';
+      const viewBoxValues = viewBox.split(' ').map(Number);
+      
+      // Extract zoom settings from JavaScript in the file
+      const scriptContent = htmlContent;
+      let defaultZoom = 1.0;
+      let defaultTranslateX = 0;
+      let defaultTranslateY = 0;
+      
+      // Look for resetView function to get default settings
+      const resetViewMatch = scriptContent.match(/function resetView\(\)\s*{[\s\S]*?currentZoom\s*=\s*([\d.]+);[\s\S]*?currentTranslateX\s*=\s*([-\d.]+);[\s\S]*?currentTranslateY\s*=\s*([-\d.]+);/);
+      if (resetViewMatch) {
+        defaultZoom = parseFloat(resetViewMatch[1]);
+        defaultTranslateX = parseFloat(resetViewMatch[2]);
+        defaultTranslateY = parseFloat(resetViewMatch[3]);
+      }
+      
+      return {
+        id: trackId,
+        displayName: trackId === 'ring-vln' ? 'Nürburgring Nordschleife' : 'Indianapolis Road Course',
+        length: trackId === 'ring-vln' ? 20.832 : 4.192, // Track length in km
+        svg: {
+          width: viewBoxValues[2] || 800,
+          height: viewBoxValues[3] || 600,
+          viewBox: viewBox,
+          trackPath: pathElement.getAttribute('d'),
+          startFinish: {
+            x: 400, // Default center positions
+            y: 300,
+            width: 4,
+            height: 20
+          }
+        },
+        zoom: {
+          defaultZoom: defaultZoom,
+          defaultTranslateX: defaultTranslateX,
+          defaultTranslateY: defaultTranslateY
+        }
+      };
+      
+    } catch (error) {
+      console.error(`Error loading track file ${fileName}:`, error);
+      return null;
+    }
   }
 
   // Switch to a different track
-  switchTrack(trackId) {
+  async switchTrack(trackId) {
     this.currentTrackId = trackId;
-    this.currentTrackData = this.loadTrackData(trackId);
+    this.currentTrackData = await this.loadTrackData(trackId);
     
     if (this.currentTrackData) {
       console.log(`🏁 Switching to track: ${this.currentTrackData.displayName}`);
@@ -86,7 +168,7 @@ class TrackMap {
       }
       
       // Reinitialize with new track data
-      this.initializeSVGTrack();
+      await this.initializeSVGTrack();
       
       // Update track length estimate
       this.trackLength = this.currentTrackData.length * 1000; // Convert km to meters
@@ -95,9 +177,9 @@ class TrackMap {
     }
   }
 
-  initializeSVGTrack() {
+  async initializeSVGTrack() {
     // Load current track data
-    this.currentTrackData = this.loadTrackData(this.currentTrackId);
+    this.currentTrackData = await this.loadTrackData(this.currentTrackId);
     if (!this.currentTrackData) {
       console.error('Failed to load track data');
       return;
@@ -176,17 +258,35 @@ class TrackMap {
     behindTitle.textContent = 'Car Behind';
     this.carBehindMarker.appendChild(behindTitle);
     
-    // Add elements to SVG
-    this.svg.appendChild(this.trackPath);
-    this.svg.appendChild(this.startFinishRect);
-    this.svg.appendChild(this.carMarker);
-    this.svg.appendChild(this.carAheadRing);
-    this.svg.appendChild(this.carAheadMarker);
-    this.svg.appendChild(this.carBehindRing);
-    this.svg.appendChild(this.carBehindMarker);
+    // Create transform group for zoom/pan functionality  
+    this.trackGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.trackGroup.setAttribute('id', 'trackGroup');
+    
+    // Add elements to transform group
+    this.trackGroup.appendChild(this.trackPath);
+    this.trackGroup.appendChild(this.startFinishRect);
+    this.trackGroup.appendChild(this.carMarker);
+    this.trackGroup.appendChild(this.carAheadRing);
+    this.trackGroup.appendChild(this.carAheadMarker);
+    this.trackGroup.appendChild(this.carBehindRing);
+    this.trackGroup.appendChild(this.carBehindMarker);
+    
+    // Add transform group to SVG
+    this.svg.appendChild(this.trackGroup);
     
     // Add SVG to container
     this.container.appendChild(this.svg);
+    
+    // Set default zoom and position from track data
+    if (this.currentTrackData.zoom) {
+      this.currentZoom = this.currentTrackData.zoom.defaultZoom;
+      this.currentTranslateX = this.currentTrackData.zoom.defaultTranslateX;
+      this.currentTranslateY = this.currentTrackData.zoom.defaultTranslateY;
+      this.updateTransform();
+    }
+    
+    // Add zoom/pan event listeners
+    this.setupZoomPanListeners();
     
     // Calculate path properties
     this.pathLength = this.trackPath.getTotalLength();
@@ -198,6 +298,92 @@ class TrackMap {
     
     // Initialize car marker at start position
     this.updateCarPosition(0);
+  }
+
+  // Zoom and pan functionality
+  updateTransform() {
+    if (this.trackGroup) {
+      this.trackGroup.setAttribute('transform', 
+        `translate(${this.currentTranslateX}, ${this.currentTranslateY}) scale(${this.currentZoom})`);
+    }
+  }
+
+  zoomIn() {
+    this.currentZoom = Math.min(this.currentZoom * 1.5, 10);
+    this.updateTransform();
+  }
+
+  zoomOut() {
+    this.currentZoom = Math.max(this.currentZoom / 1.5, 0.1);
+    this.updateTransform();
+  }
+
+  resetView() {
+    if (this.currentTrackData && this.currentTrackData.zoom) {
+      this.currentZoom = this.currentTrackData.zoom.defaultZoom;
+      this.currentTranslateX = this.currentTrackData.zoom.defaultTranslateX;
+      this.currentTranslateY = this.currentTrackData.zoom.defaultTranslateY;
+    } else {
+      this.currentZoom = 1.0;
+      this.currentTranslateX = 0;
+      this.currentTranslateY = 0;
+    }
+    this.updateTransform();
+  }
+
+  setupZoomPanListeners() {
+    if (!this.svg) return;
+
+    // Mouse wheel zoom
+    this.svg.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = this.svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(Math.max(this.currentZoom * zoomFactor, 0.1), 10);
+      
+      // Zoom towards mouse position
+      this.currentTranslateX = x - (x - this.currentTranslateX) * (newZoom / this.currentZoom);
+      this.currentTranslateY = y - (y - this.currentTranslateY) * (newZoom / this.currentZoom);
+      this.currentZoom = newZoom;
+      
+      this.updateTransform();
+    });
+
+    // Mouse drag for panning
+    this.svg.addEventListener('mousedown', (e) => {
+      this.isDragging = true;
+      this.lastMouseX = e.clientX;
+      this.lastMouseY = e.clientY;
+      this.svg.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!this.isDragging) return;
+      
+      const deltaX = e.clientX - this.lastMouseX;
+      const deltaY = e.clientY - this.lastMouseY;
+      
+      this.currentTranslateX += deltaX;
+      this.currentTranslateY += deltaY;
+      
+      this.lastMouseX = e.clientX;
+      this.lastMouseY = e.clientY;
+      
+      this.updateTransform();
+    });
+
+    document.addEventListener('mouseup', () => {
+      this.isDragging = false;
+      if (this.svg) {
+        this.svg.style.cursor = 'grab';
+      }
+    });
+
+    // Set initial cursor
+    this.svg.style.cursor = 'grab';
   }
 
   // Multi-car tracking system for displaying all cars on track
@@ -249,7 +435,7 @@ class TrackMap {
       // Create new car dot
       carDot = this.createCarDot(carIdx, carNumber);
       this.carDots.set(carIdx, carDot);
-      this.svg.appendChild(carDot);
+      this.trackGroup.appendChild(carDot);
     }
     
     // Update position
