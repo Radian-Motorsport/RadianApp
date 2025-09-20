@@ -36,9 +36,6 @@ class TrackMap {
     // Cache info box elements
     this.cacheInfoElements();
     
-    // Initialize SVG track
-    this.initializeSVGTrack();
-    
     // Initialize car tracking system
     this.initializeCarTrackingSystem();
     
@@ -67,25 +64,73 @@ class TrackMap {
   }
 
   // Load track data from track-data.js
-  loadTrackData(trackId) {
-    if (typeof getTrackData === 'undefined') {
-      console.error('Track data not loaded. Make sure track-data.js is included.');
+  async loadTrackData(trackId) {
+    const trackFiles = {
+      'ring-vln': 'Ring VLN Interactive.html',
+      'indianapolis-road': 'Indy Road Interactive.html'
+    };
+    
+    const fileName = trackFiles[trackId];
+    if (!fileName) {
+      console.warn(`Track file not found for ID: ${trackId}, falling back to Ring VLN`);
+      return await this.loadTrackData('ring-vln');
+    }
+    
+    try {
+      console.log(`🏁 Loading track data from ${fileName}`);
+      const response = await fetch(fileName);
+      const htmlContent = await response.text();
+      
+      // Parse the HTML to extract track data
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      
+      // Extract SVG path
+      const pathElement = doc.querySelector('.track-surface');
+      const svgElement = doc.querySelector('#trackSvg');
+      const startFinishElement = doc.querySelector('rect[style*="fill:#ff0000"]');
+      
+      if (!pathElement || !svgElement) {
+        throw new Error('Could not find track path or SVG in file');
+      }
+      
+      // Extract viewBox for proper coordinate system
+      const viewBox = svgElement.getAttribute('viewBox');
+      const viewBoxValues = viewBox.split(' ').map(Number);
+      
+      // Extract start/finish line position
+      let startFinish = { x: 400, y: 300 }; // Default center
+      if (startFinishElement) {
+        startFinish = {
+          x: parseFloat(startFinishElement.getAttribute('x')) || 400,
+          y: parseFloat(startFinishElement.getAttribute('y')) || 300
+        };
+      }
+      
+      return {
+        id: trackId,
+        name: trackId === 'ring-vln' ? 'Nürburgring Nordschleife' : 'Indianapolis Road Course',
+        svg: pathElement.getAttribute('d'),
+        viewBox: viewBox,
+        startFinish: startFinish,
+        // Copy the JavaScript functions from the file for zoom/pan functionality
+        htmlContent: htmlContent
+      };
+      
+    } catch (error) {
+      console.error(`Error loading track file ${fileName}:`, error);
+      // Fallback to ring-vln if loading fails
+      if (trackId !== 'ring-vln') {
+        return await this.loadTrackData('ring-vln');
+      }
       return null;
     }
-    
-    const trackData = getTrackData(trackId);
-    if (!trackData) {
-      console.warn(`Track data not found for ID: ${trackId}, falling back to default`);
-      return getTrackData(DEFAULT_TRACK);
-    }
-    
-    return trackData;
   }
 
   // Switch to a different track
-  switchTrack(trackId) {
+  async switchTrack(trackId) {
     this.currentTrackId = trackId;
-    this.currentTrackData = this.loadTrackData(trackId);
+    this.currentTrackData = await this.loadTrackData(trackId);
     
     if (this.currentTrackData) {
       console.log(`🏁 Switching to track: ${this.currentTrackData.displayName}`);
@@ -96,7 +141,7 @@ class TrackMap {
       }
       
       // Reinitialize with new track data
-      this.initializeSVGTrack();
+      await this.initializeSVGTrack();
       
       // Update track length estimate
       this.trackLength = this.currentTrackData.length * 1000; // Convert km to meters
@@ -105,9 +150,9 @@ class TrackMap {
     }
   }
 
-  initializeSVGTrack() {
+  async initializeSVGTrack() {
     // Load current track data
-    this.currentTrackData = this.loadTrackData(this.currentTrackId);
+    this.currentTrackData = await this.loadTrackData(this.currentTrackId);
     if (!this.currentTrackData) {
       console.error('Failed to load track data');
       return;

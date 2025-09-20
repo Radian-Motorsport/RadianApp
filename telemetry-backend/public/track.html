@@ -100,15 +100,16 @@
       let currentTrackId = 'ring-vln'; // Default track
       
       // Wait for socket to be available from telemetry.js
-      function initTrackMap(trackId = currentTrackId) {
+      async function initTrackMap(trackId = currentTrackId) {
         if (typeof socket !== 'undefined' && socket) {
           // If trackMap already exists, we're switching tracks
           if (window.trackMap) {
-            window.trackMap.switchTrack(trackId);
+            await window.trackMap.switchTrack(trackId);
             console.log(`TrackMap switched to: ${trackId}`);
           } else {
             // Initial initialization
             window.trackMap = new TrackMap(socket, 'trackContainer', trackId);
+            await window.trackMap.initializeSVGTrack(); // Add explicit initialization call
             console.log('TrackMap initialized successfully');
           }
           currentTrackId = trackId;
@@ -130,11 +131,11 @@
       }
       
       // Handle track switching
-      function switchTrack() {
+      async function switchTrack() {
         const selectedTrackId = trackSelector.value;
         if (selectedTrackId !== currentTrackId) {
           console.log(`🏁 User switching track from ${currentTrackId} to ${selectedTrackId}`);
-          initTrackMap(selectedTrackId);
+          await initTrackMap(selectedTrackId);
           
           // Save track preference
           localStorage.setItem('selectedTrack', selectedTrackId);
