@@ -719,7 +719,10 @@ function handleDriverExit(values, teamLap) {
   if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
 
   if (elements.fuelPerLap) {
-    updateValueWithColor(elements.fuelPerLap, `${lastFuelUsed?.toFixed(2) ?? '--'} L`, lastFuelUsed, 'fuel', 'fuelPerLap');
+    // Display the fuel from the latest lap completion, NOT from driver exit
+    const displayFuel = previousValues.fuelPerLap ?? 0;
+    console.log(`📍 DRIVER EXIT: Displaying lastFuelPerLap=${displayFuel?.toFixed(2)}L from previousValues`);
+    updateValueWithColor(elements.fuelPerLap, `${displayFuel?.toFixed(2) ?? '--'} L`, displayFuel, 'fuel', 'fuelPerLap');
   }
   if (elements.fuelAvg) {
     updateValueWithColor(elements.fuelAvg, `${avgFuelUsed?.toFixed(2) ?? '--'} L`, avgFuelUsed, 'fuel', 'fuelAvg');
