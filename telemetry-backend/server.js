@@ -83,6 +83,15 @@ const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Disable caching for all static files - force fresh load every time
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 app.use(express.static('public')); // Serve planner frontend
 app.use('/assets', express.static('../assets')); // Serve assets folder
 
