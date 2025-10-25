@@ -577,6 +577,9 @@ function updateTireBandColor(elementId, wearPercentage) {
     'wear-60', 'wear-50'
   );
   
+  // Set height based on wear percentage (0-100%)
+  element.style.height = `${Math.min(100, Math.max(0, wearPercentage))}%`;
+  
   // Add the appropriate wear class based on percentage
   if (wearPercentage >= 97.5) element.classList.add('wear-100');
   else if (wearPercentage >= 95) element.classList.add('wear-97');

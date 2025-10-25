@@ -993,10 +993,11 @@ h2 {
 
 .tire-band {
   flex: 1;
-  height: 100%;
   background-color: #333;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   border-right: 1px solid #222;
+  display: flex;
+  align-items: flex-end;
 }
 
 .tire-band:last-child {
