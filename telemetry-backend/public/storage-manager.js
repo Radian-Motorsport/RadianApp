@@ -105,7 +105,8 @@ class StorageManager {
    * @returns {object|null} - Telemetry state or null
    */
   loadTelemetryState() {
-    return this.load(this.storageKeys.telemetryState, this.defaultRetentionPeriods.telemetryState);
+    // Don't expire telemetry state - load it regardless of age
+    return this.load(this.storageKeys.telemetryState, null);
   }
 
   /**
