@@ -948,8 +948,18 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
 
       // Display last lap fuel
       if (elements.fuelPerLap) {
-        console.log(`🔥 DISPLAYING FUEL USED: fuelUsed=${fuelUsed?.toFixed(4)}, previousValues.fuelPerLap=${previousValues.fuelPerLap?.toFixed(4) ?? 'null'}`);
+        console.error(`🔥🔥🔥 FUEL DISPLAY DEBUG 🔥🔥🔥`);
+        console.error(`  fuelUsed = ${fuelUsed}`);
+        console.error(`  fuelUsed type = ${typeof fuelUsed}`);
+        console.error(`  fuelUsed.toFixed(2) = ${fuelUsed.toFixed(2)}`);
+        console.error(`  previousValues.fuelPerLap BEFORE = ${previousValues.fuelPerLap}`);
+        console.error(`  Text to display = "${fuelUsed.toFixed(2)} L"`);
+        
         updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
+        
+        console.error(`  previousValues.fuelPerLap AFTER = ${previousValues.fuelPerLap}`);
+        console.error(`  Element text content = ${elements.fuelPerLap.textContent}`);
+        console.error(`  Element classes = ${elements.fuelPerLap.className}`);
       }
     } else {
       console.log(`❌ REJECTED fuelUsed: value=${fuelUsed}, isFinite=${isFinite(fuelUsed)}, fuelUsed >= 0: ${fuelUsed >= 0}`);
