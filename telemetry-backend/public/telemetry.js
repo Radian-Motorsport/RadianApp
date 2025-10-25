@@ -425,9 +425,13 @@ function initDashboard() {
 function updateFuelGauge(level) {
   if (!elements.fuelGauge || !elements.fuelValue) return;
   
-  const fuel = Number(level).toFixed(1);
-  elements.fuelGauge.value = fuel;
-  elements.fuelValue.textContent = `${fuel}%`;
+  // level is the absolute fuel amount in liters (from FuelLevel)
+  // Calculate percentage for the progress bar
+  const fuelPercentage = tankCapacity > 0 ? (level / tankCapacity) * 100 : 0;
+  const constrainedPercentage = Math.min(100, Math.max(0, fuelPercentage));
+  
+  elements.fuelGauge.value = constrainedPercentage;
+  elements.fuelValue.textContent = `${level.toFixed(1)} L`;
 }
 
 // Update weather data display (only for non-weather pages)
@@ -797,12 +801,12 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
 
     updateValueWithColor(elements.lapAvg3, previousValues.lapAvg3 ? formatTimeMS(previousValues.lapAvg3) : '--:--', previousValues.lapAvg3, 'lapTime', 'lapAvg3');
 
-    // 5-Lap Time Average
-    const lapAvg5 = lapTimeHistory.length === 5
-      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+    // 5-Lap Time Average - FIXED: use >= instead of === and store in previousValues
+    previousValues.lapAvg5 = lapTimeHistory.length >= 5
+      ? lapTimeHistory.slice(-5).reduce((a, b) => a + b, 0) / 5
       : null;
 
-    updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
+    updateValueWithColor(elements.lapAvg5, previousValues.lapAvg5 ? formatTimeMS(previousValues.lapAvg5) : '--:--', previousValues.lapAvg5, 'lapTime', 'lapAvg5');
   } else if (lastLapStartTime !== null) {
     // Fallback to wall-clock time if no iRacing lap time available
     const wallClockLapTime = (now - lastLapStartTime) / 1000; // seconds
@@ -822,12 +826,12 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
 
     updateValueWithColor(elements.lapAvg3, previousValues.lapAvg3 ? formatTimeMS(previousValues.lapAvg3) : '--:--', previousValues.lapAvg3, 'lapTime', 'lapAvg3');
 
-    // 5-Lap Time Average
-    const lapAvg5 = lapTimeHistory.length === 5
-      ? lapTimeHistory.reduce((a, b) => a + b, 0) / 5
+    // 5-Lap Time Average - FIXED: use >= instead of === and store in previousValues
+    previousValues.lapAvg5 = lapTimeHistory.length >= 5
+      ? lapTimeHistory.slice(-5).reduce((a, b) => a + b, 0) / 5
       : null;
 
-    updateValueWithColor(elements.lapAvg5, lapAvg5 ? formatTimeMS(lapAvg5) : '--:--', lapAvg5, 'lapTime', 'lapAvg5');
+    updateValueWithColor(elements.lapAvg5, previousValues.lapAvg5 ? formatTimeMS(previousValues.lapAvg5) : '--:--', previousValues.lapAvg5, 'lapTime', 'lapAvg5');
   }
   lastLapStartTime = now;
 
@@ -858,13 +862,13 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
         updateValueWithColor(elements.fuelAvg, `${previousValues.fuelAvg?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg, 'fuel', 'fuelAvg');
       }
 
-      // 5-Lap Fuel Average
-      const avgFuelUsed5 = fuelUsageHistory.length === 5
-        ? fuelUsageHistory.reduce((a, b) => a + b, 0) / 5
+      // 5-Lap Fuel Average - FIXED: use >= instead of === and store in previousValues
+      previousValues.fuelAvg5 = fuelUsageHistory.length >= 5
+        ? fuelUsageHistory.slice(-5).reduce((a, b) => a + b, 0) / 5
         : null;
 
       if (elements.fuelAvg5) {
-        updateValueWithColor(elements.fuelAvg5, `${avgFuelUsed5?.toFixed(2) ?? '--'} L`, avgFuelUsed5, 'fuel', 'fuelAvg5');
+        updateValueWithColor(elements.fuelAvg5, `${previousValues.fuelAvg5?.toFixed(2) ?? '--'} L`, previousValues.fuelAvg5, 'fuel', 'fuelAvg5');
       }
 
       // Display last lap fuel
@@ -875,13 +879,26 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   }
 
   // Fuel Projection - now using global variables
-  const projectedLaps = previousValues.fuelAvg > 0
+  const projectedLaps = (previousValues.fuelAvg !== null && previousValues.fuelAvg > 0)
     ? fuel / previousValues.fuelAvg
     : null;
 
-  const projectedTimeSec = projectedLaps && previousValues.lapAvg3
+  const projectedTimeSec = (projectedLaps !== null && previousValues.lapAvg3 !== null)
     ? projectedLaps * previousValues.lapAvg3
     : null;
+
+  // Debug logging for projection calculation
+  if (previousValues.fuelAvg === null || previousValues.lapAvg3 === null) {
+    console.log(`🔢 Projection calculation info:`, {
+      currentFuel: fuel?.toFixed(2),
+      fuelUsageHistory: fuelUsageHistory.map(f => f.toFixed(2)),
+      fuelAvg: previousValues.fuelAvg?.toFixed(2) ?? 'null (need 3+ laps)',
+      lapTimeHistory: lapTimeHistory.map(t => t.toFixed(2)),
+      lapAvg3: previousValues.lapAvg3?.toFixed(2) ?? 'null (need 3+ laps)',
+      projectedLaps: projectedLaps?.toFixed(2) ?? 'null',
+      projectedTime: projectedTimeSec?.toFixed(2) ?? 'null'
+    });
+  }
 
   // Store projected values for persistence
   previousValues.projectedLaps = projectedLaps;
@@ -1314,7 +1331,7 @@ function resetTelemetryData() {
     if (elements.refreshRate) elements.refreshRate.textContent = 'Refresh Rate: -- Hz (-- ms)';
     if (elements.streamingStatus) elements.streamingStatus.textContent = 'Live: —';
     if (elements.teamLapDisplay) elements.teamLapDisplay.textContent = 'Team Car Lap: 0';
-    if (elements.fuelValue) elements.fuelValue.textContent = '0.0%';
+    if (elements.fuelValue) elements.fuelValue.textContent = '0.0 L';
     if (elements.fuelGauge) elements.fuelGauge.value = 0;
     
     // Notify local user
