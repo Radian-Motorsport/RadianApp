@@ -764,9 +764,20 @@ function handleDriverEntry(teamLap) {
   stintIncidentCount = 0;
   
   // Initialize fuel tracking for first lap
+  console.log(`🚦 DRIVER ENTRY DEBUG:`, {
+    bufferedDataExists: !!bufferedData,
+    valuesExists: !!bufferedData?.values,
+    fuelLevelValue: bufferedData?.values?.FuelLevel,
+    fuelLevelType: typeof bufferedData?.values?.FuelLevel,
+    teamLap: teamLap,
+    fullBufferedData: bufferedData
+  });
+  
   if (bufferedData?.values?.FuelLevel) {
     fuelAtLapStart = bufferedData.values.FuelLevel;
-    console.log(`Driver entered - initialized fuelAtLapStart to ${fuelAtLapStart?.toFixed(2)}L for first lap tracking`);
+    console.log(`✅ Driver entered - initialized fuelAtLapStart to ${fuelAtLapStart?.toFixed(2)}L for first lap tracking`);
+  } else {
+    console.log(`❌ PROBLEM: FuelLevel not found in bufferedData. fuelAtLapStart remains null`);
   }
   
   // Initialize first stint if not already tracking
@@ -864,10 +875,24 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     fuelType: typeof fuel
   });
   
-  // Initialize fuelAtLapStart if not set (safety check for lap 1)
-  if (fuelAtLapStart === null && fuel > 0) {
+  // CRITICAL: On first lap, if fuelAtLapStart is null, assume this lap started with full fuel
+  // We'll estimate fuel used by assuming max consumption, then use this lap's end fuel as baseline
+  if (lapCompleted === 1 && fuelAtLapStart === null && fuel > 0) {
+    // For lap 1: assume fuel used was consumed over this lap
+    // Estimate: if tank is 104L and we have 90L left, we used ~14L
+    const estimatedFuelUsed = Math.max(0.5, tankCapacity > 0 ? tankCapacity - fuel : 2.0);
+    console.log(`⚠️ LAP 1 - fuelAtLapStart was null. Tank capacity: ${tankCapacity}L, ending fuel: ${fuel?.toFixed(2)}L, estimated used: ${estimatedFuelUsed?.toFixed(2)}L`);
+    
+    fuelUsageHistory.push(estimatedFuelUsed);
+    
+    // PRE-FILL for immediate 3-lap average
+    fuelUsageHistory.push(estimatedFuelUsed);
+    fuelUsageHistory.push(estimatedFuelUsed);
+    console.log(`📊 LAP 1 pre-filled with estimated ${estimatedFuelUsed?.toFixed(2)}L usage for immediate projections`);
+    
+    // Set baseline for next lap
     fuelAtLapStart = fuel;
-    console.log(`⚠️ Safety initialization: fuelAtLapStart was null, set to ${fuel?.toFixed(2)}L`);
+    console.log(`✅ Set fuelAtLapStart to ${fuel?.toFixed(2)}L for lap 2 tracking`);
   }
   
   if (fuelAtLapStart !== null) {
@@ -878,12 +903,9 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
       console.log(`✅ fuelUsed is valid (${fuelUsed?.toFixed(2)}L) - adding to history`);
       fuelUsageHistory.push(fuelUsed);
       
-      // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
-      if (fuelUsageHistory.length === 1 && lapCompleted === 1) {
-        console.log(`📊 First lap complete - pre-filling fuel history for immediate projections`);
-        fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 2 estimate
-        fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 3 estimate
-        console.log(`📊 Fuel usage pre-filled to:`, fuelUsageHistory.map(f => f.toFixed(2)));
+      // PRE-FILL STRATEGY: On first "normal" lap (lap 2+), skip pre-fill since we already did it for lap 1
+      if (fuelUsageHistory.length === 4 && lapCompleted === 2) {
+        console.log(`📊 Lap 2 complete - fuel history now has real data: `, fuelUsageHistory.map(f => f.toFixed(2)));
       }
       
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
