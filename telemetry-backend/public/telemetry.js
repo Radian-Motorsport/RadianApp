@@ -1,4 +1,6 @@
 // telemetry.js - Handles all telemetry data processing and display updates
+// VERSION: 2025-10-25-fuel-fix v2 (Lap 1 fuel estimation, no driver entry required)
+console.log('%c 📊 TELEMETRY.JS LOADED - Fuel Fix v2', 'background: #2a2a2a; color: #00ff00; font-weight: bold; padding: 8px; border-radius: 4px;');
 
 // Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
