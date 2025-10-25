@@ -872,27 +872,27 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     fuelAtLapStart: fuelAtLapStart?.toFixed(2) ?? 'NULL',
     currentFuel: fuel?.toFixed(2) ?? 'NULL',
     fuelParameter: fuel,
-    fuelType: typeof fuel
+    fuelType: typeof fuel,
+    lastLapCompleted: lastLapCompleted
   });
   
-  // CRITICAL: On first lap, if fuelAtLapStart is null, assume this lap started with full fuel
-  // We'll estimate fuel used by assuming max consumption, then use this lap's end fuel as baseline
-  if (lapCompleted === 1 && fuelAtLapStart === null && fuel > 0) {
-    // For lap 1: assume fuel used was consumed over this lap
-    // Estimate: if tank is 104L and we have 90L left, we used ~14L
+  // CRITICAL: If fuelAtLapStart is still null (no driver entry event), initialize it NOW
+  // This handles cases where driver is already in car at session start
+  if (fuelAtLapStart === null && fuel > 0) {
+    // Estimate fuel used for this lap based on tank capacity
     const estimatedFuelUsed = Math.max(0.5, tankCapacity > 0 ? tankCapacity - fuel : 2.0);
-    console.log(`⚠️ LAP 1 - fuelAtLapStart was null. Tank capacity: ${tankCapacity}L, ending fuel: ${fuel?.toFixed(2)}L, estimated used: ${estimatedFuelUsed?.toFixed(2)}L`);
+    console.log(`⚠️ FIRST LAP SEEN (lap ${lapCompleted}) - fuelAtLapStart was null. Tank: ${tankCapacity}L, current fuel: ${fuel?.toFixed(2)}L, estimated used: ${estimatedFuelUsed?.toFixed(2)}L`);
     
     fuelUsageHistory.push(estimatedFuelUsed);
     
     // PRE-FILL for immediate 3-lap average
     fuelUsageHistory.push(estimatedFuelUsed);
     fuelUsageHistory.push(estimatedFuelUsed);
-    console.log(`📊 LAP 1 pre-filled with estimated ${estimatedFuelUsed?.toFixed(2)}L usage for immediate projections`);
+    console.log(`📊 Pre-filled with ${estimatedFuelUsed?.toFixed(2)}L for immediate 3-lap average`);
     
     // Set baseline for next lap
     fuelAtLapStart = fuel;
-    console.log(`✅ Set fuelAtLapStart to ${fuel?.toFixed(2)}L for lap 2 tracking`);
+    console.log(`✅ Set fuelAtLapStart to ${fuel?.toFixed(2)}L for next lap tracking`);
   }
   
   if (fuelAtLapStart !== null) {
