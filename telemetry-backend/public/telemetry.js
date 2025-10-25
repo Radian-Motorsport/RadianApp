@@ -72,6 +72,10 @@ let stintLapCounts = []; // History of actual stint lap counts
 let fuelAtStintStart = null; // Fuel level when stint started
 let actualStintFuelUsed = 0; // Last completed stint fuel usage
 
+// Pit road duration tracking
+let pitEntrySessionTime = null; // SessionTimeRemain when entering pit road
+let lastPitDuration = 0; // Duration spent on pit road in seconds
+
 // Previous value tracking for color coding
 let previousValues = {
   fuelPerLap: null,
@@ -632,9 +636,9 @@ function handlePitStopCompletion(values) {
     updateTireWear(previousValues.lastStintTireWear);
   }
   
-  // Update last pit stop time with stint duration
-  if (elements.lastPitStopTime && stintTotalTimeSeconds) {
-    const timeStr = formatTimeMS(stintTotalTimeSeconds);
+  // Update last pit stop time with pit road duration
+  if (elements.lastPitStopTime && lastPitDuration > 0) {
+    const timeStr = formatTimeMS(lastPitDuration);
     elements.lastPitStopTime.textContent = timeStr;
     lastPitStopTimeValue = timeStr;
   }
@@ -1149,13 +1153,20 @@ function setupSocketListeners() {
           LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
         };
         
+        // Track pit entry time for pit duration calculation
+        pitEntrySessionTime = currentSessionTimeRemain;
+        
       } else if (!onPitRoad && wasPitstopActive) {
-        // Pit exit detected - new stint starts
+        // Pit exit detected - calculate pit duration
+        if (pitEntrySessionTime !== null && currentSessionTimeRemain !== null) {
+          lastPitDuration = pitEntrySessionTime - currentSessionTimeRemain;
+        }
+        
+        // New stint starts
         wasPitstopActive = false;
         lastStintStartSessionTime = currentSessionTimeRemain;
         lastStintStartLap = currentTeamLap;
-        fuelAtStintStart = values.FuelLevel; // Track fuel level at stint start
-        console.log(`New stint started - SessionTimeRemain: ${currentSessionTimeRemain}s, Lap: ${currentTeamLap}, Fuel: ${values.FuelLevel?.toFixed(2)}L`);
+        fuelAtStintStart = values.FuelLevel;
       }
       
   // Coasting/overlap indicators moved to Inputs page
