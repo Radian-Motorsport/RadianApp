@@ -803,12 +803,12 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     // Use actual iRacing lap time data
     lapTimeHistory.push(lapTime);
     
-    // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
-    if (lapTimeHistory.length === 1 && lapCompleted === 1) {
-      console.log(`📊 First lap complete - pre-filling lap time history for immediate projections`);
+    // PRE-FILL STRATEGY: On first lap we see, duplicate the value to give immediate 3-lap average
+    if (lapTimeHistory.length === 1) {
+      console.log(`📊 FIRST LAP SEEN (lap ${lapCompleted}) - pre-filling lap time history for immediate projections`);
       lapTimeHistory.push(lapTime); // Duplicate lap 1 time for lap 2 estimate
       lapTimeHistory.push(lapTime); // Duplicate lap 1 time for lap 3 estimate
-      console.log(`Lap time pre-filled to:`, lapTimeHistory.map(t => t.toFixed(2)));
+      console.log(`📊 Lap time pre-filled to:`, lapTimeHistory.map(t => formatTimeMS(t)));
     }
     
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
@@ -837,12 +837,12 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     const wallClockLapTime = (now - lastLapStartTime) / 1000; // seconds
     lapTimeHistory.push(wallClockLapTime);
     
-    // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
-    if (lapTimeHistory.length === 1 && lapCompleted === 1) {
-      console.log(`📊 First lap complete (wall-clock) - pre-filling lap time history for immediate projections`);
+    // PRE-FILL STRATEGY: On first lap we see, duplicate the value to give immediate 3-lap average
+    if (lapTimeHistory.length === 1) {
+      console.log(`📊 FIRST LAP SEEN (lap ${lapCompleted}, wall-clock) - pre-filling lap time history for immediate projections`);
       lapTimeHistory.push(wallClockLapTime); // Duplicate lap 1 time for lap 2 estimate
       lapTimeHistory.push(wallClockLapTime); // Duplicate lap 1 time for lap 3 estimate
-      console.log(`Lap time pre-filled to:`, lapTimeHistory.map(t => t.toFixed(2)));
+      console.log(`📊 Lap time pre-filled to:`, lapTimeHistory.map(t => formatTimeMS(t)));
     }
     
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
@@ -873,6 +873,8 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   console.log(`\n🔴 LAP ${lapCompleted} FUEL CALCULATION:`, {
     fuelAtLapStart: fuelAtLapStart?.toFixed(2) ?? 'NULL',
     currentFuel: fuel?.toFixed(2) ?? 'NULL',
+    tankCapacity: tankCapacity?.toFixed(2) ?? 'NULL',
+    fuelLevelPct: bufferedData?.values?.FuelLevelPct?.toFixed(2) ?? 'NULL',
     fuelParameter: fuel,
     fuelType: typeof fuel,
     lastLapCompleted: lastLapCompleted
@@ -883,7 +885,8 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   if (fuelAtLapStart === null && fuel > 0) {
     // Estimate fuel used for this lap based on tank capacity
     const estimatedFuelUsed = Math.max(0.5, tankCapacity > 0 ? tankCapacity - fuel : 2.0);
-    console.log(`⚠️ FIRST LAP SEEN (lap ${lapCompleted}) - fuelAtLapStart was null. Tank: ${tankCapacity}L, current fuel: ${fuel?.toFixed(2)}L, estimated used: ${estimatedFuelUsed?.toFixed(2)}L`);
+    console.log(`⚠️ FIRST LAP SEEN (lap ${lapCompleted}) - fuelAtLapStart was null. Tank: ${tankCapacity?.toFixed(2)}L, current fuel: ${fuel?.toFixed(2)}L, estimated used: ${estimatedFuelUsed?.toFixed(2)}L`);
+    console.log(`  Calculation: ${tankCapacity?.toFixed(2)} - ${fuel?.toFixed(2)} = ${estimatedFuelUsed?.toFixed(2)}L`);
     
     fuelUsageHistory.push(estimatedFuelUsed);
     
@@ -899,7 +902,7 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   
   if (fuelAtLapStart !== null) {
     const fuelUsed = fuelAtLapStart - fuel;
-    console.log(`✅ Fuel tracking: fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}, currentFuel=${fuel?.toFixed(2)}, fuelUsed=${fuelUsed?.toFixed(2)}`);
+    console.log(`✅ Fuel tracking (lap ${lapCompleted}): fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}L, currentFuel=${fuel?.toFixed(2)}L, calculated fuelUsed=${fuelUsed?.toFixed(2)}L`);
     
     if (fuelUsed >= 0 && isFinite(fuelUsed)) {
       console.log(`✅ fuelUsed is valid (${fuelUsed?.toFixed(2)}L) - adding to history`);
