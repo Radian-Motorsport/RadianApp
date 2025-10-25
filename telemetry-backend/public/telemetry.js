@@ -786,6 +786,15 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   if (lapTime !== null && lapTime > 0) {
     // Use actual iRacing lap time data
     lapTimeHistory.push(lapTime);
+    
+    // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
+    if (lapTimeHistory.length === 1 && lapCompleted === 1) {
+      console.log(`📊 First lap complete - pre-filling lap time history for immediate projections`);
+      lapTimeHistory.push(lapTime); // Duplicate lap 1 time for lap 2 estimate
+      lapTimeHistory.push(lapTime); // Duplicate lap 1 time for lap 3 estimate
+      console.log(`Lap time pre-filled to:`, lapTimeHistory.map(t => t.toFixed(2)));
+    }
+    
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
 
     // Store and display last lap time
@@ -811,6 +820,15 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     // Fallback to wall-clock time if no iRacing lap time available
     const wallClockLapTime = (now - lastLapStartTime) / 1000; // seconds
     lapTimeHistory.push(wallClockLapTime);
+    
+    // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
+    if (lapTimeHistory.length === 1 && lapCompleted === 1) {
+      console.log(`📊 First lap complete (wall-clock) - pre-filling lap time history for immediate projections`);
+      lapTimeHistory.push(wallClockLapTime); // Duplicate lap 1 time for lap 2 estimate
+      lapTimeHistory.push(wallClockLapTime); // Duplicate lap 1 time for lap 3 estimate
+      console.log(`Lap time pre-filled to:`, lapTimeHistory.map(t => t.toFixed(2)));
+    }
+    
     if (lapTimeHistory.length > 5) lapTimeHistory.shift();
 
     // Store and display last lap time
@@ -842,6 +860,15 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
     
     if (fuelUsed >= 0 && isFinite(fuelUsed)) {
       fuelUsageHistory.push(fuelUsed);
+      
+      // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
+      if (fuelUsageHistory.length === 1 && lapCompleted === 1) {
+        console.log(`📊 First lap complete - pre-filling fuel history for immediate projections`);
+        fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 2 estimate
+        fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 3 estimate
+        console.log(`Fuel usage pre-filled to:`, fuelUsageHistory.map(f => f.toFixed(2)));
+      }
+      
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
       
       console.log(`Fuel usage history (${fuelUsageHistory.length} laps):`, fuelUsageHistory.map(f => f.toFixed(2)));
