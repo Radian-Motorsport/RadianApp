@@ -857,6 +857,13 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   lastLapStartTime = now;
 
   // Fuel Usage Tracking
+  console.log(`\n🔴 LAP ${lapCompleted} FUEL CALCULATION:`, {
+    fuelAtLapStart: fuelAtLapStart?.toFixed(2) ?? 'NULL',
+    currentFuel: fuel?.toFixed(2) ?? 'NULL',
+    fuelParameter: fuel,
+    fuelType: typeof fuel
+  });
+  
   // Initialize fuelAtLapStart if not set (safety check for lap 1)
   if (fuelAtLapStart === null && fuel > 0) {
     fuelAtLapStart = fuel;
@@ -865,9 +872,10 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   
   if (fuelAtLapStart !== null) {
     const fuelUsed = fuelAtLapStart - fuel;
-    console.log(`Fuel tracking: fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}, currentFuel=${fuel?.toFixed(2)}, fuelUsed=${fuelUsed?.toFixed(2)}`);
+    console.log(`✅ Fuel tracking: fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}, currentFuel=${fuel?.toFixed(2)}, fuelUsed=${fuelUsed?.toFixed(2)}`);
     
     if (fuelUsed >= 0 && isFinite(fuelUsed)) {
+      console.log(`✅ fuelUsed is valid (${fuelUsed?.toFixed(2)}L) - adding to history`);
       fuelUsageHistory.push(fuelUsed);
       
       // PRE-FILL STRATEGY: On first lap, duplicate the value to give immediate 3-lap average
@@ -875,7 +883,7 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
         console.log(`📊 First lap complete - pre-filling fuel history for immediate projections`);
         fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 2 estimate
         fuelUsageHistory.push(fuelUsed); // Duplicate lap 1 fuel for lap 3 estimate
-        console.log(`Fuel usage pre-filled to:`, fuelUsageHistory.map(f => f.toFixed(2)));
+        console.log(`📊 Fuel usage pre-filled to:`, fuelUsageHistory.map(f => f.toFixed(2)));
       }
       
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
@@ -911,6 +919,8 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
       if (elements.fuelPerLap) {
         updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
       }
+    } else {
+      console.log(`❌ REJECTED fuelUsed: value=${fuelUsed}, isFinite=${isFinite(fuelUsed)}, fuelUsed >= 0: ${fuelUsed >= 0}`);
     }
   }
 
@@ -1262,6 +1272,7 @@ function setupSocketListeners() {
       // NOTE: Process all laps (even lap 1) - driverReady is only for dimming the UI
       if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
         const lapTime = safeValues?.LapLastLapTime; // Get actual iRacing lap time
+        console.log(`🟢 LAP COMPLETED DETECTED: lapCompleted=${lapCompleted}, lastLapCompleted=${lastLapCompleted}, fuel=${fuel?.toFixed(2) ?? 'NULL'}, lapTime=${lapTime?.toFixed(2) ?? 'NULL'}`);
         processLapCompletion(lapCompleted, fuel, lapTime);
       }
     } catch (error) {
