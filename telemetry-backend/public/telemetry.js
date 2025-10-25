@@ -1199,28 +1199,8 @@ function setupSocketListeners() {
         bufferedData = data;
       }
 
-      // Update stint stats in real-time if we have a start time
-      if (isOnTrack && stintStartTime && !bufferFrozen) {
-        const currentStintTime = (Date.now() - stintStartTime) / 1000;
-        if (elements.stintTotalTime) {
-          elements.stintTotalTime.textContent = formatTimeHMS(currentStintTime);
-        }
-        
-        // Calculate current stint lap count using new global tracking
-        const currentStintLapCount = (lastStintStartLap !== null && teamLap !== null) 
-          ? teamLap - lastStintStartLap 
-          : 0;
-        if (currentStintLapCount > 0) {
-          const currentAvgLapTime = currentStintTime / currentStintLapCount;
-          if (elements.stintAvgLapTime) {
-            elements.stintAvgLapTime.textContent = formatTimeMS(currentAvgLapTime);
-          }
-        }
-        
-        if (elements.stintIncidents) {
-          elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
-        }
-      }
+      // DO NOT update stint stats in real-time - they show LAST STINT summary, not current stint
+      // The stint summary is only updated when pit stop completes via handlePitStopCompletion()
 
       // Update fuel gauge with live data
       const liveFuelLevel = values?.FuelLevel ?? 0;
