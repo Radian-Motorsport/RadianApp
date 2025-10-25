@@ -1285,8 +1285,13 @@ function setupSocketListeners() {
       updateTireWear(currentTireWear);
 
       // Display Logic
-      const safeValues = bufferedData?.values;
-      if (!safeValues) return;
+      // CRITICAL FIX: Don't wait for buffer to unfreeze for lap completion processing
+      // We need to process laps immediately regardless of buffer state
+      const safeValues = data?.values || bufferedData?.values;
+      if (!safeValues) {
+        console.log(`⚠️ No safeValues available (bufferFrozen=${bufferFrozen}, hasBufferedData=${!!bufferedData}, hasDataValues=${!!data?.values})`);
+        return;
+      }
 
       // Calculated Values
       const lapCompleted = safeValues?.CarIdxLapCompleted?.[safeValues?.PlayerCarIdx] || safeValues.LapCompleted;
