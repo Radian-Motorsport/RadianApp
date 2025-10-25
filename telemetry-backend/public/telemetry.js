@@ -924,27 +924,17 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   
   if (fuelAtLapStart !== null) {
     const fuelUsed = fuelAtLapStart - fuel;
-    console.log(`✅ Fuel tracking (lap ${lapCompleted}): fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}L, currentFuel=${fuel?.toFixed(2)}L, calculated fuelUsed=${fuelUsed?.toFixed(2)}L`);
+    console.log(`LAP ${lapCompleted} FUEL: start=${fuelAtLapStart.toFixed(2)}L, end=${fuel.toFixed(2)}L, used=${fuelUsed.toFixed(2)}L`);
     
     if (fuelUsed >= 0 && isFinite(fuelUsed)) {
-      console.log(`✅ fuelUsed is valid (${fuelUsed?.toFixed(2)}L) - adding to history`);
       fuelUsageHistory.push(fuelUsed);
       
-      // PRE-FILL STRATEGY: On first "normal" lap (lap 2+), skip pre-fill since we already did it for lap 1
-      if (fuelUsageHistory.length === 4 && lapCompleted === 2) {
-        console.log(`📊 Lap 2 complete - fuel history now has real data: `, fuelUsageHistory.map(f => f.toFixed(2)));
-      }
-      
       if (fuelUsageHistory.length > 5) fuelUsageHistory.shift();
-      
-      console.log(`Fuel usage history (${fuelUsageHistory.length} laps):`, fuelUsageHistory.map(f => f.toFixed(2)));
 
-      // 3-Lap Fuel Average - store in global previousValues
+      // 3-Lap Fuel Average
       previousValues.fuelAvg = fuelUsageHistory.length >= 3
         ? fuelUsageHistory.slice(-3).reduce((a, b) => a + b, 0) / 3
         : null;
-      
-      console.log(`3-lap fuel average: ${previousValues.fuelAvg?.toFixed(2) ?? 'null'}`);
       
       // Update avgFuelPerLap for general usage
       avgFuelPerLap = previousValues.fuelAvg || (fuelUsageHistory.length > 0 
@@ -965,22 +955,10 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
       }
 
       // Display last lap fuel
+      previousValues.fuelPerLap = fuelUsed;
       if (elements.fuelPerLap) {
-        console.error(`🔥🔥🔥 FUEL DISPLAY DEBUG 🔥🔥🔥`);
-        console.error(`  fuelUsed = ${fuelUsed}`);
-        console.error(`  fuelUsed type = ${typeof fuelUsed}`);
-        console.error(`  fuelUsed.toFixed(2) = ${fuelUsed.toFixed(2)}`);
-        console.error(`  previousValues.fuelPerLap BEFORE = ${previousValues.fuelPerLap}`);
-        console.error(`  Text to display = "${fuelUsed.toFixed(2)} L"`);
-        
         updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
-        
-        console.error(`  previousValues.fuelPerLap AFTER = ${previousValues.fuelPerLap}`);
-        console.error(`  Element text content = ${elements.fuelPerLap.textContent}`);
-        console.error(`  Element classes = ${elements.fuelPerLap.className}`);
       }
-    } else {
-      console.log(`❌ REJECTED fuelUsed: value=${fuelUsed}, isFinite=${isFinite(fuelUsed)}, fuelUsed >= 0: ${fuelUsed >= 0}`);
     }
   }
 
