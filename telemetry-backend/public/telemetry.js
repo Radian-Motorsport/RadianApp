@@ -1307,14 +1307,8 @@ function setupSocketListeners() {
       // Update weather data
       updateWeatherData(values);
       
-      // Update tire wear in real-time
-      const currentTireWear = {
-        RF: { L: values.RFwearL, M: values.RFwearM, R: values.RFwearR },
-        LF: { L: values.LFwearL, M: values.LFwearM, R: values.LFwearR },
-        RR: { L: values.RRwearL, M: values.RRwearM, R: values.RRwearR },
-        LR: { L: values.LRwearL, M: values.LRwearM, R: values.LRwearR }
-      };
-      updateTireWear(currentTireWear);
+      // Tire wear is NOT updated in real-time - only updated at stint completion
+      // to show the tire wear from the previous stint
 
       // Display Logic
       // CRITICAL FIX: Don't wait for buffer to unfreeze for lap completion processing
