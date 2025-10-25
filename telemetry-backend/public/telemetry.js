@@ -473,23 +473,34 @@ function updateWeatherData(values) {
 
 // Calculate and display tire wear percentages
 function updateTireWear(tireData) {
-  if (!tireData) return;
+  console.error(`🔥 updateTireWear() called with:`, tireData);
+  if (!tireData) {
+    console.error(`  ✗ No tire data provided`);
+    return;
+  }
   
   // Update tire wear visuals and values for each tire
   updateTireVisual('RF', tireData.RF);
   updateTireVisual('LF', tireData.LF);
   updateTireVisual('RR', tireData.RR);
   updateTireVisual('LR', tireData.LR);
+  console.error(`  ✓ All tire visuals updated`);
 }
 
 // Update visual representation and values for a single tire
 function updateTireVisual(position, tire) {
-  if (!tire) return;
+  console.error(`  updateTireVisual(${position}):`, tire);
+  if (!tire) {
+    console.error(`    ✗ No tire data for ${position}`);
+    return;
+  }
   
   // Get percentage values (0-100)
   const leftWear = Math.round(tire.L * 100);
   const middleWear = Math.round(tire.M * 100);
   const rightWear = Math.round(tire.R * 100);
+  
+  console.error(`    L=${leftWear}%, M=${middleWear}%, R=${rightWear}%`);
   
   // Update the band colors based on wear percentages
   updateTireBandColor(`tire${position}L`, leftWear);
@@ -504,6 +515,9 @@ function updateTireVisual(position, tire) {
       <span class="tire-value">${middleWear}</span>
       <span class="tire-value">${rightWear}</span>
     `;
+    console.error(`    ✓ Updated span element`);
+  } else {
+    console.error(`    ✗ Span element 'tire${position}' not found`);
   }
 }
 
@@ -632,6 +646,14 @@ function handlePitStopCompletion(values) {
   });
   
   // Update stint summary UI
+  console.error(`🔥 STINT SUMMARY DISPLAY:`);
+  console.error(`  stintLapCount = ${stintLapCount}`);
+  console.error(`  avgFuelUsed = ${avgFuelUsed}`);
+  console.error(`  stintTotalTimeSeconds = ${stintTotalTimeSeconds}`);
+  console.error(`  formatTimeHMS(stintTotalTimeSeconds) = ${stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--'}`);
+  console.error(`  stintAvgLapTimeSeconds = ${stintAvgLapTimeSeconds}`);
+  console.error(`  formatTimeMS(stintAvgLapTimeSeconds) = ${stintAvgLapTimeSeconds ? formatTimeMS(stintAvgLapTimeSeconds) : '--:--'}`);
+  
   if (elements.stintLapCount) elements.stintLapCount.textContent = stintLapCount ?? '--';
   if (elements.stintFuelAvg) elements.stintFuelAvg.textContent = avgFuelUsed ? `${avgFuelUsed.toFixed(2)} L` : '--';
   if (elements.stintTotalTime) elements.stintTotalTime.textContent = stintTotalTimeSeconds ? formatTimeHMS(stintTotalTimeSeconds) : '--:--:--';
@@ -639,8 +661,13 @@ function handlePitStopCompletion(values) {
   if (elements.stintIncidents) elements.stintIncidents.textContent = values?.PlayerCarDriverIncidentCount?.toString() ?? '--';
   
   // Display tire wear from the previous stint (stored when entering pit road)
+  console.error(`🔥 TIRE WEAR DEBUG:`);
+  console.error(`  previousValues.lastStintTireWear = ${JSON.stringify(previousValues.lastStintTireWear)}`);
   if (previousValues.lastStintTireWear) {
     updateTireWear(previousValues.lastStintTireWear);
+    console.error(`  ✓ Called updateTireWear()`);
+  } else {
+    console.error(`  ✗ No tire wear data to display`);
   }
   
   // Update last pit stop time with actual completion timestamp
@@ -652,6 +679,10 @@ function handlePitStopCompletion(values) {
       minute: '2-digit', 
       second: '2-digit' 
     });
+    console.error(`🔥 LAST PIT STOP TIME DEBUG:`);
+    console.error(`  Current time = ${now}`);
+    console.error(`  Formatted time = ${timeStr}`);
+    console.error(`  Element text will be = ${timeStr}`);
     elements.lastPitStopTime.textContent = timeStr;
     lastPitStopTimeValue = timeStr;
   }
@@ -1145,6 +1176,10 @@ function setupSocketListeners() {
         // Calculate actual stint duration if we have a previous stint start time
         if (lastStintStartSessionTime !== null && currentSessionTimeRemain !== null) {
           const calculatedStintDuration = lastStintStartSessionTime - currentSessionTimeRemain;
+          console.error(`🔥 STINT DURATION DEBUG:`);
+          console.error(`  lastStintStartSessionTime = ${lastStintStartSessionTime}s`);
+          console.error(`  currentSessionTimeRemain = ${currentSessionTimeRemain}s`);
+          console.error(`  calculatedStintDuration = ${calculatedStintDuration}s`);
           if (calculatedStintDuration > 0) {
             actualStintDuration = calculatedStintDuration;
             stintDurations.push(calculatedStintDuration);
