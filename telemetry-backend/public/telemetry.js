@@ -944,6 +944,7 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
 
       // Display last lap fuel
       if (elements.fuelPerLap) {
+        console.log(`🔥 DISPLAYING FUEL USED: fuelUsed=${fuelUsed?.toFixed(4)}, previousValues.fuelPerLap=${previousValues.fuelPerLap?.toFixed(4) ?? 'null'}`);
         updateValueWithColor(elements.fuelPerLap, `${fuelUsed.toFixed(2)} L`, fuelUsed, 'fuel', 'fuelPerLap');
       }
     } else {
