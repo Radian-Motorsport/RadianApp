@@ -1045,7 +1045,14 @@ function setupSocketListeners() {
   // Server state synchronization
   socket.on('telemetryStateInit', (serverState) => {
     console.log('Received initial state from server');
-    applyServerState(serverState);
+    // Don't overwrite localStorage with server state on init
+    // Only use server state if we have no localStorage data
+    if (!window.storageManager || !window.storageManager.loadTelemetryState()) {
+      console.log('No localStorage data found, using server state');
+      applyServerState(serverState);
+    } else {
+      console.log('localStorage data exists, ignoring server init state');
+    }
   });
   
   socket.on('telemetryStateUpdate', (updates) => {
