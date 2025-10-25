@@ -857,6 +857,12 @@ function processLapCompletion(lapCompleted, fuel, lapTime = null) {
   lastLapStartTime = now;
 
   // Fuel Usage Tracking
+  // Initialize fuelAtLapStart if not set (safety check for lap 1)
+  if (fuelAtLapStart === null && fuel > 0) {
+    fuelAtLapStart = fuel;
+    console.log(`⚠️ Safety initialization: fuelAtLapStart was null, set to ${fuel?.toFixed(2)}L`);
+  }
+  
   if (fuelAtLapStart !== null) {
     const fuelUsed = fuelAtLapStart - fuel;
     console.log(`Fuel tracking: fuelAtLapStart=${fuelAtLapStart?.toFixed(2)}, currentFuel=${fuel?.toFixed(2)}, fuelUsed=${fuelUsed?.toFixed(2)}`);
@@ -1253,7 +1259,8 @@ function setupSocketListeners() {
       }
 
       // Lap Completion Logic
-      if (driverReady && lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
+      // NOTE: Process all laps (even lap 1) - driverReady is only for dimming the UI
+      if (lapCompleted !== lastLapCompleted && lapCompleted !== -1) {
         const lapTime = safeValues?.LapLastLapTime; // Get actual iRacing lap time
         processLapCompletion(lapCompleted, fuel, lapTime);
       }
