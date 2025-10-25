@@ -1,7 +1,7 @@
 // telemetry.js - Handles all telemetry data processing and display updates
-// VERSION: 2025-10-25-fuel-fix v4 (Built: 2025-10-25T14:30:00Z)
-console.log('%c 📊 TELEMETRY.JS LOADED - Fuel Fix v4 - Built 14:30 UTC', 'background: #2a2a2a; color: #00ff00; font-weight: bold; padding: 8px; border-radius: 4px;');
-console.log('If you see this message, telemetry.js is the LATEST version');
+// VERSION: 2025-10-25-fuel-fix v5-FINAL (Built: 2025-10-25T14:45:00Z)
+console.error('%c � TELEMETRY.JS v5-FINAL LOADED 🚨', 'background: #ff0000; color: #ffff00; font-weight: bold; padding: 12px; border-radius: 4px; font-size: 16px;');
+console.error('THIS IS THE LATEST VERSION - IF YOU SEE THIS, CACHE IS CLEARED');
 
 // Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
