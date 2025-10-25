@@ -670,19 +670,9 @@ function handlePitStopCompletion(values) {
     console.error(`  ✗ No tire wear data to display`);
   }
   
-  // Update last pit stop time with actual completion timestamp
-  if (elements.lastPitStopTime) {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
-    });
-    console.error(`🔥 LAST PIT STOP TIME DEBUG:`);
-    console.error(`  Current time = ${now}`);
-    console.error(`  Formatted time = ${timeStr}`);
-    console.error(`  Element text will be = ${timeStr}`);
+  // Update last pit stop time with stint duration
+  if (elements.lastPitStopTime && stintTotalTimeSeconds) {
+    const timeStr = formatTimeMS(stintTotalTimeSeconds);
     elements.lastPitStopTime.textContent = timeStr;
     lastPitStopTimeValue = timeStr;
   }
@@ -717,9 +707,6 @@ function handleDriverExit(values, teamLap) {
   const stintAvgLapTimeSeconds = (stintLapCount > 0 && stintTotalTimeSeconds) 
     ? stintTotalTimeSeconds / stintLapCount 
     : null;
-  
-  // Update last pit stop time
-  lastPitStopTimeValue = stintTotalTimeSeconds ? formatTimeMS(stintTotalTimeSeconds) : '--:--';
 
   // Store stint values for persistence
   previousValues.stintLapCount = stintLapCount;
