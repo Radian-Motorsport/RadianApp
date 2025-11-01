@@ -25,7 +25,13 @@ let telemetryState = {
     fuelAvg5: null,
     lastLapTime: null,
     lapAvg3: null,
-    lapAvg5: null
+    lapAvg5: null,
+    projectedLaps: null,
+    projectedTime: null,
+    stintLapCount: null,
+    stintFuelAvg: null,
+    stintTotalTime: null,
+    stintAvgLapTime: null
   },
   stintIncidentCount: 0,
   lastSessionId: null,
@@ -251,7 +257,13 @@ io.on('connection', (socket) => {
         fuelAvg5: null,
         lastLapTime: null,
         lapAvg3: null,
-        lapAvg5: null
+        lapAvg5: null,
+        projectedLaps: null,
+        projectedTime: null,
+        stintLapCount: null,
+        stintFuelAvg: null,
+        stintTotalTime: null,
+        stintAvgLapTime: null
       },
       stintIncidentCount: 0,
       // Keep session tracking
