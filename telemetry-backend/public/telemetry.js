@@ -1,7 +1,4 @@
 // telemetry.js - Handles all telemetry data processing and display updates
-// VERSION: 2025-10-25-fuel-fix v5-FINAL (Built: 2025-10-25T14:45:00Z)
-console.error('%c � TELEMETRY.JS v5-FINAL LOADED 🚨', 'background: #ff0000; color: #ffff00; font-weight: bold; padding: 12px; border-radius: 4px; font-size: 16px;');
-console.error('THIS IS THE LATEST VERSION - IF YOU SEE THIS, CACHE IS CLEARED');
 
 // Socket.io connection to production server
 const socket = io('https://radianapp.onrender.com');
@@ -644,6 +641,7 @@ function handlePitStopCompletion(values) {
   }
   
   // Reset stint tracking for next stint
+  const currentTeamLap = values?.CarIdxLapCompleted?.[values?.PlayerCarIdx] || 0;
   lapEntryPoint = currentTeamLap;
   stintStartTime = Date.now();
 }
