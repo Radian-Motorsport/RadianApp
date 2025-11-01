@@ -325,6 +325,10 @@
     <!-- Admin Actions -->
     <div class="admin-actions">
       <button class="admin-button danger" id="resetButton">Reset All Data</button>
+      <label style="display: flex; align-items: center; gap: 10px; color: white; font-family: 'Orbitron', sans-serif;">
+        <input type="checkbox" id="persistenceToggle" style="width: 20px; height: 20px;">
+        <span>Enable Data Persistence (OFF by default)</span>
+      </label>
     </div>
   </div>
 
@@ -382,6 +386,15 @@
       
       // Cache buttons
       resetButton = document.getElementById('resetButton');
+      const persistenceToggle = document.getElementById('persistenceToggle');
+      
+      // Load persistence setting from localStorage
+      const persistenceEnabled = localStorage.getItem('dataPersistence') === 'true';
+      persistenceToggle.checked = persistenceEnabled;
+      
+      // Emit initial persistence state to server
+      socket.emit('setPersistence', { enabled: persistenceEnabled });
+      
       updateConnectionTime();
       setInterval(updateConnectionTime, 1000);
       
@@ -402,6 +415,14 @@
           socket.emit('resetTelemetryState');
           addConnectionEvent('Telemetry data reset initiated');
         }
+      });
+      
+      // Set up persistence toggle
+      persistenceToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        localStorage.setItem('dataPersistence', enabled.toString());
+        socket.emit('setPersistence', { enabled });
+        addConnectionEvent(`Data persistence ${enabled ? 'enabled' : 'disabled'}`);
       });
     });
     

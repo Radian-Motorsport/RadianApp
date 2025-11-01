@@ -34,6 +34,9 @@ socket.on('sessionInfo', (data) => {
 window.elements = window.elements || {};
 let elements = window.elements;
 
+// Persistence control flag
+let dataPersistenceEnabled = false;
+
 // State Variables - Initialize with default values
 let lastLapCompleted = -1;
 let fuelAtLapStart = null;
@@ -96,6 +99,11 @@ let isSyncingFromServer = false;
 
 // Telemetry state persistence functions
 function saveTelemetryState() {
+  // Only save if persistence is enabled
+  if (!dataPersistenceEnabled) {
+    return;
+  }
+  
   if (!window.storageManager) {
     console.warn('Telemetry: StorageManager not available');
     return;
@@ -206,8 +214,8 @@ function setupTelemetryAutoSave() {
 
 // Functions to handle server state synchronization
 function syncToServer() {
-  // Only sync if not currently receiving updates from server
-  if (isSyncingFromServer) return;
+  // Only sync if persistence is enabled and not currently receiving updates from server
+  if (!dataPersistenceEnabled || isSyncingFromServer) return;
   
   // Create state object
   const stateToSync = {
@@ -1006,6 +1014,17 @@ function setupSocketListeners() {
     
     // Show notification
     alert('Telemetry data has been reset by another team member.');
+  });
+  
+  // Listen for persistence setting changes
+  socket.on('persistenceChanged', (data) => {
+    dataPersistenceEnabled = data.enabled;
+    console.log(`Data persistence ${dataPersistenceEnabled ? 'enabled' : 'disabled'}`);
+    
+    // If persistence was disabled, clear stored data
+    if (!dataPersistenceEnabled && window.storageManager) {
+      window.storageManager.clearAll();
+    }
   });
 
   // Session info processing

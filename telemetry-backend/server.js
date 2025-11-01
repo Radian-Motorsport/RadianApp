@@ -287,6 +287,13 @@ io.on('connection', (socket) => {
     io.emit('telemetryStateReset', telemetryState);
   });
   
+  // Handle persistence toggle
+  socket.on('setPersistence', (data) => {
+    console.log(`Persistence setting changed: ${data.enabled}`);
+    // Broadcast to all clients
+    io.emit('persistenceChanged', { enabled: data.enabled });
+  });
+  
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
