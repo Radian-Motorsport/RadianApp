@@ -612,6 +612,12 @@ function handlePitStopCompletion(values) {
   // Use the actual stint lap count from global tracking (calculated via OnPitRoad)
   const stintLapCount = actualStintLapCount > 0 ? actualStintLapCount : 0;
   
+  // Only update stint summary if stint had at least 1 lap
+  if (stintLapCount === 0) {
+    console.log('Skipping stint summary update - no laps completed in stint');
+    return;
+  }
+  
   // Calculate stint average fuel usage using actual fuel consumed during stint
   const avgFuelUsed = (stintLapCount > 0 && actualStintFuelUsed > 0) 
     ? actualStintFuelUsed / stintLapCount 
