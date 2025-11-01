@@ -2,6 +2,7 @@ let currentSessionId = null;
 let currentUserName = null;
 let lastBroadcastedDriver = null;
 let lastBroadcastedSession = null;
+let dataPersistenceEnabled = false; // OFF by default
 
 // Telemetry state storage
 let telemetryState = {
@@ -142,7 +143,31 @@ io.on('connection', (socket) => {
   });
   
   // Send current telemetry state to newly connected client
-  socket.emit('telemetryStateInit', telemetryState);
+  // Only send if persistence is enabled, otherwise send empty state
+  if (dataPersistenceEnabled) {
+    socket.emit('telemetryStateInit', telemetryState);
+  } else {
+    // Send empty state when persistence is off
+    socket.emit('telemetryStateInit', {
+      lastLapCompleted: -1,
+      fuelUsageHistory: [],
+      lapTimeHistory: [],
+      previousValues: {
+        fuelPerLap: null,
+        fuelAvg: null,
+        fuelAvg5: null,
+        lastLapTime: null,
+        lapAvg3: null,
+        lapAvg5: null,
+        projectedLaps: null,
+        projectedTime: null,
+        stintLapCount: null,
+        stintFuelAvg: null,
+        stintTotalTime: null,
+        stintAvgLapTime: null
+      }
+    });
+  }
   
   // Handle connection info requests
   socket.on('requestConnectionInfo', () => {
@@ -222,12 +247,14 @@ io.on('connection', (socket) => {
       connectedClients.set(socket.id, clientInfo);
     }
     
-    // Update server state
-    Object.keys(updates).forEach(key => {
-      if (key in telemetryState) {
-        telemetryState[key] = updates[key];
-      }
-    });
+    // Only update server state if persistence is enabled
+    if (dataPersistenceEnabled) {
+      Object.keys(updates).forEach(key => {
+        if (key in telemetryState) {
+          telemetryState[key] = updates[key];
+        }
+      });
+    }
     
     // Broadcast to all other clients
     socket.broadcast.emit('telemetryStateUpdate', updates);
@@ -289,9 +316,48 @@ io.on('connection', (socket) => {
   
   // Handle persistence toggle
   socket.on('setPersistence', (data) => {
-    console.log(`Persistence setting changed: ${data.enabled}`);
+    dataPersistenceEnabled = data.enabled;
+    console.log(`Persistence setting changed: ${dataPersistenceEnabled}`);
+    
+    // If persistence was disabled, reset server state
+    if (!dataPersistenceEnabled) {
+      telemetryState = {
+        lastLapCompleted: -1,
+        fuelAtLapStart: null,
+        fuelUsageHistory: [],
+        lapTimeHistory: [],
+        lastLapStartTime: null,
+        currentLap: 0,
+        lastTeamLap: null,
+        bufferedData: null,
+        lapEntryPoint: null,
+        bufferFrozen: true,
+        driverWasOnTrack: false,
+        lastTelemetryTime: null,
+        stintStartTime: null,
+        lastPitStopTimeValue: null,
+        previousValues: {
+          fuelPerLap: null,
+          fuelAvg: null,
+          fuelAvg5: null,
+          lastLapTime: null,
+          lapAvg3: null,
+          lapAvg5: null,
+          projectedLaps: null,
+          projectedTime: null,
+          stintLapCount: null,
+          stintFuelAvg: null,
+          stintTotalTime: null,
+          stintAvgLapTime: null
+        },
+        stintIncidentCount: 0,
+        lastSessionId: null,
+        lastSessionDate: new Date().toDateString()
+      };
+    }
+    
     // Broadcast to all clients
-    io.emit('persistenceChanged', { enabled: data.enabled });
+    io.emit('persistenceChanged', { enabled: dataPersistenceEnabled });
   });
   
   // Handle disconnect
